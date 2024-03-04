@@ -1,0 +1,6 @@
+[workspace]
+members = ["./turing", "./turing-wasm"]
+
+[profile.release]
+# Link-Time Optimization
+lto = true
