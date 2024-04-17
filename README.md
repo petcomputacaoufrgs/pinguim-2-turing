@@ -2,7 +2,7 @@
 
 "Pinguim" is an initiative by PET Computação, originating in 2021, dedicated to crafting efficient simulators for the Register Machine, Lambda calculus, and the Turing machine, essential components of the INF05501 course instructed by Professor Rodrigo Machado at UFRGS. Collaborating with Professor Rodrigo, the group successfully developed an efficient simulator for the Register Machine before transitioning to other projects. You can check the new simulator [here](https://www.inf.ufrgs.br/pet/pinguim/norma/).
 
-In 2024, other members of PET Computação decided to work on Pinguim again, but this time focusing in creating the Turing machine simulator. This project is a web application that compiles [Rust](https://www.rust-lang.org) code to WebAssembly for high-performance computing in the browser, while utilizing [Next.js](https://nextjs.org/) for  front-end development; and it's still in development.
+In 2024, other members of PET Computação decided to work on Pinguim again, but this time focusing in creating the Turing machine simulator. This project is a web application that compiles [Rust](https://www.rust-lang.org) code to WebAssembly for high-performance computing in the browser, while utilizing [React](https://react.dev) for  front-end development; and it's still in development.
 
 ## Install and run the project
 
@@ -11,41 +11,41 @@ To build the package, additional to Rust, we need a library called `wasm-pack`
 ```bash
 cargo install wasm-pack
 ```
-After cloning the project, build it using:
 
+After cloning the project, ensure dependencies are up to date. If not up to date, then:
 ```bash
-cd turing-wasm
-wasm-pack build --target bundler
+npm install
 ```
+
+Afterwards, build it using:
+```bash
+npm run build:wasm
+```
+
 Now, you are ready to run the development server
 
 ```bash
-cd site
-npm run serve
+npm start
 ```
 
 ## How is this project organized
 
-This projects utilizes three main folders
+This projects utilizes two main folders
 
 ```bash
-site
-turing
+src
 turing-wasm
- |_ pkg
- |_ src
+ |_ lib.rs
+ |_ turing.rs
 ```
-### `site`
+### `src`
 Contains all files used for front-end development
 
-### `turing`
-Contains source code for the Turing machine simulator
-
 ### `turing-wasm`
-This folder contains information about the transformation from Rust to WebAssembly
+This folder contains all files regarding the library turing-wasm, which represents the back-end of the project.
 
-#### `pkg`
-Contains build information of the source code after compiling using `wasm-pack
-
-#### `src`
+#### `lib.rs`
 Contains source code that uses `wasm-bindgen` to export Rust functions to JavaScript
+
+#### `turing.rs`
+Contains source code for the Turing machine simulator
