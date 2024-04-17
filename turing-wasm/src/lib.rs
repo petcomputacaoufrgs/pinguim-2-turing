@@ -1,13 +1,15 @@
 use wasm_bindgen::prelude::*;
 
-use turing::tests::capslock;
+mod turing;
+
 
 #[wasm_bindgen]
-extern {
-    pub fn alert(s: &str);
+pub fn add(mut a: i32, b: i32) -> i32 {
+    a = turing::multiply_2(a);
+    a + b
 }
 
-#[wasm_bindgen]
-pub fn greet(name: &str) {
-    alert(&format!("Hello, {}!", capslock(name)));
+#[test]
+fn add_test() {
+    assert_eq!(1 + 1, add(1, 1));
 }

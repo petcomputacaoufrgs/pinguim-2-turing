@@ -1,12 +1,11 @@
 [package]
 name = "turing-wasm"
 version = "0.1.0"
-authors = ["beaarend <beaarend@gmail.com>"]
-edition = "2018"
+edition = "2021"
+
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen = "0.2"
-turing = {path = "../turing/"}
+wasm-bindgen = "0.2.78"
