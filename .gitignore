@@ -1,6 +1,8 @@
 # wasm
 /turing-wasm/target
 /turing-wasm/Cargo.lock
+/turing-wasm/turing.exe
+/turing-wasm/turing.pdb
 
 # dependencies
 /node_modules
