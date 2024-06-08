@@ -1,33 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import init, { add } from "turing-wasm";
-import logo from './logo.svg';
-import './App.css';
+//import init, { add } from "turing-wasm";
+import logo from './assets/LogoPET_oficial (1).png';
+import './controller/home/style.css';
+import Routess from "./routes"
 
 function App() {
-  const [ans, setAns] = useState(0);
-  useEffect(() => {
-    init().then(() => {
-      setAns(add(1, 1));
-    })
-  }, [])
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <p>1*2 + 1 = {ans}</p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Routess/>
   );
 }
 
