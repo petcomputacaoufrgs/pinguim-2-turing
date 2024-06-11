@@ -4,6 +4,7 @@ import "../../components/cabecalho"
 
 import './style.css';
 import Cabecalho from '../../components/cabecalho';
+import Inputs from '../../components/input';
 
 export function Home() {
   const [ans, setAns] = useState(0);
@@ -18,28 +19,26 @@ export function Home() {
       <Cabecalho/>
       <body className='corpo'>
         <div id='div1'>
-          <input type="file" id="botaoCarregar" hidden/>
-          <label htmlFor="botaoCarregar">Carregar</label>
-          <div id="inputs">
-            <text>Estados:</text>
-            <input type='text'/>
-            <text>Estado Inicial:</text>
-            <input type='text'/>
-            <text>Estados Finais:</text>
-            <input type='text'/>
-            <text>Alfabeto de Entrada:</text>
-            <input type='text'/>
-            <text>Alfabeto Auxiliar:</text>
-            <input type='text'/>
-            <text>Símbolo Inicial:</text>
-            <input type='text'/>
-            <text>Símbolo de Branco:</text>
-            <input type='text'/>
+          <div id='botao_inputs'>
+            <input type="file" id="botaoCarregar" hidden/>
+            <label htmlFor="botaoCarregar">Carregar</label>
+            <div id="inputs">
+              <Inputs titulo="Estados:"/>
+              <Inputs titulo="Estado Inicial:"/>
+              <Inputs titulo="Estados Finais:"/>
+              <Inputs titulo="Alfabeto de Entrada:"/>
+              <Inputs titulo="Alfabeto Auxiliar:"/>
+              <Inputs titulo="Símbolo Inicial:"/>
+              <Inputs titulo="Símbolo de Branco:"/>
+            </div>
           </div>
-          <div id="Documentacao">
+          <div id="documentacao">
             <text>Documentação:</text>
             <input type='text'/>
           </div>
+        </div>
+        <div id='div2'>
+          <text>teste</text>
         </div>
       </body>
     </div>
