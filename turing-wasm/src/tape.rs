@@ -18,18 +18,23 @@
 
 use direction;
 
+#[derive(Clone)]
 pub struct Tape {
     pub alphabet: Vec<char>,
     pub head_position: i32,
-    pub tape: Vec<char>
+    pub tape: Vec<char>,
+    initial_tape: Vec<char>
 }
 
 impl Tape {
     pub fn new(alphabet: &str, tape: &str) -> Tape {
+        let initial_tape: Vec<char> = tape.chars().collect();
+
         Tape {
             alphabet: alphabet.chars().collect(),
             head_position: 0,
-            tape: tape.chars().collect()
+            tape: initial_tape.clone(), 
+            initial_tape,  
         }
     }
 
@@ -40,6 +45,11 @@ impl Tape {
         }
 
         self.tape[self.head_position as usize] = character;
+    }
+
+    pub fn reset(&mut self) {
+        self.head_position = 0;
+        self.tape = self.initial_tape.clone(); 
     }
 
     pub fn read(&mut self) -> char {
