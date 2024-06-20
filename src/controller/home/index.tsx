@@ -16,12 +16,15 @@ export function Home() {
   
   return (
     <div className="App">
+
       <Cabecalho/>
+
       <body className='corpo'>
         <div id='div1'>
           <div id='botao_inputs'>
-            <input type="file" id="botaoCarregar" hidden/>
-            <label htmlFor="botaoCarregar">Carregar</label>
+              <input type="file" id="botaoCarregar" hidden/>
+              <label htmlFor="botaoCarregar">Carregar</label>
+
             <div id="inputs">
               <Inputs titulo="Estados:"/>
               <Inputs titulo="Estado Inicial:"/>
@@ -32,13 +35,23 @@ export function Home() {
               <Inputs titulo="Símbolo de Branco:"/>
             </div>
           </div>
+
           <div id="documentacao">
             <text>Documentação:</text>
             <input type='text'/>
           </div>
         </div>
+        
         <div id='div2'>
-          <text>teste</text>
+          <div id='tabela_transicao'>
+            <text>Tabela de Transição:</text>
+            <div></div>
+          </div>
+
+          <div id='botoes_div2'>
+            <button>Computar</button>
+            <button>Salvar</button>
+          </div>
         </div>
       </body>
     </div>

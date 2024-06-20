@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import "./style.css"
+import {Div, Input, Text} from "./styled.ts"
 
 interface i_input{
     titulo:string
 }
 
 const Inputs:React.FC<i_input>=({titulo})=>{
-
-
     return(
-        <div id="component_input">
-            <text>{titulo}</text>
-            <input type='text'/>
-        </div>
+        <Div>
+            <Text>{titulo}</Text>
+            <Input type='text'/>
+        </Div>
     )
 }
+
 export default Inputs

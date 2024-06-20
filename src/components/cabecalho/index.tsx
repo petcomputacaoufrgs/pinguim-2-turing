@@ -1,31 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import logo from '../../assets/LogoPET_oficial (1).png';
+import {AppHeader, AppLogo, AppTitle, AppLinks, AppLink} from './styled.ts';
 
 export default function Cabecalho(){
 
-
     return(
-        <header className="App-header">
-            <img src={logo} className="App-logo" alt="logo" />
-            <p className="titulo">
-            Máquina de Turing
-            </p>
-            <a
-            className="App-link1"
-            href="https://www.inf.ufrgs.br/pet/pinguim/norma/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >
-            Máquina Norma
-            </a>
-            <a
-            className="App-link2"
-            href="https://www.inf.ufrgs.br/pet/pinguim/norma/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >
-            Cálculo Lambda
-            </a>
-        </header>
+        <AppHeader>
+            <AppLogo src={logo} alt="logo" />
+            <AppTitle> Máquina de Turing </AppTitle>
+
+            <AppLinks>
+                <AppLink href="https://www.inf.ufrgs.br/pet/pinguim/norma/" target="_blank" rel="noopener noreferrer"> Máquina Norma </AppLink>
+                <AppLink href="https://www.inf.ufrgs.br/pet/pinguim/norma/" target="_blank" rel="noopener noreferrer"> Cálculo Lambda </AppLink>
+            </AppLinks>
+        </AppHeader>
     )
 }
