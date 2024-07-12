@@ -20,10 +20,10 @@
     Still deciding where to put the translate function and how to organize the code, 
 */
 
-mod state;
-mod tape;
-mod direction;
-mod transition;
+use super::tape;
+use super::direction;
+use super::transition;
+use super::state;
 
 struct TuringMachine {
     states: Vec<state::State>,

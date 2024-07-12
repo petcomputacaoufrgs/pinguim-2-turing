@@ -15,7 +15,7 @@
     transition: transition::Transition::new('0', 'a', '1', 'A', direction::Direction::Right)
     */
 
-use direction;
+use super::direction;
 
 #[derive(Copy)]
 pub struct Transition{

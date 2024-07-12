@@ -1,6 +1,10 @@
 // src/TuringMachinePage.tsx
 import React, { useState, ChangeEvent, FocusEvent } from 'react';
 
+import init, * as wasm from "turing-wasm";
+
+await init()
+
 interface Transitions {
   [state: string]: {
     [symbol: string]: string;
@@ -14,6 +18,7 @@ const TuringMachinePage: React.FC = () => {
   const [alphabet, setAlphabet] = useState<string>('');
   const [auxiliaryAlphabet, setAuxiliaryAlphabet] = useState<string>('');
   const [transitions, setTransitions] = useState<Transitions>({});
+  const [tape, setTape] = useState<string>('');
   const initialSymbol = '@';
   const blankSymbol = '-';
 
@@ -33,8 +38,36 @@ const TuringMachinePage: React.FC = () => {
     }
   };
 
+  const handleReady = () => {
+    const stateList = states.split(',').map((s) => s.trim());
+    const finalStateList = finalStates.split(',').map((s) => s.trim());
+    const alphabetList = alphabet.split(',').map((a) => a.trim());
+    const auxiliaryAlphabetList = auxiliaryAlphabet.split(',').map((a) => a.trim());
+
+    const transitionList: { state: string; symbol: string; action: string }[] = [];
+    for (const state in transitions) {
+      for (const symbol in transitions[state]) {
+        transitionList.push({
+          state,
+          symbol,
+          action: transitions[state][symbol],
+        });
+      }
+    }
+
+    console.log('Mounted!');
+    console.log(`Here are the states: ${JSON.stringify(stateList)}`);
+    console.log(`This is the initial state: ${initialState}`);
+    console.log(`These are the final states: ${JSON.stringify(finalStateList)}`);
+    console.log(`This is the alphabet: ${JSON.stringify(alphabetList)}`);
+    console.log(`This is the auxiliary alphabet: ${JSON.stringify(auxiliaryAlphabetList)}`);
+    console.log(`This is the tape: ${tape}`);
+    console.log(`This is the transitions: ${JSON.stringify(transitionList)}`);
+  };
+
   const renderTransitionTable = () => {
     const stateList = states.split(',').map((s) => s.trim());
+    const finalStateList = finalStates.split(',').map((s) => s.trim());
     const alphabetList = [initialSymbol, ...alphabet.split(',').map((a) => a.trim()).filter((a) => a !== initialSymbol && a !== blankSymbol), blankSymbol];
 
     return (
@@ -49,7 +82,7 @@ const TuringMachinePage: React.FC = () => {
         </thead>
         <tbody>
           {stateList.map((state) => (
-            <tr key={state}>
+            <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FFD700' : 'white' }}>
               <td>{state}</td>
               {alphabetList.map((symbol) => (
                 <td key={symbol}>
@@ -78,7 +111,7 @@ const TuringMachinePage: React.FC = () => {
       <h1>Turing Machine Configuration</h1>
       <div>
         <label>
-          States (comma separated):
+          States:
           <input
             type="text"
             value={states}
@@ -88,7 +121,7 @@ const TuringMachinePage: React.FC = () => {
       </div>
       <div>
         <label>
-          Final States (comma separated):
+          Final States:
           <input
             type="text"
             value={finalStates}
@@ -108,7 +141,7 @@ const TuringMachinePage: React.FC = () => {
       </div>
       <div>
         <label>
-          Alphabet (comma separated):
+          Alphabet:
           <input
             type="text"
             value={alphabet}
@@ -118,7 +151,7 @@ const TuringMachinePage: React.FC = () => {
       </div>
       <div>
         <label>
-          Auxiliary Alphabet (comma separated):
+          Auxiliary Alphabet:
           <input
             type="text"
             value={auxiliaryAlphabet}
@@ -136,6 +169,17 @@ const TuringMachinePage: React.FC = () => {
           Blank Symbol: {blankSymbol}
         </label>
       </div>
+      <div>
+        <label>
+          Tape:
+          <input
+            type="text"
+            value={tape}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setTape(e.target.value)}
+          />
+        </label>
+      </div>
+      <button onClick={handleReady}>Ready</button>
       <h2>Transitions</h2>
       {renderTransitionTable()}
     </div>

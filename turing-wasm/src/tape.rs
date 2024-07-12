@@ -16,7 +16,7 @@
     Implement error messages
 */
 
-use direction;
+use super::direction;
 
 #[derive(Clone)]
 pub struct Tape {
