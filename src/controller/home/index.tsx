@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import init, { add } from "turing-wasm";
-import "../../components/cabecalho"
-
-import './style.css';
-import Cabecalho from '../../components/cabecalho';
-import Inputs from '../../components/input';
+import {Container, ContainerBody} from "./styled.ts"
+import Header from '../../components/header/index.tsx';
+import Upload_button from '../../components/upload_button/index.tsx';
+import Inputs from '../../components/input/index.tsx';
+import Documentation from '../../components/documentation/index.tsx';
 
 export function Home() {
   const [ans, setAns] = useState(0);
@@ -15,46 +15,39 @@ export function Home() {
   }, [])
   
   return (
-    <div className="App">
+    <Container>
+      <Header/>
 
-      <Cabecalho/>
-
-      <body className='corpo'>
-        <div id='div1'>
-          <div id='botao_inputs'>
-              <input type="file" id="botaoCarregar" hidden/>
-              <label htmlFor="botaoCarregar">Carregar</label>
-
-            <div id="inputs">
-              <Inputs titulo="Estados:"/>
-              <Inputs titulo="Estado Inicial:"/>
-              <Inputs titulo="Estados Finais:"/>
-              <Inputs titulo="Alfabeto de Entrada:"/>
-              <Inputs titulo="Alfabeto Auxiliar:"/>
-              <Inputs titulo="Símbolo Inicial:"/>
-              <Inputs titulo="Símbolo de Branco:"/>
+      <ContainerBody>
+        <div id="div1">
+          <Upload_button/>
+          
+          <div id="div1_part2">
+            <div id="div1_part2_inputs">
+              <Inputs title="Estado:"/>
+              <Inputs title="Estado inicial:"/>
+              <Inputs title="Estados finais:"/>
+              <Inputs title="Alfabeto de entrada:"/>
+              <Inputs title="Alfabeto auxiliar:"/>
+              <Inputs title="Símbolo inicial:"/>
+              <Inputs title="Símbolo de branco:"/>
             </div>
-          </div>
 
-          <div id="documentacao">
-            <text>Documentação:</text>
-            <input type='text'/>
+            <Documentation/>
           </div>
         </div>
-        
-        <div id='div2'>
-          <div id='tabela_transicao'>
-            <text>Tabela de Transição:</text>
-            <div></div>
-          </div>
 
-          <div id='botoes_div2'>
-            <button>Computar</button>
-            <button>Salvar</button>
-          </div>
+        <div id="div2">
+          <p>Tabela de Transição:</p>
+          <div></div>
         </div>
-      </body>
-    </div>
+
+        <div id="div3">
+          <p>Grafo:</p>
+          <div></div>
+        </div>
+      </ContainerBody>
+    </Container>
   );
 }
 

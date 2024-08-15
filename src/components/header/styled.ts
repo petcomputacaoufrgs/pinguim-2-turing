@@ -13,27 +13,27 @@ export const AppHeader = styled.header`
     text-overflow: ellipsis;
 `;
 
-export const AppLogo = styled.img`
+export const Logo = styled.img`
     max-height: 9vh;
     max-width: 7vw;
     padding-left: 3vw;
 `;
 
-export const AppTitle = styled.text`
+export const Title = styled.text`
     color: #FBF9FB;
     font-size: 3vw;
     font-weight:bold;
     padding-right: 13vw;
 `;
 
-export const AppLinks = styled.div`
+export const Links = styled.div`
     display:flex;
     flex-direction:row;
     justify-content: space-between;
     padding-right: 3vw;
 `;
 
-export const AppLink = styled.a` 
+export const Link = styled.a` 
     color: #FBF9FB;
     font-size: 1.5vw;
     margin: 1vw;

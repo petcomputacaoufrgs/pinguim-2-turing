@@ -1,4 +1,3 @@
-import './controller/home/style.css';
 import Routess from "./routes"
 
 function App() {

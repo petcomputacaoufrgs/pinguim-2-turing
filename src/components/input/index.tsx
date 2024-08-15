@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import {Div, Input, Text} from "./styled.ts"
 
 interface i_input{
-    titulo:string
+    title:string
 }
 
-const Inputs:React.FC<i_input>=({titulo})=>{
+const Inputs:React.FC<i_input>=({title})=>{
     return(
         <Div>
-            <Text>{titulo}</Text>
+            <Text>{title}</Text>
             <Input type='text'/>
         </Div>
     )
 }
 
-export default Inputs
+export default Inputs;

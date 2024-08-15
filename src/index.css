@@ -1,9 +1,7 @@
 body {
   margin: 0;
   font-family: 'Poppins';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   padding: 0;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: auto;
 }
