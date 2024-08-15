@@ -9,10 +9,11 @@ export const Container = styled.div`
     margin-left: 2vw;
     width: 50%;
 
-    input{
+    textarea{
         width: 100%;
         height: 100%;
         border: none;
+        outline: none;
     }
 
     p{

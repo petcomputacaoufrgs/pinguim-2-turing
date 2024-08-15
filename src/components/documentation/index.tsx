@@ -6,7 +6,7 @@ export default function Documentation(){
     return(
         <Container>
             <p>Documentação: </p>
-            <input type="text"/>
+            <textarea/>
         </Container>
     )
 }
