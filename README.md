@@ -6,6 +6,10 @@ In 2024, other members of PET Computação decided to work on Pinguim again, but
 
 ## Install and run the project
 
+1. Make sure you already have Build Tools C++ for Desktop downloaded
+2. Download rust on your machine.
+3. After everything has been installed, restart the system.
+   
 To build the package, additional to Rust, we need a library called `wasm-pack`
 
 ```bash
