@@ -20,19 +20,6 @@ pub fn add(mut a: i32, b: i32) -> i32 {
     a + b
 }
 
-<<<<<<< Updated upstream
-#[test]
-fn add_test() {
-    assert_eq!(1 + 1, add(1, 1));
-}
-=======
-    // if run : tm.run()
-    // if step : tm.step() 
-        // how to know if it is the first step?
-        // how to know which step to take?
-    // if reset : tm.reset()
-
-#[wasm_bindgen]
 pub struct TuringMachineWrapper {
     machine: TuringMachine,
 }
@@ -104,4 +91,4 @@ pub struct TransitionWrapper {
     pub new_symbol: String,
     pub direction: String,
 }
->>>>>>> Stashed changes
+
