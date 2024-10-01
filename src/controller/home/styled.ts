@@ -24,6 +24,10 @@ export const ContainerBody = styled.div`
 
       padding-left: 3vw;
       padding-top: 1vh;
+
+      #div1_buttons{
+        display: flex;
+      }
       
       #div1_part2{
         display: flex;
@@ -33,7 +37,7 @@ export const ContainerBody = styled.div`
         height: 87%; 
 
         #div1_part2_inputs{
-          width: 50%;
+          width: 82%;
         }
       }
     }
@@ -50,9 +54,14 @@ export const ContainerBody = styled.div`
 
       div{
         width: 100%;
-        height: 80%;
+        height: 65%;
         overflow: auto;
         background-color: #FFF;
+        margin-bottom: 1vh;
+      }
+
+      button{
+        width: 100%;
       }
     }
 

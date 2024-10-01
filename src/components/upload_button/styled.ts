@@ -15,6 +15,7 @@ export const Div = styled.div`
         justify-content: center;
         align-items: center;
 
+        margin-right: 1vw;
         margin-bottom: 1vh;
     }
 `;
