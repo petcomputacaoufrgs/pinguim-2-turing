@@ -4,7 +4,7 @@ export const Button = styled.button`
     color: #343239;
     font-weight:bolder;
     font-size: 1vw;
-    background-color: #DD5B6C !important; 
+    background-color: #DD5B6C; 
 
     font-family: 'Poppins';
 

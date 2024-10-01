@@ -20,37 +20,30 @@ export const ContainerBody = styled.div`
     color: #343239;
 
     #div1 {
-      grid-area: div1;
-
+      grid-area: div2;
       padding-left: 3vw;
-      padding-top: 1vh;
       
-      #div1_part2{
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-
-        height: 87%; 
-
-        #div1_part2_inputs{
-          width: 50%;
-        }
-      }
     }
 
     #div2 {
-      grid-area: div2;
+      grid-area: div1;
       padding-left: 3vw;
+      padding-top: 1vh;
+
+      button{
+        width: 35%;
+      }
 
       p{
         font-weight: bold;
-        font-size: 1.5vw;
+        font-size: 4vh;
         margin-bottom: 0.2vh;
+        margin-top: 0.2vh;
       }
 
       div{
         width: 100%;
-        height: 80%;
+        height: 100%;
         overflow: auto;
         background-color: #FFF;
       }
@@ -61,19 +54,19 @@ export const ContainerBody = styled.div`
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: end;
+      justify-content: flex-end;
       margin-bottom: 5vh;
 
       p{
         font-weight: bold;
         font-size: 4vh;
-        margin-bottom: 0.2vh;
+        margin-bottom: 0.4vh;
         margin-top: 5vh;
       }
 
       div{
         width: 80%;
-        height: 82%;
+        height: 100%;
         overflow: auto;
         background-color: #FFF;
       }

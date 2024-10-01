@@ -4,6 +4,7 @@ import Header from '../../components/header/index.tsx';
 import Upload_button from '../../components/upload_button/index.tsx';
 import Inputs from '../../components/input/index.tsx';
 import Documentation from '../../components/documentation/index.tsx';
+import Buttons from '../../components/general_button/index.tsx';
 
 export function Home() {  
   return (
@@ -11,16 +12,19 @@ export function Home() {
       <Header/>
 
       <ContainerBody>
-        <div id="div1">
-        
+        <div id="div2">
+          <Buttons title="Editar Máquina de Turing"/>
+          <p>Tabela de Transição:</p>
+          <div></div>
         </div>
 
-        <div id="div2">
-          
+        <div id="div1">
+
         </div>
 
         <div id="div3">
-        
+            <p>Grafo:</p>
+            <div></div>
         </div>
       </ContainerBody>
     </Container>
