@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {Container, ContainerBody} from "./styled.ts";
+import {Container, ContainerBody, Div11, Div12, Div13, Div14} from "./styled.ts";
 import Header from '../../components/header/index.tsx';
-import Upload_button from '../../components/upload_button/index.tsx';
-import Inputs from '../../components/input/index.tsx';
-import Documentation from '../../components/documentation/index.tsx';
 import Buttons from '../../components/general_button/index.tsx';
 
 export function Home() {  
@@ -19,7 +16,19 @@ export function Home() {
         </div>
 
         <div id="div1">
+          <Div11>
+            <p>Entrada:</p>
+            <input type="text"/>
+          </Div11> 
 
+          <Div12>
+          </Div12>
+
+          <Div13>
+          </Div13>
+
+          <Div14>
+          </Div14>
         </div>
 
         <div id="div3">
