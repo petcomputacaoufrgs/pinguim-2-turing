@@ -22,10 +22,10 @@ export const ContainerBody = styled.div`
     #div1 {
       grid-area: div2;
       padding-left: 3vw;
-      margin-bottom: 5vh;
+      margin-bottom: 5vh;   
+      
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
 
       p{
         font-weight: bold;
@@ -44,9 +44,6 @@ export const ContainerBody = styled.div`
             outline: none;
         }
       }
-
-      background-color: blue;
-
     }
 
     #div2 {
@@ -58,7 +55,7 @@ export const ContainerBody = styled.div`
         width: 35%;
         
         &:hover {
-          color: #DD5B6C;
+          background-color: #4D4C52;
         }  
       }
 
@@ -107,26 +104,35 @@ export const Div11 = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 20%;
 `;
 
 export const Div12 = styled.div`
   background-color: aqua;
   width: 100%;
-  height: 30%;
-  margin-top: 2vh;
-  margin-bottom: 1vh;
+  height: 60%;
+  margin-top: 1vh;
 `;
 
 export const Div13 = styled.div`
   background-color: yellow;
   width: 100%;
   height: 15%;
-  margin-bottom: 1vh;
+  display: flex;
+  align-items: center;
 `;
 
 export const Div14 = styled.div`
   background-color: red;
   width: 100%;
-  height: 12%;
+  height: 15%;
+  display: flex;
+  align-items: center;
+`;
+
+
+export const Div2p = styled.div`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 `;
