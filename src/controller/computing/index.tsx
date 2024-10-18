@@ -10,7 +10,7 @@ export function Home() {
 
       <ContainerBody>
         <div id="div2">
-          <Buttons title="Editar Máquina de Turing"/>
+          <Buttons to={"../"} title="Editar Máquina de Turing"/>
           <p>Tabela de Transição:</p>
           <div></div>
         </div>
