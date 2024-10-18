@@ -14,7 +14,7 @@ export const ContainerBody = styled.div`
     grid-template-columns: 55% auto;
     grid-template-rows: 40% auto;
     grid-template-areas:
-        'div1 div3'
+        'div1 div4'
         'div2 div3';
 
     color: #343239;
@@ -86,5 +86,20 @@ export const ContainerBody = styled.div`
         overflow: auto;
         background-color: #FFF;
       }
+    }
+
+    #div4 {
+
+      grid-area: div4;
+      padding-left: 3vw;
+      margin: auto;
+      p{
+
+
+
+      
+      }
+    
+    
     }
 `;
