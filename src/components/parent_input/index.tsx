@@ -1,5 +1,10 @@
 import Inputs from "../input";
 import { ChangeEvent, useState } from "react";
+import Upload_button from "../upload_button";
+import Buttons from "../general_button";
+import Documentation from "../documentation";
+
+
 
 // Essa interface está repetida em validation_message
 interface i_input_errors{
@@ -150,15 +155,49 @@ const ParentInput = ({old_errors, onChangeErrors}: i_parent_input) => {
     
       };
 
+
+      const handleFileUpload = (lines: string[]) => {
+        const newInputs = {...inputValues};
+        let i = 0;
+        for(const key in inputValues) {
+            if(i >= lines.length)
+                break;
+              
+            newInputs[key as keyof i_input_values] = lines[i];
+            i = i + 1;
+        }
+
+        setInputValues(newInputs);
+
+        validate_inputs(newInputs);
+    };
+
     return (
+
         <>
-            <Inputs name="input0" value={inputValues.input0} onChange={handleInputChange} title={"Estados"}></Inputs>
-            <Inputs name="input1" value={inputValues.input1} onChange={handleInputChange} title={"Estado inicial"}></Inputs>
-            <Inputs name="input2" value={inputValues.input2} onChange={handleInputChange} title={"Estados finais"}></Inputs>
-            <Inputs name="input3" value={inputValues.input3} onChange={handleInputChange} title={"Alfabeto de entrada"}></Inputs>
-            <Inputs name="input4" value={inputValues.input4} onChange={handleInputChange} title={"Alfabeto auxiliar"}></Inputs>
-            <Inputs name="input5" value={inputValues.input5} onChange={handleInputChange} title={"Símbolo inicial"}></Inputs>
-            <Inputs name="input6" value={inputValues.input6} onChange={handleInputChange} title={"Símbolo de branco"}></Inputs>
+          <div id="div1_buttons">
+            <Upload_button onFileUpload={handleFileUpload}/>
+            <Buttons title="Salvar"/>
+          </div>
+          
+          <div id="div1_part2">
+            <div id="div1_part2_inputs"> 
+              <Inputs name="input0" value={inputValues.input0} onChange={handleInputChange} title={"Estados"}></Inputs>
+              <Inputs name="input1" value={inputValues.input1} onChange={handleInputChange} title={"Estado inicial"}></Inputs>
+              <Inputs name="input2" value={inputValues.input2} onChange={handleInputChange} title={"Estados finais"}></Inputs>
+              <Inputs name="input3" value={inputValues.input3} onChange={handleInputChange} title={"Alfabeto de entrada"}></Inputs>
+              <Inputs name="input4" value={inputValues.input4} onChange={handleInputChange} title={"Alfabeto auxiliar"}></Inputs>
+              <Inputs name="input5" value={inputValues.input5} onChange={handleInputChange} title={"Símbolo inicial"}></Inputs>
+              <Inputs name="input6" value={inputValues.input6} onChange={handleInputChange} title={"Símbolo de branco"}></Inputs>
+            </div>            
+
+            <Documentation/>
+          </div>
+
+
+
+
+
 
         </>
     )

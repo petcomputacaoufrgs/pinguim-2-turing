@@ -23,25 +23,18 @@ export function Home() {
 
 
 
+
+
+
   return (
     <Container>
       <Header/>
 
       <ContainerBody>
         <div id="div1">
-          <div id="div1_buttons">
-            <Upload_button/>
-            <Buttons title="Salvar"/>
-          </div>
-          
-          <div id="div1_part2">
-            <div id="div1_part2_inputs"> 
-              {/*Todos esses inputs vao precisar estar dentro de uma unica componente de forma que seja possivel acessar os estados de todos eles ao mesmo tempo */}
-                <ParentInput onChangeErrors={setErros} old_errors={erros}/>
-            </div>            
+          {/*Todos esses inputs vao precisar estar dentro de uma unica componente de forma que seja possivel acessar os estados de todos eles ao mesmo tempo */}
+            <ParentInput onChangeErrors={setErros} old_errors={erros}/>
 
-            <Documentation/>
-          </div>
         </div>
 
         <div id="div2">
