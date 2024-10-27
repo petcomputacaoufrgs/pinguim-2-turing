@@ -17,7 +17,7 @@ export default function Upload_button({ onFileUpload } : FileUploaderProps){
             reader.onload = (e) => {
                 const content = e.target?.result as string;
                 const lines = content.split('\n').map(line => line.trim());
-                onFileUpload(lines); // Passa as linhas para o componente pai
+                onFileUpload(lines); 
             };
             reader.readAsText(file);
         }

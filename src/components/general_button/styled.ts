@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
-export const Button = styled.button`
+export const Button = styled.button<{disabled : boolean}>`
     color: #343239;
     font-weight:bolder;
     font-size: 1vw;
@@ -11,7 +11,7 @@ export const Button = styled.button`
     font-family: 'Poppins';
     border:none;
     border-radius: 4px;
-    width: 15vw;
+    width: 14vw;
     height: 4.5vh;
 
     display: flex;
@@ -21,11 +21,22 @@ export const Button = styled.button`
     
     transition: background-color 0.2s ease, transform 0.2s ease;
 
-    &:hover {
-    background-color: #C14C5F; 
-    transform: scale(1.03); 
-    cursor: pointer; 
-  }
+    ${props => props.disabled ?
+    `
+        background-color: #B0B0B0; 
+        color: #7D7D7D;   
+        transform: none; 
+    ` 
+      :
+
+    `&:hover {
+        background-color: #C14C5F; 
+        transform: scale(1.03); 
+        cursor: pointer; 
+      } 
+    `
+    }
+
 
 `;
 

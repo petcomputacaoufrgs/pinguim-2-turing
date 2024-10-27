@@ -8,7 +8,7 @@ export const Div = styled.div`
         background-color: #DD5B6C;
         
         border-radius: 4px;
-        width: 15vw;
+        width: 14vw;
         height: 4.5vh;
 
         display: flex;

@@ -1,8 +1,9 @@
 import Inputs from "../input";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, ChangeEventHandler, useState } from "react";
 import Upload_button from "../upload_button";
 import Buttons from "../general_button";
 import Documentation from "../documentation";
+import { DivButtons, DivInputs } from "./styled";
 
 
 
@@ -32,24 +33,19 @@ interface i_input_values {
 
 
 interface i_parent_input{
+    onFileInputDoc : (doc_value : string) => void;
+
+    inputValues: i_input_values;
+    onChangeInputs: (inputs: i_input_values) => void;
+
     old_errors: i_input_errors;
     onChangeErrors: (errors: i_input_errors) => void;
 }
 
+const ParentInput = ({onFileInputDoc, inputValues, onChangeInputs, old_errors, onChangeErrors}: i_parent_input) => {
 
 
-const ParentInput = ({old_errors, onChangeErrors}: i_parent_input) => {
-
-    const [inputValues, setInputValues] = useState<i_input_values>({
-        input0: "",
-        input1: "",
-        input2: "",
-        input3: "",
-        input4: "",
-        input5: "",
-        input6: ""
-      });
-
+    const [setDocumentationValue] = useState<string>("");
 
       const tokenize = (input: string) => {
         return input
@@ -149,7 +145,7 @@ const ParentInput = ({old_errors, onChangeErrors}: i_parent_input) => {
         const { name, value } = e.target;
         const newValues = {...inputValues, [name]: value};
 
-        setInputValues(newValues);
+        onChangeInputs(newValues);
 
         validate_inputs(newValues);
     
@@ -158,47 +154,45 @@ const ParentInput = ({old_errors, onChangeErrors}: i_parent_input) => {
 
       const handleFileUpload = (lines: string[]) => {
         const newInputs = {...inputValues};
+        const ordem_leitura = ["input3", "input4", "input5", "input6", "input0", "input1", "input2"];
+
         let i = 0;
-        for(const key in inputValues) {
+
+        for(const key of ordem_leitura) {
             if(i >= lines.length)
                 break;
-              
-            newInputs[key as keyof i_input_values] = lines[i];
+            
+            newInputs[key as keyof i_input_values] = lines[i];            
             i = i + 1;
         }
 
-        setInputValues(newInputs);
-
+        onChangeInputs(newInputs);
         validate_inputs(newInputs);
+
+        // FAZER: LEITURA DA TABELA
+        i = i + 1; // Pula leitura da tabela
+
+        onFileInputDoc(lines[i]); 
     };
 
     return (
-
         <>
-          <div id="div1_buttons">
+          <DivButtons id="div1_buttons">
             <Upload_button onFileUpload={handleFileUpload}/>
             <Buttons title="Salvar"/>
-          </div>
+          </DivButtons>
           
-          <div id="div1_part2">
+          <DivInputs id="div1_part2">
             <div id="div1_part2_inputs"> 
-              <Inputs name="input0" value={inputValues.input0} onChange={handleInputChange} title={"Estados"}></Inputs>
-              <Inputs name="input1" value={inputValues.input1} onChange={handleInputChange} title={"Estado inicial"}></Inputs>
-              <Inputs name="input2" value={inputValues.input2} onChange={handleInputChange} title={"Estados finais"}></Inputs>
-              <Inputs name="input3" value={inputValues.input3} onChange={handleInputChange} title={"Alfabeto de entrada"}></Inputs>
-              <Inputs name="input4" value={inputValues.input4} onChange={handleInputChange} title={"Alfabeto auxiliar"}></Inputs>
-              <Inputs name="input5" value={inputValues.input5} onChange={handleInputChange} title={"Símbolo inicial"}></Inputs>
-              <Inputs name="input6" value={inputValues.input6} onChange={handleInputChange} title={"Símbolo de branco"}></Inputs>
-            </div>            
-
-            <Documentation/>
-          </div>
-
-
-
-
-
-
+              <Inputs name="input0" value={inputValues.input0} onChange={handleInputChange} title={"Estados:"}></Inputs>
+              <Inputs name="input1" value={inputValues.input1} onChange={handleInputChange} title={"Estado inicial:"}></Inputs>
+              <Inputs name="input2" value={inputValues.input2} onChange={handleInputChange} title={"Estados finais:"}></Inputs>
+              <Inputs name="input3" value={inputValues.input3} onChange={handleInputChange} title={"Alfabeto de entrada:"}></Inputs>
+              <Inputs name="input4" value={inputValues.input4} onChange={handleInputChange} title={"Alfabeto auxiliar:"}></Inputs>
+              <Inputs name="input5" value={inputValues.input5} onChange={handleInputChange} title={"Símbolo inicial:"}></Inputs>
+              <Inputs name="input6" value={inputValues.input6} onChange={handleInputChange} title={"Símbolo de branco:"}></Inputs>
+            </div>  
+          </DivInputs>          
         </>
     )
 

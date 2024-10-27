@@ -19,26 +19,23 @@ export const ContainerBody = styled.div`
 
     color: #343239;
 
+
     #div1 {
+      display: grid;
+
+
       grid-area: div1;
 
+      grid-template-columns: 55% auto;
       padding-left: 3vw;
       padding-top: 1vh;
 
-      #div1_buttons{
-        display: flex;
-      }
-      
-      #div1_part2{
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
 
-        height: 87%; 
+      #div1_doc{
 
-        #div1_part2_inputs{
-          width: 82%;
-        }
+        display: flex;
+        width: 100%;
+
       }
     }
 
@@ -93,12 +90,6 @@ export const ContainerBody = styled.div`
       grid-area: div4;
       padding-left: 3vw;
       margin: auto;
-      p{
-
-
-
-      
-      }
     
     
     }

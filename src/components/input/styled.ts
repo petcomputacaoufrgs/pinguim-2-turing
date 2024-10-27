@@ -12,13 +12,14 @@ export const Div = styled.div`
 export const Text = styled.p`
     color: #343239;
     font-size: 0.8vw;
+    font-weight: bold;
 `;
 
 export const Input = styled.input`
     border: none;
     border-radius: 5px;
     height: 3vh;
-    width: 20vw;
+    width: 18vw;
 
     &:focus{
         outline: none;

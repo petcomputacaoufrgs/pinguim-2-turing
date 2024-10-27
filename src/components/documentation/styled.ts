@@ -6,8 +6,8 @@ export const Container = styled.div`
     justify-content: center;
     align-items: center;
 
-    margin-left: 2vw;
-    width: 50%;
+    margin-left: 1vw;
+    width: 100%;
 
     textarea{
         width: 100%;

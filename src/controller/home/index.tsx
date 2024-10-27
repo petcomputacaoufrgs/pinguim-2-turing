@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { ChangeEvent, ChangeEventHandler, useEffect, useState } from 'react';
 import {Container, ContainerBody} from "./styled.ts";
 import Header from '../../components/header/index.tsx';
 import Upload_button from '../../components/upload_button/index.tsx';
@@ -7,23 +7,69 @@ import Documentation from '../../components/documentation/index.tsx';
 import Buttons from '../../components/general_button/index.tsx';
 import ParentInput from '../../components/parent_input/index.tsx';
 import ValidationMessage from '../../components/validation_message/index.tsx';
+import { useStateContext } from '../../StateContext.tsx';
+
+
+interface i_input_values {
+  input0: string;
+  input1: string;
+  input2: string;
+  input3: string;
+  input4: string;
+  input5: string;
+  input6: string;
+}
+
+interface i_input_errors{
+  unique_states: boolean;
+  valid_initial_state: boolean;
+  valid_final_states: boolean;
+  unique_alphabet_symbols: boolean;
+  disjoint_alphabets: boolean;
+  alphabet_does_not_contain_start: boolean;
+  alphabet_does_not_contain_blank: boolean;
+  auxiliary_alphabet_does_not_contain_start: boolean;
+  auxiliary_alphabet_does_not_contain_blank: boolean;
+}
+
+
 
 
 export function Home() { 
-  const [erros, setErros] = useState({    
-    unique_states: true,
-    valid_initial_state: true,
-    valid_final_states: true,
-    unique_alphabet_symbols: true,
-    disjoint_alphabets: true,
-    alphabet_does_not_contain_start: true,
-    alphabet_does_not_contain_blank: true,
-    auxiliary_alphabet_does_not_contain_start: true,
-    auxiliary_alphabet_does_not_contain_blank: true});
 
+    const  { inputStates, setInputStates } = useStateContext();
 
+    const {erros} = inputStates;
+    const {values} = inputStates;
+    const {documentacao} = inputStates;
 
+    const setErros = (novos_erros : i_input_errors) => {
+      setInputStates(prevState => ({
+        ...prevState,
+        erros: novos_erros
+      }));
+    }
 
+    const setInputValues = (novos_valores : i_input_values) => {
+      setInputStates(prevState => ({
+        ...prevState,
+        values: novos_valores
+      }));
+    }
+
+    const OnChangeDocumentationValue = (e : ChangeEvent<HTMLTextAreaElement>) => {
+      setInputStates(prevState => ({
+        ...prevState,
+        documentacao : e.target.value
+      }))
+    }
+
+    const setDocumentationValue = (doc_value : string) => {
+      setInputStates(prevStates => ({
+        ...prevStates,
+        documentacao : doc_value
+      }))
+    }
 
 
   return (
@@ -31,16 +77,22 @@ export function Home() {
       <Header/>
 
       <ContainerBody>
-        <div id="div1">
-          {/*Todos esses inputs vao precisar estar dentro de uma unica componente de forma que seja possivel acessar os estados de todos eles ao mesmo tempo */}
-            <ParentInput onChangeErrors={setErros} old_errors={erros}/>
+            {/*Como todas as componentes aqui utilizam de alguma forma o estado dos inputs (download, upload, modificação direta) 
+            e os manipulam coloquei todas em uma componente para poder acessar esses estados mais facilmente sem tranferir a lógica diretamente para a home */}
 
+        <div id="div1">
+          <div>    
+            <ParentInput onFileInputDoc={setDocumentationValue} inputValues={values} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
+          </div>
+          <div id="div1_doc">
+            <Documentation value={documentacao} onChange={OnChangeDocumentationValue}></Documentation>
+          </div>
         </div>
 
         <div id="div2">
           <p>Tabela de Transição:</p>
           <div></div>
-          <Buttons to={"/computing"} title="Computar"/>
+          <Buttons to={"/computing"} title="Computar" disabled={Object.values(erros).some(valor_bool => !valor_bool)}/>
         </div>
 
         <div id="div3">
