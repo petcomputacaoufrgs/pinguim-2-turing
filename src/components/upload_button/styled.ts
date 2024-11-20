@@ -17,5 +17,9 @@ export const Div = styled.div`
 
         margin-right: 1vw;
         margin-bottom: 1vh;
+
+        &:hover{
+            background-color: #FF7C89;
+        }
     }
 `;
