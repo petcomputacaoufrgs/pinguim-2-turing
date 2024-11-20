@@ -30,7 +30,7 @@ export const Button = styled.button<{disabled : boolean}>`
       :
 
     `&:hover {
-        background-color: #C14C5F; 
+        background-color: #FF7C89; 
         transform: scale(1.03); 
         cursor: pointer; 
       } 

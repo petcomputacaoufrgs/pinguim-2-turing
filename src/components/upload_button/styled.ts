@@ -21,7 +21,7 @@ export const Div = styled.div`
         transition: background-color 0.2s ease, transform 0.2s ease;
 
         &:hover {
-        background-color: #C14C5F; 
+        background-color: #FF7C89; 
         transform: scale(1.03); 
         cursor: pointer; 
   }

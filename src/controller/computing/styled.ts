@@ -54,6 +54,9 @@ export const ContainerBody = styled.div`
       button{
         width: 35%;
         
+        &:hover {
+          background-color: #FF7C89;
+        }  
       }
 
       p{
