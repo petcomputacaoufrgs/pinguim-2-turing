@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+
+interface Transitions {
+  [state: string]: {
+    [symbol: string] : string;
+  }
+}
+
 interface i_input_values {
     input0: string;
     input1: string;
@@ -8,6 +15,16 @@ interface i_input_values {
     input4: string;
     input5: string;
     input6: string;
+  }
+
+  interface i_input_values_tokenized {
+    input0: string[];
+    input1: string[];
+    input2: string[];
+    input3: string[];
+    input4: string[];
+    input5: string[];
+    input6: string[];
   }
 
   interface i_input_errors{
@@ -23,21 +40,20 @@ interface i_input_values {
 }
 
 
-
 const InputStatesContext = createContext<{
-  inputStates: {values : i_input_values, erros : i_input_errors, documentacao : string};
-  setInputStates: React.Dispatch<React.SetStateAction<{ values: i_input_values; erros: i_input_errors; documentacao: string }>>;
+  inputStates: {inputs : i_input_values, tokenized_inputs : i_input_values_tokenized, erros : i_input_errors, documentacao : string, transitions : Transitions};
+  setInputStates: React.Dispatch<React.SetStateAction<{inputs: i_input_values, tokenized_inputs: i_input_values_tokenized; erros: i_input_errors; documentacao: string, transitions : Transitions}>>;
 } | null>(null);
 
 export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [inputStates, setInputStates] = useState<{values : i_input_values, erros : i_input_errors, documentacao : string}>({ 
-    values : {input0: "q0",
-    input1: "q0",
-    input2: "",
-    input3: "",
-    input4: "",
-    input5: "@",
-    input6: "-"
+  const [inputStates, setInputStates] = useState<{inputs: i_input_values, tokenized_inputs : i_input_values_tokenized, erros : i_input_errors, documentacao : string, transitions : Transitions}>({ 
+    tokenized_inputs : {input0: ["q0"],
+    input1: ["q0"],
+    input2: [""],
+    input3: [""],
+    input4: [""],
+    input5: ["@"],
+    input6: ["-"]
   },
 
    erros : {    
@@ -52,7 +68,19 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     auxiliary_alphabet_does_not_contain_blank: true},
 
 
-    documentacao : ""
+    documentacao : "",
+
+    transitions : {q0:{"@":"", "-":""}},
+
+    inputs: {
+      input0: "q0",
+      input1: "q0",
+      input2: "",
+      input3: "",
+      input4: "",
+      input5: "@",
+      input6: "-"   
+    }
 
 }); // Estado inicial do simulador do Rodrigo
 

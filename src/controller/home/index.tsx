@@ -7,6 +7,7 @@ import Documentation from '../../components/documentation/index.tsx';
 import Buttons from '../../components/general_button/index.tsx';
 import ParentInput from '../../components/parent_input/index.tsx';
 import ValidationMessage from '../../components/validation_message/index.tsx';
+import TransitionTable from '../../components/transition_table/index.tsx';
 import { useStateContext } from '../../StateContext.tsx';
 
 
@@ -20,6 +21,17 @@ interface i_input_values {
   input6: string;
 }
 
+interface i_input_values_tokenized {
+  input0: string[];
+  input1: string[];
+  input2: string[];
+  input3: string[];
+  input4: string[];
+  input5: string[];
+  input6: string[];
+}
+
+
 interface i_input_errors{
   unique_states: boolean;
   valid_initial_state: boolean;
@@ -32,6 +44,11 @@ interface i_input_errors{
   auxiliary_alphabet_does_not_contain_blank: boolean;
 }
 
+interface Transitions {
+  [state: string]: {
+    [symbol: string] : string;
+  }
+}
 
 
 
@@ -40,8 +57,17 @@ export function Home() {
     const  { inputStates, setInputStates } = useStateContext();
 
     const {erros} = inputStates;
-    const {values} = inputStates;
+    const {tokenized_inputs} = inputStates;
     const {documentacao} = inputStates;
+    const {inputs} = inputStates;
+    const {transitions} = inputStates;
+
+    const setTransitions = (novas_transicoes : Transitions) => {
+      setInputStates(prevState => ({
+        ...prevState,
+        transitions : novas_transicoes
+      }));
+    };
 
     const setErros = (novos_erros : i_input_errors) => {
       setInputStates(prevState => ({
@@ -50,10 +76,11 @@ export function Home() {
       }));
     }
 
-    const setInputValues = (novos_valores : i_input_values) => {
+    const setInputValues = (new_values : i_input_values, new_tokenized_values : i_input_values_tokenized) => {
       setInputStates(prevState => ({
         ...prevState,
-        values: novos_valores
+        inputs: new_values,
+        tokenized_inputs: new_tokenized_values
       }));
     }
 
@@ -82,7 +109,7 @@ export function Home() {
 
         <div id="div1">
           <div>    
-            <ParentInput onFileInputDoc={setDocumentationValue} inputValues={values} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
+            <ParentInput onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenized_inputs} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
           </div>
           <div id="div1_doc">
             <Documentation value={documentacao} onChange={OnChangeDocumentationValue}></Documentation>
@@ -91,7 +118,7 @@ export function Home() {
 
         <div id="div2">
           <p>Tabela de Transição:</p>
-          <div></div>
+          <TransitionTable tokenized_inputs={tokenized_inputs} OnChangeTransitionTable={setTransitions} transitions={transitions} />
           <Buttons to={"/computing"} title="Computar" disabled={Object.values(erros).some(valor_bool => !valor_bool)}/>
         </div>
 

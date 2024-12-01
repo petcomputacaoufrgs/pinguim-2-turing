@@ -31,21 +31,30 @@ interface i_input_values {
     input6: string;
   }
 
+  interface i_input_values_tokenized {
+    input0: string[];
+    input1: string[];
+    input2: string[];
+    input3: string[];
+    input4: string[];
+    input5: string[];
+    input6: string[];
+  }
+
+
 
 interface i_parent_input{
     onFileInputDoc : (doc_value : string) => void;
 
     inputValues: i_input_values;
-    onChangeInputs: (inputs: i_input_values) => void;
+    inputTokenizedValues : i_input_values_tokenized;
+    onChangeInputs: (inputs: i_input_values, inputs_tokenized: i_input_values_tokenized) => void;
 
     old_errors: i_input_errors;
     onChangeErrors: (errors: i_input_errors) => void;
 }
 
-const ParentInput = ({onFileInputDoc, inputValues, onChangeInputs, old_errors, onChangeErrors}: i_parent_input) => {
-
-
-    const [setDocumentationValue] = useState<string>("");
+const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChangeInputs, old_errors, onChangeErrors}: i_parent_input) => {
 
       const tokenize = (input: string) => {
         return input
@@ -121,9 +130,8 @@ const ParentInput = ({onFileInputDoc, inputValues, onChangeInputs, old_errors, o
       }
 
 
-      const validate_inputs = (inputs: i_input_values) => {
+      const validate_inputs = (tokenized_inputs: i_input_values_tokenized) => {
         const newErrors = {...old_errors};
-        const tokenized_inputs = tokenize_inputs(inputs);
 
         newErrors.valid_initial_state = isInitialStateValid(tokenized_inputs.input1, tokenized_inputs.input0);
         newErrors.valid_final_states = areFinalStatesValid(tokenized_inputs.input0, tokenized_inputs.input2);
@@ -131,11 +139,11 @@ const ParentInput = ({onFileInputDoc, inputValues, onChangeInputs, old_errors, o
         newErrors.unique_alphabet_symbols = hasUniqueTokens(tokenized_inputs.input3);
         newErrors.disjoint_alphabets = hasDisjointAlphabets(tokenized_inputs.input3, tokenized_inputs.input4);
 
-        newErrors.alphabet_does_not_contain_start = !tokenized_inputs.input3.includes(inputs.input5[0]);
-        newErrors.alphabet_does_not_contain_blank = !tokenized_inputs.input3.includes(inputs.input6[0]);
+        newErrors.alphabet_does_not_contain_start = !tokenized_inputs.input3.includes(tokenized_inputs.input5[0]);
+        newErrors.alphabet_does_not_contain_blank = !tokenized_inputs.input3.includes(tokenized_inputs.input6[0]);
 
-        newErrors.auxiliary_alphabet_does_not_contain_start = !tokenized_inputs.input4.includes(inputs.input5[0]);
-        newErrors.auxiliary_alphabet_does_not_contain_blank = !tokenized_inputs.input4.includes(inputs.input6[0]);
+        newErrors.auxiliary_alphabet_does_not_contain_start = !tokenized_inputs.input4.includes(tokenized_inputs.input5[0]);
+        newErrors.auxiliary_alphabet_does_not_contain_blank = !tokenized_inputs.input4.includes(tokenized_inputs.input6[0]);
       
         onChangeErrors(newErrors)
       }
@@ -144,16 +152,18 @@ const ParentInput = ({onFileInputDoc, inputValues, onChangeInputs, old_errors, o
       const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         const newValues = {...inputValues, [name]: value};
+        const newTokenizedValues = {...inputTokenizedValues, [name]: tokenize(value)};
 
-        onChangeInputs(newValues);
-
-        validate_inputs(newValues);
+        onChangeInputs(newValues, newTokenizedValues);
+        validate_inputs(newTokenizedValues);
     
       };
 
 
       const handleFileUpload = (lines: string[]) => {
         const newInputs = {...inputValues};
+        
+
         const ordem_leitura = ["input3", "input4", "input5", "input6", "input0", "input1", "input2"];
 
         let i = 0;
@@ -166,8 +176,10 @@ const ParentInput = ({onFileInputDoc, inputValues, onChangeInputs, old_errors, o
             i = i + 1;
         }
 
-        onChangeInputs(newInputs);
-        validate_inputs(newInputs);
+        const newInputsTokenized = tokenize_inputs(inputValues);
+
+        onChangeInputs(newInputs, newInputsTokenized);
+        validate_inputs(newInputsTokenized);
 
         // FAZER: LEITURA DA TABELA
         i = i + 1; // Pula leitura da tabela
