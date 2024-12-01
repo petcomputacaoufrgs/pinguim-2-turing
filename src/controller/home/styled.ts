@@ -42,7 +42,6 @@ export const ContainerBody = styled.div`
     #div2 {
       grid-area: div2;
       padding-left: 3vw;
-
       p{
         font-weight: bold;
         font-size: 1.5vw;
@@ -67,19 +66,18 @@ export const ContainerBody = styled.div`
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: end;
-      margin-bottom: 5vh;
+
+
 
       p{
         font-weight: bold;
-        font-size: 4vh;
+        font-size: 1.5vw;
         margin-bottom: 0.2vh;
-        margin-top: 5vh;
       }
 
       div{
         width: 80%;
-        height: 82%;
+        height: 75%;
         overflow: auto;
         background-color: #FFF;
       }

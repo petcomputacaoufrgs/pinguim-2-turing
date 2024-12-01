@@ -3,9 +3,13 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface Transitions {
   [state: string]: {
-    [symbol: string] : string;
-  }
+    [symbol: string] : {
+      next: string;
+      error: number;
+    };
+  };
 }
+
 
 interface i_input_values {
     input0: string;
@@ -70,7 +74,7 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     documentacao : "",
 
-    transitions : {q0:{"@":"", "-":""}},
+    transitions : {q0:{"@":{next:"", error:0}, "-":{next:"", error:0}}},
 
     inputs: {
       input0: "q0",

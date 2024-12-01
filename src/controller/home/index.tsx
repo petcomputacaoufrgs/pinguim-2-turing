@@ -9,6 +9,7 @@ import ParentInput from '../../components/parent_input/index.tsx';
 import ValidationMessage from '../../components/validation_message/index.tsx';
 import TransitionTable from '../../components/transition_table/index.tsx';
 import { useStateContext } from '../../StateContext.tsx';
+import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
 
 interface i_input_values {
@@ -46,8 +47,11 @@ interface i_input_errors{
 
 interface Transitions {
   [state: string]: {
-    [symbol: string] : string;
-  }
+    [symbol: string] : {
+      next: string;
+      error: number;
+    };
+  };
 }
 
 
@@ -118,7 +122,10 @@ export function Home() {
 
         <div id="div2">
           <p>Tabela de Transição:</p>
+          <div>
           <TransitionTable tokenized_inputs={tokenized_inputs} OnChangeTransitionTable={setTransitions} transitions={transitions} />
+          <TransitionsErrorMessages transitions={transitions} />
+          </div>
           <Buttons to={"/computing"} title="Computar" disabled={Object.values(erros).some(valor_bool => !valor_bool)}/>
         </div>
 
