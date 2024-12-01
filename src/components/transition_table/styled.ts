@@ -18,3 +18,34 @@ export const StyledInput = styled.input<InputProps>`
       border-color: ${({ hasError }) => (hasError ? 'darkred' : 'blue')};
     }
   `;
+
+
+export const StyledTable = styled.table`
+  thead th {
+    position: sticky;
+    top: 0; 
+    background-color: #f4f4f4;
+
+    padding: 10px;
+    text-align: center;
+  }
+
+  tbody td:first-child, 
+  thead th:first-child { 
+    position: sticky;
+    left: 0; 
+    background-color: #f4f4f4; 
+    z-index: 1; 
+  }
+
+  tbody td {
+    padding: 10px;
+    text-align: center;
+  }
+
+  th,
+  td {
+    border: 1px solid #ddd; 
+  }
+`;
+

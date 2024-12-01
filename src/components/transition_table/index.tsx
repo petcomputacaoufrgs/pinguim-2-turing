@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FocusEvent, useEffect, useState } from 'react';
-import {StyledInput} from "./styled";
+import {StyledInput, StyledTable} from "./styled";
 import { errorCodes } from '../../types/types';
 
 
@@ -88,11 +88,12 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
 
     const renderTransitionTable = () => {
         const stateList = tokenized_inputs.input0;
-        const finalStateList = tokenized_inputs.input2
-        const alphabetList = tokenized_inputs.input3.filter((symbol) => symbol != "") .concat(tokenized_inputs.input4.filter((symbol) => symbol != ""));
+        const finalStateList = tokenized_inputs.input2;
+
+        const alphabetList = [tokenized_inputs.input5[0], ...(tokenized_inputs.input3.filter((symbol) => symbol != "").concat(tokenized_inputs.input4.filter((symbol) => symbol != ""))), tokenized_inputs.input6[0]];
     
         return (
-          <table border={1}>
+          <StyledTable border={1}>
             <thead>
               <tr>
                 <th></th>
@@ -123,7 +124,7 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StyledTable>
         );
       };
     

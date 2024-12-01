@@ -2,12 +2,14 @@ import styled from "styled-components";
 
 export const Container = styled.div`
   height: 100vh;
+
   display: flex;
   flex-direction: column;
 `;
 
 export const ContainerBody = styled.div`
   height: 100vh;
+
   background-color: #E4DADF;
 
   display: grid;
@@ -42,6 +44,8 @@ export const ContainerBody = styled.div`
     #div2 {
       grid-area: div2;
       padding-left: 3vw;
+      overflow: hidden;
+
       p{
         font-weight: bold;
         font-size: 1.5vw;
@@ -50,7 +54,7 @@ export const ContainerBody = styled.div`
 
       div{
         width: 100%;
-        height: 65%;
+        height: 66%;
         overflow: auto;
         background-color: #FFF;
         margin-bottom: 1vh;
