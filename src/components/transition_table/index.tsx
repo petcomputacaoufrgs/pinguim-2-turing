@@ -65,10 +65,10 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
     }
 
     const renderTransitionTable = () => {
-        const stateList = tokenized_inputs.states;
-        const finalStateList = tokenized_inputs.final_states;
+        const stateList = Array.from(new Set(tokenized_inputs.states));
+        const finalStateList = Array.from(new Set(tokenized_inputs.final_states));
 
-        const alphabetList = [tokenized_inputs.init_symbol[0], ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), tokenized_inputs.blank_symbol[0]];
+        const alphabetList = Array.from(new Set([tokenized_inputs.init_symbol[0], ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), tokenized_inputs.blank_symbol[0]]));
     
         return (
           <StyledTable border={1}>

@@ -67,9 +67,9 @@ export function Home() {
       const new_transitions: Transitions = {};
       const initial_symbol = tokenized_inputs.init_symbol[0];
       const blank_symbol = tokenized_inputs.blank_symbol[0];
-      const new_states = tokenized_inputs.states;
+      const new_states = Array.from(new Set(tokenized_inputs.states));
 
-      const new_alphabet = [initial_symbol, ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), blank_symbol];
+      const new_alphabet = Array.from(new Set([initial_symbol, ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), blank_symbol]));
     
       for (const state of new_states) {
         new_transitions[state] = {};
