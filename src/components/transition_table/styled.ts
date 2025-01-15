@@ -8,7 +8,7 @@ interface InputProps {
 export const StyledInput = styled.input<InputProps>`
     border: 1px solid ${({ hasError }) => (hasError ? 'red' : 'black')};
     background-color: ${({ hasError }) => (hasError ? '#ffe6e6' : 'white')};
-    color: ${({ hasError }) => (hasError ? 'red' : 'black')};
+    color: ${({ hasError }) => (hasError ? 'darkred' : 'black')};
     padding: 8px;
     border-radius: 4px;
     font-size: 0.8vw;
@@ -56,6 +56,7 @@ export const StyledTable = styled.table`
   th,
   td {
     border: 1px solid #ddd; 
+    font-weight: bold;
   }
 
 `;

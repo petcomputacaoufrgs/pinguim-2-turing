@@ -1,8 +1,6 @@
-import React, { ChangeEvent, ChangeEventHandler, useEffect, useState } from 'react';
+import React, { ChangeEvent } from 'react';
 import {Container, ContainerBody} from "./styled.ts";
 import Header from '../../components/header/index.tsx';
-import Upload_button from '../../components/upload_button/index.tsx';
-import Inputs from '../../components/input/index.tsx';
 import Documentation from '../../components/documentation/index.tsx';
 import Buttons from '../../components/general_button/index.tsx';
 import ParentInput from '../../components/parent_input/index.tsx';
@@ -52,9 +50,17 @@ export function Home() {
       
       // Se anteriormente esse novo estado existia e se o símbolo novo também existia
       if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
+
+          if(previous_transitions[state] === undefined) 
+            return {next: "", error: errorCodes.NoError};
+          
+          const transition = previous_transitions[state][symbol];
+
+          if(transition === undefined)
+            return {next: "", error: errorCodes.NoError};
+
           // Então apenas toma a transicao anterior validada para os novos estados e novo alfabeto
-          const transition = previous_transitions[state][symbol].next;
-          return {next : transition, error: validateTransition(transition, states, alphabet)};
+          return {next : transition.next, error: validateTransition(transition.next, states, alphabet)};
         }
       
       // Se o estado novo não existia ou o símbolo novo não existia
@@ -81,9 +87,6 @@ export function Home() {
       return new_transitions
     }
   
-
-
-
     const setTransitions = (novas_transicoes : Transitions) => {
       setInputStates(prevState => ({
         ...prevState,
@@ -104,6 +107,16 @@ export function Home() {
         inputs: new_values,
         tokenized_inputs: new_tokenized_values,
         transitions: revalidateTransitions(prevState.transitions, prevState.tokenized_inputs, new_tokenized_values)
+      })
+    );
+    }
+
+    const setAllInputValues = (new_values : i_input_values, new_tokenized_values : i_input_values_tokenized, new_transitions : Transitions) => {
+      setInputStates(prevState => ({
+        ...prevState,
+        inputs: new_values,
+        tokenized_inputs: new_tokenized_values,
+        transitions: new_transitions
       }));
     }
 
@@ -129,7 +142,7 @@ export function Home() {
       <ContainerBody>
         <div id="div1">
           <div>    
-            <ParentInput onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenized_inputs} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
+            <ParentInput onFileInputValues={setAllInputValues} onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenized_inputs} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
           </div>
           <div id="div1_doc">
             <Documentation value={documentacao} onChange={OnChangeDocumentationValue}></Documentation>

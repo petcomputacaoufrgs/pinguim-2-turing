@@ -5,10 +5,11 @@ import Buttons from "../general_button";
 import Documentation from "../documentation";
 import { DivButtons, DivInputs } from "./styled";
 
-import { i_input_values, i_input_values_tokenized, i_input_errors } from '../../types/types';
+import { i_input_values, i_input_values_tokenized, i_input_errors, Transitions, errorCodes } from '../../types/types';
 
 
 interface i_parent_input{
+    onFileInputValues : (new_values : i_input_values, new_tokenized_values : i_input_values_tokenized, new_transitions : Transitions) => void;
     onFileInputDoc : (doc_value : string) => void;
 
     inputValues: i_input_values;
@@ -19,7 +20,7 @@ interface i_parent_input{
     onChangeErrors: (errors: i_input_errors) => void;
 }
 
-const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChangeInputs, old_errors, onChangeErrors}: i_parent_input) => {
+const ParentInput = ({ onFileInputValues, onFileInputDoc, inputValues, inputTokenizedValues, onChangeInputs, old_errors, onChangeErrors }: i_parent_input) => {
 
       const tokenize = (input: string) => {
         return input
@@ -124,6 +125,29 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
     
       };
 
+      const validateTransition = (value:string, states:string[], alphabet:string[]) => {
+      
+        const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
+              
+          if(value_tokenized === null || value_tokenized.length == 0)
+            return errorCodes.NoError;
+      
+          if(value_tokenized.length !== 3)
+            return errorCodes.InvalidNumberOfParameters;
+      
+          if(!states.includes(value_tokenized[0]))
+            return errorCodes.InvalidState; 
+          
+          if(!alphabet.includes(value_tokenized[2]))
+            return errorCodes.InvalidSymbol;
+      
+          if(value_tokenized[1].toUpperCase() !== "L" && value_tokenized[1].toUpperCase() !== "R")
+            return errorCodes.InvalidDirection;
+      
+          return errorCodes.NoError;
+
+        }
+
 
       const handleFileUpload = (lines: string[]) => {
         const newInputs = {...inputValues};
@@ -137,19 +161,50 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
             if(i >= lines.length)
                 break;
             
-            newInputs[key as keyof i_input_values] = lines[i];            
+            newInputs[key as keyof i_input_values] = lines[i]; 
+
             i = i + 1;
         }
 
-        const newInputsTokenized = tokenize_inputs(inputValues);
 
-        onChangeInputs(newInputs, newInputsTokenized);
+        const newInputsTokenized = tokenize_inputs(newInputs);
+
+
+        const transitions: Transitions = {};
+        const table = tokenize(lines[i]);
+        const alphabet = Array.from(new Set([newInputsTokenized.init_symbol[0], ...(newInputsTokenized.in_alphabet.filter((symbol) => symbol != "").concat(newInputsTokenized.aux_alphabet.filter((symbol) => symbol != ""))), newInputsTokenized.blank_symbol[0]]));
+    
+
+        for (let j = 0; j < table.length; j += 5) {
+          const state = table[j];
+          const symbol = table[j + 1];
+
+          const next = `${table[j + 2]},${table[j + 3]},${table[j + 4]}`; // Desperdício, já que uma hora ou outra vamos ter que tokenizar isso. Mas parta garantir que a tabela esteja igual a como estava na versão anterior, deixa assim por enquanto
+
+          if (!transitions[state]) {
+            transitions[state] = {};
+          }
+      
+
+          transitions[state][symbol] = {
+            next: next,
+            error: validateTransition(next, newInputsTokenized.states, alphabet)
+          };
+        }
+
+
+
+        i = i + 1;
+
+        onFileInputDoc(lines[i]);
+        
+        console.log(newInputsTokenized); 
+        console.log(transitions);
+        console.log(alphabet);
+
+        onFileInputValues(newInputs, newInputsTokenized, transitions);
         validate_inputs(newInputsTokenized);
 
-        // FAZER: LEITURA DA TABELA
-        i = i + 1; // Pula leitura da tabela
-
-        onFileInputDoc(lines[i]); 
     };
 
     return (
