@@ -1,26 +1,6 @@
 import React, { ChangeEvent, FocusEvent, useEffect, useState } from 'react';
 import {StyledInput, StyledTable} from "./styled";
-import { errorCodes } from '../../types/types';
-
-
-interface Transitions {
-    [state: string]: {
-      [symbol: string] : {
-        next: string;
-        error: number;
-      };
-    };
-  }
-  
-interface i_input_values_tokenized {
-    input0: string[];
-    input1: string[];
-    input2: string[];
-    input3: string[];
-    input4: string[];
-    input5: string[];
-    input6: string[];
-  }
+import { errorCodes, Transitions, i_input_values_tokenized } from '../../types/types';
 
 
 interface i_transition_table {
@@ -37,8 +17,6 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
 
         const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
         
-        console.log(value_tokenized);
-        
         if(value_tokenized == null || value_tokenized.length == 0)
             return errorCodes.NoError;
 
@@ -51,7 +29,7 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
         if(!alphabet.includes(value_tokenized[2]))
             return errorCodes.InvalidSymbol;
 
-        if(value_tokenized[1] != "L" && value_tokenized[1] != "R")
+        if(value_tokenized[1].toUpperCase() != "L" && value_tokenized[1].toUpperCase() != "R")
             return errorCodes.InvalidDirection;
 
         return errorCodes.NoError;
@@ -62,7 +40,7 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>, state: string, symbol: string, alphabet: string[]) => {
         const {value} = e.target;
 
-        const validacao = validateTransition(value, tokenized_inputs.input0, alphabet);
+        const validacao = validateTransition(value, tokenized_inputs.states, alphabet);
 
         OnChangeTransitionTable({
             ...transitions,
@@ -87,10 +65,10 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
     }
 
     const renderTransitionTable = () => {
-        const stateList = tokenized_inputs.input0;
-        const finalStateList = tokenized_inputs.input2;
+        const stateList = tokenized_inputs.states;
+        const finalStateList = tokenized_inputs.final_states;
 
-        const alphabetList = [tokenized_inputs.input5[0], ...(tokenized_inputs.input3.filter((symbol) => symbol != "").concat(tokenized_inputs.input4.filter((symbol) => symbol != ""))), tokenized_inputs.input6[0]];
+        const alphabetList = [tokenized_inputs.init_symbol[0], ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), tokenized_inputs.blank_symbol[0]];
     
         return (
           <StyledTable border={1}>
@@ -105,7 +83,7 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
             <tbody>
               {stateList.map((state) => (
                 <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FFD700' : 'white' }}>
-                  <td>{(tokenized_inputs.input1[0] != state)? state : ">" + state}</td>
+                  <td>{(tokenized_inputs.init_state[0] != state)? state : ">" + state}</td>
                   {alphabetList.map((symbol) => (
                     <td key={symbol}>
 
@@ -119,8 +97,8 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
                     </td>
                   ))}
 
-                  
 
+                  
                 </tr>
               ))}
             </tbody>

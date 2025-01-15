@@ -1,47 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-
-interface Transitions {
-  [state: string]: {
-    [symbol: string] : {
-      next: string;
-      error: number;
-    };
-  };
-}
-
-
-interface i_input_values {
-    input0: string;
-    input1: string;
-    input2: string;
-    input3: string;
-    input4: string;
-    input5: string;
-    input6: string;
-  }
-
-  interface i_input_values_tokenized {
-    input0: string[];
-    input1: string[];
-    input2: string[];
-    input3: string[];
-    input4: string[];
-    input5: string[];
-    input6: string[];
-  }
-
-  interface i_input_errors{
-    unique_states: boolean;
-    valid_initial_state: boolean;
-    valid_final_states: boolean;
-    unique_alphabet_symbols: boolean;
-    disjoint_alphabets: boolean;
-    alphabet_does_not_contain_start: boolean;
-    alphabet_does_not_contain_blank: boolean;
-    auxiliary_alphabet_does_not_contain_start: boolean;
-    auxiliary_alphabet_does_not_contain_blank: boolean;
-}
+import { Transitions, i_input_values, i_input_values_tokenized, i_input_errors } from './types/types';
 
 
 const InputStatesContext = createContext<{
@@ -51,13 +9,13 @@ const InputStatesContext = createContext<{
 
 export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [inputStates, setInputStates] = useState<{inputs: i_input_values, tokenized_inputs : i_input_values_tokenized, erros : i_input_errors, documentacao : string, transitions : Transitions}>({ 
-    tokenized_inputs : {input0: ["q0"],
-    input1: ["q0"],
-    input2: [""],
-    input3: [""],
-    input4: [""],
-    input5: ["@"],
-    input6: ["-"]
+    tokenized_inputs : {states: ["q0"],
+    init_state: ["q0"],
+    final_states: [""],
+    in_alphabet: [""],
+    aux_alphabet: [""],
+    init_symbol: ["@"],
+    blank_symbol: ["-"]
   },
 
    erros : {    
@@ -77,13 +35,13 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     transitions : {q0:{"@":{next:"", error:0}, "-":{next:"", error:0}}},
 
     inputs: {
-      input0: "q0",
-      input1: "q0",
-      input2: "",
-      input3: "",
-      input4: "",
-      input5: "@",
-      input6: "-"   
+      states: "q0",
+      init_state: "q0",
+      final_states: "",
+      in_alphabet: "",
+      aux_alphabet: "",
+      init_symbol: "@",
+      blank_symbol: "-"   
     }
 
 }); // Estado inicial do simulador do Rodrigo

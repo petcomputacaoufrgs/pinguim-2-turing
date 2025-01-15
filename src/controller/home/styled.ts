@@ -10,6 +10,9 @@ export const Container = styled.div`
 export const ContainerBody = styled.div`
   height: 100vh;
 
+  overflow: auto;
+
+
   background-color: #E4DADF;
 
   display: grid;
@@ -17,7 +20,8 @@ export const ContainerBody = styled.div`
     grid-template-rows: 40% auto;
     grid-template-areas:
         'div1 div4'
-        'div2 div3';
+        'div2 div3'
+        'div5 div5';
 
     color: #343239;
 
@@ -44,8 +48,6 @@ export const ContainerBody = styled.div`
     #div2 {
       grid-area: div2;
       padding-left: 3vw;
-      overflow: hidden;
-
       p{
         font-weight: bold;
         font-size: 1.5vw;
@@ -54,10 +56,11 @@ export const ContainerBody = styled.div`
 
       div{
         width: 100%;
-        height: 66%;
-        overflow: auto;
+        height: auto;
+        min-height: 66%;
         background-color: #FFF;
         margin-bottom: 1vh;
+        overflow: auto;
       }
 
       button{
@@ -70,8 +73,7 @@ export const ContainerBody = styled.div`
       display: flex;
       flex-direction: column;
       align-items: center;
-
-
+  
 
       p{
         font-weight: bold;
@@ -82,7 +84,6 @@ export const ContainerBody = styled.div`
       div{
         width: 80%;
         height: 75%;
-        overflow: auto;
         background-color: #FFF;
       }
     }
@@ -92,7 +93,12 @@ export const ContainerBody = styled.div`
       grid-area: div4;
       padding-left: 3vw;
       margin: auto;
+    }
+
     
-    
+    #div5 {
+      grid-area: div5;
+      height: 10px;
+      margin: auto;
     }
 `;

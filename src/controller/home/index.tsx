@@ -11,49 +11,7 @@ import TransitionTable from '../../components/transition_table/index.tsx';
 import { useStateContext } from '../../StateContext.tsx';
 import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
-
-interface i_input_values {
-  input0: string;
-  input1: string;
-  input2: string;
-  input3: string;
-  input4: string;
-  input5: string;
-  input6: string;
-}
-
-interface i_input_values_tokenized {
-  input0: string[];
-  input1: string[];
-  input2: string[];
-  input3: string[];
-  input4: string[];
-  input5: string[];
-  input6: string[];
-}
-
-
-interface i_input_errors{
-  unique_states: boolean;
-  valid_initial_state: boolean;
-  valid_final_states: boolean;
-  unique_alphabet_symbols: boolean;
-  disjoint_alphabets: boolean;
-  alphabet_does_not_contain_start: boolean;
-  alphabet_does_not_contain_blank: boolean;
-  auxiliary_alphabet_does_not_contain_start: boolean;
-  auxiliary_alphabet_does_not_contain_blank: boolean;
-}
-
-interface Transitions {
-  [state: string]: {
-    [symbol: string] : {
-      next: string;
-      error: number;
-    };
-  };
-}
-
+import { errorCodes, Transitions, i_input_values, i_input_values_tokenized, i_input_errors } from '../../types/types';
 
 
 export function Home() { 
@@ -65,6 +23,66 @@ export function Home() {
     const {documentacao} = inputStates;
     const {inputs} = inputStates;
     const {transitions} = inputStates;
+
+
+    const validateTransition = (value:string, states:string[], alphabet:string[]) => {
+
+        const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
+        
+        if(value_tokenized === null || value_tokenized.length == 0)
+            return errorCodes.NoError;
+
+        if(value_tokenized.length !== 3)
+            return errorCodes.InvalidNumberOfParameters;
+
+        if(!states.includes(value_tokenized[0]))
+            return errorCodes.InvalidState; 
+    
+        if(!alphabet.includes(value_tokenized[2]))
+            return errorCodes.InvalidSymbol;
+
+        if(value_tokenized[1].toUpperCase() !== "L" && value_tokenized[1].toUpperCase() !== "R")
+            return errorCodes.InvalidDirection;
+
+        return errorCodes.NoError;
+    }
+
+    const updateTransition = (previous_transitions : Transitions, previous_inputs : i_input_values_tokenized, states: string[], alphabet: string[], state: string, symbol: string) => {
+      const previous_alphabet = [previous_inputs.init_symbol[0], ...(previous_inputs.in_alphabet.filter((x) => x != "").concat(previous_inputs.aux_alphabet.filter((x) => x != ""))), previous_inputs.blank_symbol[0]];
+      
+      // Se anteriormente esse novo estado existia e se o símbolo novo também existia
+      if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
+          // Então apenas toma a transicao anterior validada para os novos estados e novo alfabeto
+          const transition = previous_transitions[state][symbol].next;
+          return {next : transition, error: validateTransition(transition, states, alphabet)};
+        }
+      
+      // Se o estado novo não existia ou o símbolo novo não existia
+        // Então cria uma nova transição vazia a partir do novo estado para esse símbolo
+        return { next: "", error: errorCodes.NoError };
+      
+      };
+
+    const revalidateTransitions = (previous_transitions : Transitions, previous_inputs : i_input_values_tokenized, tokenized_inputs : i_input_values_tokenized) => {
+      const new_transitions: Transitions = {};
+      const initial_symbol = tokenized_inputs.init_symbol[0];
+      const blank_symbol = tokenized_inputs.blank_symbol[0];
+      const new_states = tokenized_inputs.states;
+
+      const new_alphabet = [initial_symbol, ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), blank_symbol];
+    
+      for (const state of new_states) {
+        new_transitions[state] = {};
+
+        for (const symbol of new_alphabet) 
+          new_transitions[state][symbol] = updateTransition(previous_transitions, previous_inputs, new_states, new_alphabet, state, symbol);
+      }
+
+      return new_transitions
+    }
+  
+
+
 
     const setTransitions = (novas_transicoes : Transitions) => {
       setInputStates(prevState => ({
@@ -84,7 +102,8 @@ export function Home() {
       setInputStates(prevState => ({
         ...prevState,
         inputs: new_values,
-        tokenized_inputs: new_tokenized_values
+        tokenized_inputs: new_tokenized_values,
+        transitions: revalidateTransitions(prevState.transitions, prevState.tokenized_inputs, new_tokenized_values)
       }));
     }
 
@@ -108,9 +127,6 @@ export function Home() {
       <Header/>
 
       <ContainerBody>
-            {/*Como todas as componentes aqui utilizam de alguma forma o estado dos inputs (download, upload, modificação direta) 
-            e os manipulam coloquei todas em uma componente para poder acessar esses estados mais facilmente sem tranferir a lógica diretamente para a home */}
-
         <div id="div1">
           <div>    
             <ParentInput onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenized_inputs} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
@@ -124,8 +140,8 @@ export function Home() {
           <p>Tabela de Transição:</p>
           <div>
           <TransitionTable tokenized_inputs={tokenized_inputs} OnChangeTransitionTable={setTransitions} transitions={transitions} />
-          <TransitionsErrorMessages transitions={transitions} />
           </div>
+
           <Buttons to={"/computing"} title="Computar" disabled={Object.values(erros).some(valor_bool => !valor_bool)}/>
         </div>
 
@@ -139,7 +155,13 @@ export function Home() {
           <ValidationMessage {...erros}/>
         </div>
 
+        <div id="div5">
+          <TransitionsErrorMessages transitions={transitions} />
+        </div>
+
       </ContainerBody>
+
+      
     </Container>
   );
 }

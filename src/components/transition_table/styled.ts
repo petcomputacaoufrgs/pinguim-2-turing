@@ -11,12 +11,20 @@ export const StyledInput = styled.input<InputProps>`
     color: ${({ hasError }) => (hasError ? 'red' : 'black')};
     padding: 8px;
     border-radius: 4px;
-    font-size: 1rem;
-  
+    font-size: 0.8vw;
+
+    text-align: center; 
+
+    width: 8vw;
+
     &:focus {
       outline: none;
       border-color: ${({ hasError }) => (hasError ? 'darkred' : 'blue')};
     }
+
+    &::placeholder {
+      font-size: 0.6vw;
+  }
   `;
 
 
@@ -43,9 +51,12 @@ export const StyledTable = styled.table`
     text-align: center;
   }
 
+
+
   th,
   td {
     border: 1px solid #ddd; 
   }
+
 `;
 

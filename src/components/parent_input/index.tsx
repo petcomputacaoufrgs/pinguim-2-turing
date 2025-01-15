@@ -5,42 +5,7 @@ import Buttons from "../general_button";
 import Documentation from "../documentation";
 import { DivButtons, DivInputs } from "./styled";
 
-
-
-// Essa interface está repetida em validation_message
-interface i_input_errors{
-    unique_states: boolean;
-    valid_initial_state: boolean;
-    valid_final_states: boolean;
-    unique_alphabet_symbols: boolean;
-    disjoint_alphabets: boolean;
-    alphabet_does_not_contain_start: boolean;
-    alphabet_does_not_contain_blank: boolean;
-    auxiliary_alphabet_does_not_contain_start: boolean;
-    auxiliary_alphabet_does_not_contain_blank: boolean;
-
-}
-
-interface i_input_values {
-    input0: string;
-    input1: string;
-    input2: string;
-    input3: string;
-    input4: string;
-    input5: string;
-    input6: string;
-  }
-
-  interface i_input_values_tokenized {
-    input0: string[];
-    input1: string[];
-    input2: string[];
-    input3: string[];
-    input4: string[];
-    input5: string[];
-    input6: string[];
-  }
-
+import { i_input_values, i_input_values_tokenized, i_input_errors } from '../../types/types';
 
 
 interface i_parent_input{
@@ -65,13 +30,13 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
 
       const tokenize_inputs = (inputs: i_input_values) => {
         const result : Record<keyof i_input_values, string[]> = {
-          input0: [],
-          input1: [],
-          input2: [],
-          input3: [],
-          input4: [],
-          input5: [],
-          input6: []
+          states: [],
+          init_state: [],
+          final_states: [],
+          in_alphabet: [],
+          aux_alphabet: [],
+          init_symbol: [],
+          blank_symbol: []
         }
 
         // Os inputs 5 e 6 estao desnecessariamente sendo tokenizados, porque a forma como o simulador do Rogrigo funciona é que o primeiro caractere
@@ -110,7 +75,7 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
 
       const areFinalStatesValid = (states: string[], final_states: string[]) => {
         for (const state of final_states){
-          if(!states.includes(state))
+          if(!states.includes(state) && state != "")
             return false;
         }
 
@@ -121,7 +86,7 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
         const set = new Set(alphabet);
 
         for (const item of aux_alphabet) {
-            if (set.has(item)) {
+            if (set.has(item) && item != "") {
                 return false; 
             }
         }
@@ -133,17 +98,17 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
       const validate_inputs = (tokenized_inputs: i_input_values_tokenized) => {
         const newErrors = {...old_errors};
 
-        newErrors.valid_initial_state = isInitialStateValid(tokenized_inputs.input1, tokenized_inputs.input0);
-        newErrors.valid_final_states = areFinalStatesValid(tokenized_inputs.input0, tokenized_inputs.input2);
-        newErrors.unique_states = hasUniqueTokens(tokenized_inputs.input0);
-        newErrors.unique_alphabet_symbols = hasUniqueTokens(tokenized_inputs.input3);
-        newErrors.disjoint_alphabets = hasDisjointAlphabets(tokenized_inputs.input3, tokenized_inputs.input4);
+        newErrors.valid_initial_state = isInitialStateValid(tokenized_inputs.init_state, tokenized_inputs.states);
+        newErrors.valid_final_states = areFinalStatesValid(tokenized_inputs.states, tokenized_inputs.final_states);
+        newErrors.unique_states = hasUniqueTokens(tokenized_inputs.states);
+        newErrors.unique_alphabet_symbols = hasUniqueTokens(tokenized_inputs.in_alphabet);
+        newErrors.disjoint_alphabets = hasDisjointAlphabets(tokenized_inputs.in_alphabet, tokenized_inputs.aux_alphabet);
 
-        newErrors.alphabet_does_not_contain_start = !tokenized_inputs.input3.includes(tokenized_inputs.input5[0]);
-        newErrors.alphabet_does_not_contain_blank = !tokenized_inputs.input3.includes(tokenized_inputs.input6[0]);
+        newErrors.alphabet_does_not_contain_start = !tokenized_inputs.in_alphabet.includes(tokenized_inputs.init_symbol[0]);
+        newErrors.alphabet_does_not_contain_blank = !tokenized_inputs.in_alphabet.includes(tokenized_inputs.blank_symbol[0]);
 
-        newErrors.auxiliary_alphabet_does_not_contain_start = !tokenized_inputs.input4.includes(tokenized_inputs.input5[0]);
-        newErrors.auxiliary_alphabet_does_not_contain_blank = !tokenized_inputs.input4.includes(tokenized_inputs.input6[0]);
+        newErrors.auxiliary_alphabet_does_not_contain_start = !tokenized_inputs.aux_alphabet.includes(tokenized_inputs.init_symbol[0]);
+        newErrors.auxiliary_alphabet_does_not_contain_blank = !tokenized_inputs.aux_alphabet.includes(tokenized_inputs.blank_symbol[0]);
       
         onChangeErrors(newErrors)
       }
@@ -164,7 +129,7 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
         const newInputs = {...inputValues};
         
 
-        const ordem_leitura = ["input3", "input4", "input5", "input6", "input0", "input1", "input2"];
+        const ordem_leitura = ["in_alphabet", "aux_alphabet", "init_symbol", "blank_symbol", "states", "init_state", "final_states"];
 
         let i = 0;
 
@@ -196,13 +161,13 @@ const ParentInput = ({onFileInputDoc, inputValues, inputTokenizedValues, onChang
           
           <DivInputs id="div1_part2">
             <div id="div1_part2_inputs"> 
-              <Inputs name="input0" value={inputValues.input0} onChange={handleInputChange} title={"Estados:"}></Inputs>
-              <Inputs name="input1" value={inputValues.input1} onChange={handleInputChange} title={"Estado inicial:"}></Inputs>
-              <Inputs name="input2" value={inputValues.input2} onChange={handleInputChange} title={"Estados finais:"}></Inputs>
-              <Inputs name="input3" value={inputValues.input3} onChange={handleInputChange} title={"Alfabeto de entrada:"}></Inputs>
-              <Inputs name="input4" value={inputValues.input4} onChange={handleInputChange} title={"Alfabeto auxiliar:"}></Inputs>
-              <Inputs name="input5" value={inputValues.input5} onChange={handleInputChange} title={"Símbolo inicial:"}></Inputs>
-              <Inputs name="input6" value={inputValues.input6} onChange={handleInputChange} title={"Símbolo de branco:"}></Inputs>
+              <Inputs name="states" value={inputValues.states} onChange={handleInputChange} title={"Estados:"}></Inputs>
+              <Inputs name="init_state" value={inputValues.init_state} onChange={handleInputChange} title={"Estado inicial:"}></Inputs>
+              <Inputs name="final_states" value={inputValues.final_states} onChange={handleInputChange} title={"Estados finais:"}></Inputs>
+              <Inputs name="in_alphabet" value={inputValues.in_alphabet} onChange={handleInputChange} title={"Alfabeto de entrada:"}></Inputs>
+              <Inputs name="aux_alphabet" value={inputValues.aux_alphabet} onChange={handleInputChange} title={"Alfabeto auxiliar:"}></Inputs>
+              <Inputs name="init_symbol" value={inputValues.init_symbol} onChange={handleInputChange} title={"Símbolo inicial:"}></Inputs>
+              <Inputs name="blank_symbol" value={inputValues.blank_symbol} onChange={handleInputChange} title={"Símbolo de branco:"}></Inputs>
             </div>  
           </DivInputs>          
         </>

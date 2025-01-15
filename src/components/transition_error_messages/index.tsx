@@ -1,14 +1,5 @@
-import { errorCodes } from "../../types/types";
+import { errorCodes, Transitions } from "../../types/types";
 import { TextoErro } from "./styles";
-
-interface Transitions {
-    [state: string]: {
-      [symbol: string] : {
-        next: string;
-        error: number;
-      };
-    };
-  }
 
 
   interface ErrorMessageProps {

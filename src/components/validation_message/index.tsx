@@ -1,20 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { TextoErro } from "./styled";
-
-// Essa interface está repetida em parent_input
-interface i_input_errors{
-    unique_states: boolean;
-    valid_initial_state: boolean;
-    valid_final_states: boolean;
-    unique_alphabet_symbols: boolean;
-    disjoint_alphabets: boolean;
-    alphabet_does_not_contain_start: boolean;
-    alphabet_does_not_contain_blank: boolean;
-    auxiliary_alphabet_does_not_contain_start: boolean;
-    auxiliary_alphabet_does_not_contain_blank: boolean;
-}
-
+import { i_input_errors } from "../../types/types";
 
 const ValidationMessage = (validation: i_input_errors) => {
     return (
