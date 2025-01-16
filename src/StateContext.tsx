@@ -1,47 +1,47 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Transitions, i_input_values, i_input_values_tokenized, i_input_errors } from './types/types';
+import { Transitions, InputValues, TokenizedInputValues, InputErrors } from './types/types';
 
 
 const InputStatesContext = createContext<{
-  inputStates: {inputs : i_input_values, tokenized_inputs : i_input_values_tokenized, erros : i_input_errors, documentacao : string, transitions : Transitions};
-  setInputStates: React.Dispatch<React.SetStateAction<{inputs: i_input_values, tokenized_inputs: i_input_values_tokenized; erros: i_input_errors; documentacao: string, transitions : Transitions}>>;
+  inputStates: {inputs : InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions};
+  setInputStates: React.Dispatch<React.SetStateAction<{inputs: InputValues, tokenizedInputs: TokenizedInputValues; errors: InputErrors; documentation: string, transitions : Transitions}>>;
 } | null>(null);
 
 export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [inputStates, setInputStates] = useState<{inputs: i_input_values, tokenized_inputs : i_input_values_tokenized, erros : i_input_errors, documentacao : string, transitions : Transitions}>({ 
-    tokenized_inputs : {states: ["q0"],
-    init_state: ["q0"],
-    final_states: [""],
-    in_alphabet: [""],
-    aux_alphabet: [""],
-    init_symbol: ["@"],
-    blank_symbol: ["-"]
+  const [inputStates, setInputStates] = useState<{inputs: InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions}>({ 
+    tokenizedInputs : {states: ["q0"],
+    initState: ["q0"],
+    finalStates: [""],
+    inAlphabet: [""],
+    auxAlphabet: [""],
+    initSymbol: ["@"],
+    blankSymbol: ["-"]
   },
 
-   erros : {    
-    unique_states: true,
-    valid_initial_state: true,
-    valid_final_states: true,
-    unique_alphabet_symbols: true,
-    disjoint_alphabets: true,
-    alphabet_does_not_contain_start: true,
-    alphabet_does_not_contain_blank: true,
-    auxiliary_alphabet_does_not_contain_start: true,
-    auxiliary_alphabet_does_not_contain_blank: true},
+   errors : {    
+    uniqueStates: true,
+    validInitialState: true,
+    validFinalStates: true,
+    uniqueAlphabetSymbols: true,
+    disjointAlphabets: true,
+    alphabetHasStart: true,
+    alphabetHasBlank: true,
+    auxiliaryAlphabetHasStart: true,
+    auxiliaryAlphabetHasBlank: true},
 
 
-    documentacao : "",
+    documentation : "",
 
     transitions : {q0:{"@":{next:"", error:0}, "-":{next:"", error:0}}},
 
     inputs: {
       states: "q0",
-      init_state: "q0",
-      final_states: "",
-      in_alphabet: "",
-      aux_alphabet: "",
-      init_symbol: "@",
-      blank_symbol: "-"   
+      initState: "q0",
+      finalStates: "",
+      inAlphabet: "",
+      auxAlphabet: "",
+      initSymbol: "@",
+      blankSymbol: "-"   
     }
 
 }); // Estado inicial do simulador do Rodrigo

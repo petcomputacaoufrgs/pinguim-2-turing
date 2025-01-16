@@ -1,5 +1,5 @@
 import { errorCodes, Transitions } from "../../types/types";
-import { TextoErro } from "./styles";
+import { ErrorText, ErrorsContainer } from "./styles";
 
 
   interface ErrorMessageProps {
@@ -32,13 +32,13 @@ const TransitionsErrorMessages = ({ transitions }: ErrorMessageProps) => {
   
     return (
 
-      <>
+      <ErrorsContainer>
         {errors.map((error, index) => (
-          <TextoErro key={index} >
+          <ErrorText key={index} >
             {error}
-          </TextoErro>
+          </ErrorText>
         ))}
-      </>
+      </ErrorsContainer>
     );
   };
 

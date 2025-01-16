@@ -9,84 +9,20 @@ import TransitionTable from '../../components/transition_table/index.tsx';
 import { useStateContext } from '../../StateContext.tsx';
 import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
-import { errorCodes, Transitions, i_input_values, i_input_values_tokenized, i_input_errors } from '../../types/types';
+import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 
 
 export function Home() { 
 
     const  { inputStates, setInputStates } = useStateContext();
 
-    const {erros} = inputStates;
-    const {tokenized_inputs} = inputStates;
-    const {documentacao} = inputStates;
+    const {errors} = inputStates;
+    const {tokenizedInputs} = inputStates;
+    const {documentation} = inputStates;
     const {inputs} = inputStates;
     const {transitions} = inputStates;
 
 
-    const validateTransition = (value:string, states:string[], alphabet:string[]) => {
-
-        const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
-        
-        if(value_tokenized === null || value_tokenized.length == 0)
-            return errorCodes.NoError;
-
-        if(value_tokenized.length !== 3)
-            return errorCodes.InvalidNumberOfParameters;
-
-        if(!states.includes(value_tokenized[0]))
-            return errorCodes.InvalidState; 
-    
-        if(!alphabet.includes(value_tokenized[2]))
-            return errorCodes.InvalidSymbol;
-
-        if(value_tokenized[1].toUpperCase() !== "L" && value_tokenized[1].toUpperCase() !== "R")
-            return errorCodes.InvalidDirection;
-
-        return errorCodes.NoError;
-    }
-
-    const updateTransition = (previous_transitions : Transitions, previous_inputs : i_input_values_tokenized, states: string[], alphabet: string[], state: string, symbol: string) => {
-      const previous_alphabet = [previous_inputs.init_symbol[0], ...(previous_inputs.in_alphabet.filter((x) => x != "").concat(previous_inputs.aux_alphabet.filter((x) => x != ""))), previous_inputs.blank_symbol[0]];
-      
-      // Se anteriormente esse novo estado existia e se o símbolo novo também existia
-      if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
-
-          if(previous_transitions[state] === undefined) 
-            return {next: "", error: errorCodes.NoError};
-          
-          const transition = previous_transitions[state][symbol];
-
-          if(transition === undefined)
-            return {next: "", error: errorCodes.NoError};
-
-          // Então apenas toma a transicao anterior validada para os novos estados e novo alfabeto
-          return {next : transition.next, error: validateTransition(transition.next, states, alphabet)};
-        }
-      
-      // Se o estado novo não existia ou o símbolo novo não existia
-        // Então cria uma nova transição vazia a partir do novo estado para esse símbolo
-        return { next: "", error: errorCodes.NoError };
-      
-      };
-
-    const revalidateTransitions = (previous_transitions : Transitions, previous_inputs : i_input_values_tokenized, tokenized_inputs : i_input_values_tokenized) => {
-      const new_transitions: Transitions = {};
-      const initial_symbol = tokenized_inputs.init_symbol[0];
-      const blank_symbol = tokenized_inputs.blank_symbol[0];
-      const new_states = Array.from(new Set(tokenized_inputs.states));
-
-      const new_alphabet = Array.from(new Set([initial_symbol, ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), blank_symbol]));
-    
-      for (const state of new_states) {
-        new_transitions[state] = {};
-
-        for (const symbol of new_alphabet) 
-          new_transitions[state][symbol] = updateTransition(previous_transitions, previous_inputs, new_states, new_alphabet, state, symbol);
-      }
-
-      return new_transitions
-    }
-  
     const setTransitions = (novas_transicoes : Transitions) => {
       setInputStates(prevState => ({
         ...prevState,
@@ -94,28 +30,19 @@ export function Home() {
       }));
     };
 
-    const setErros = (novos_erros : i_input_errors) => {
+    const setErros = (new_errors : InputErrors) => {
       setInputStates(prevState => ({
         ...prevState,
-        erros: novos_erros
+        errors: new_errors
       }));
     }
 
-    const setInputValues = (new_values : i_input_values, new_tokenized_values : i_input_values_tokenized) => {
-      setInputStates(prevState => ({
-        ...prevState,
-        inputs: new_values,
-        tokenized_inputs: new_tokenized_values,
-        transitions: revalidateTransitions(prevState.transitions, prevState.tokenized_inputs, new_tokenized_values)
-      })
-    );
-    }
 
-    const setAllInputValues = (new_values : i_input_values, new_tokenized_values : i_input_values_tokenized, new_transitions : Transitions) => {
+    const setInputValues = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions) => {
       setInputStates(prevState => ({
         ...prevState,
         inputs: new_values,
-        tokenized_inputs: new_tokenized_values,
+        tokenizedInputs: new_tokenized_values,
         transitions: new_transitions
       }));
     }
@@ -123,14 +50,14 @@ export function Home() {
     const OnChangeDocumentationValue = (e : ChangeEvent<HTMLTextAreaElement>) => {
       setInputStates(prevState => ({
         ...prevState,
-        documentacao : e.target.value
+        documentation : e.target.value
       }))
     }
 
-    const setDocumentationValue = (doc_value : string) => {
+    const setDocumentationValue = (docValue : string) => {
       setInputStates(prevStates => ({
         ...prevStates,
-        documentacao : doc_value
+        documentation : docValue
       }))
     }
 
@@ -142,20 +69,20 @@ export function Home() {
       <ContainerBody>
         <div id="div1">
           <div>    
-            <ParentInput onFileInputValues={setAllInputValues} onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenized_inputs} old_errors={erros} onChangeInputs={setInputValues} onChangeErrors={setErros} />
+            <ParentInput onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenizedInputs} old_errors={errors} transitions={transitions} onChangeInputs={setInputValues} onChangeErrors={setErros} />
           </div>
           <div id="div1_doc">
-            <Documentation value={documentacao} onChange={OnChangeDocumentationValue}></Documentation>
+            <Documentation value={documentation} onChange={OnChangeDocumentationValue}></Documentation>
           </div>
         </div>
 
         <div id="div2">
           <p>Tabela de Transição:</p>
           <div>
-          <TransitionTable tokenized_inputs={tokenized_inputs} OnChangeTransitionTable={setTransitions} transitions={transitions} />
+          <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={setTransitions} transitions={transitions} />
           </div>
 
-          <Buttons to={"/computing"} title="Computar" disabled={Object.values(erros).some(valor_bool => !valor_bool)}/>
+          <Buttons to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
         </div>
 
         <div id="div3">
@@ -165,7 +92,7 @@ export function Home() {
 
 
         <div id="div4">
-          <ValidationMessage {...erros}/>
+          <ValidationMessage {...errors}/>
         </div>
 
         <div id="div5">

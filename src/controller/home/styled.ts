@@ -2,7 +2,6 @@ import styled from "styled-components";
 
 export const Container = styled.div`
   height: 100vh;
-
   display: flex;
   flex-direction: column;
 `;
@@ -11,7 +10,6 @@ export const ContainerBody = styled.div`
   height: 100vh;
 
   overflow: auto;
-
 
   background-color: #E4DADF;
 
@@ -98,7 +96,6 @@ export const ContainerBody = styled.div`
     
     #div5 {
       grid-area: div5;
-      height: 10px;
       margin: auto;
     }
 `;

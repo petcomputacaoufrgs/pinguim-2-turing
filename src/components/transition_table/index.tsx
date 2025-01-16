@@ -1,16 +1,16 @@
 import React, { ChangeEvent, FocusEvent, useEffect, useState } from 'react';
 import {StyledInput, StyledTable} from "./styled";
-import { errorCodes, Transitions, i_input_values_tokenized } from '../../types/types';
+import { errorCodes, Transitions, TokenizedInputValues } from '../../types/types';
 
 
 interface i_transition_table {
-    tokenized_inputs: i_input_values_tokenized;
+    tokenizedInputs: TokenizedInputValues;
 
     transitions: Transitions;
     OnChangeTransitionTable: (newTransitions: Transitions) => void;
 }
 
-export default function TransitionTable({tokenized_inputs, transitions, OnChangeTransitionTable} : i_transition_table){
+export default function TransitionTable({tokenizedInputs, transitions, OnChangeTransitionTable} : i_transition_table){
 
 
     const validateTransition = (value:string, states:string[], alphabet:string[]) => {
@@ -40,7 +40,7 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>, state: string, symbol: string, alphabet: string[]) => {
         const {value} = e.target;
 
-        const validacao = validateTransition(value, tokenized_inputs.states, alphabet);
+        const validacao = validateTransition(value, tokenizedInputs.states, alphabet);
 
         OnChangeTransitionTable({
             ...transitions,
@@ -65,10 +65,10 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
     }
 
     const renderTransitionTable = () => {
-        const stateList = Array.from(new Set(tokenized_inputs.states));
-        const finalStateList = Array.from(new Set(tokenized_inputs.final_states));
+        const stateList = Array.from(new Set(tokenizedInputs.states));
+        const finalStateList = Array.from(new Set(tokenizedInputs.finalStates));
 
-        const alphabetList = Array.from(new Set([tokenized_inputs.init_symbol[0], ...(tokenized_inputs.in_alphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.aux_alphabet.filter((symbol) => symbol != ""))), tokenized_inputs.blank_symbol[0]]));
+        const alphabetList = Array.from(new Set([tokenizedInputs.initSymbol[0], ...(tokenizedInputs.inAlphabet.filter((symbol) => symbol != "").concat(tokenizedInputs.auxAlphabet.filter((symbol) => symbol != ""))), tokenizedInputs.blankSymbol[0]]));
     
         return (
           <StyledTable border={1}>
@@ -83,7 +83,7 @@ export default function TransitionTable({tokenized_inputs, transitions, OnChange
             <tbody>
               {stateList.map((state) => (
                 <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FFD700' : 'white' }}>
-                  <td>{(tokenized_inputs.init_state[0] != state)? state : ">" + state}</td>
+                  <td>{(tokenizedInputs.initState[0] != state)? state : ">" + state}</td>
                   {alphabetList.map((symbol) => (
                     <td key={symbol}>
 

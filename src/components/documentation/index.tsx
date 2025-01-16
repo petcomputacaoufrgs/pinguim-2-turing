@@ -2,12 +2,12 @@ import React, { ChangeEventHandler, useEffect, useState } from 'react';
 import {Container} from "./styled.ts"
 
 
-interface i_documentation{
+interface DocumentationProps{
     value:string;
     onChange: ChangeEventHandler<HTMLTextAreaElement>;
 }
 
-export default function Documentation({value, onChange} : i_documentation){
+export default function Documentation({value, onChange} : DocumentationProps){
 
     
 

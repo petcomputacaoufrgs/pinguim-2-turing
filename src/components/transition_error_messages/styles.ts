@@ -1,7 +1,10 @@
 import styled from "styled-components"
 
 
-export const TextoErro = styled.p`
+export const ErrorText = styled.p`
     color: red;
+`
 
+export const ErrorsContainer = styled.div`
+    background-color: tranparent;
 `
