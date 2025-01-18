@@ -22,7 +22,6 @@ export function Home() {
     const {inputs} = inputStates;
     const {transitions} = inputStates;
 
-
     const setTransitions = (novas_transicoes : Transitions) => {
       setInputStates(prevState => ({
         ...prevState,

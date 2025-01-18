@@ -36,16 +36,15 @@ export const ContainerBody = styled.div`
 
 
       #div1_doc{
-
         display: flex;
-        width: 100%;
-
+        width: 100%
       }
     }
 
     #div2 {
       grid-area: div2;
       padding-left: 3vw;
+
       p{
         font-weight: bold;
         font-size: 1.5vw;
@@ -87,7 +86,6 @@ export const ContainerBody = styled.div`
     }
 
     #div4 {
-
       grid-area: div4;
       padding-left: 3vw;
       margin: auto;
@@ -96,6 +94,7 @@ export const ContainerBody = styled.div`
     
     #div5 {
       grid-area: div5;
-      margin: auto;
+      margin-left: 3vw;
+      width: 92.5%;
     }
 `;
