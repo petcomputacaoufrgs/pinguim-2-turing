@@ -23,7 +23,6 @@ export default function Upload_button({ onFileUpload } : FileUploaderProps){
         }
     };
 
-
     return(
         <Div>
              <input type="file" id="botaoCarregar" accept=".mt"  onChange={handleFileChange} hidden/>
@@ -31,3 +30,4 @@ export default function Upload_button({ onFileUpload } : FileUploaderProps){
         </Div>
     )
 }
+

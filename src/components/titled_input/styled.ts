@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-export const Div = styled.div`
+export const InputDiv = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -9,7 +9,7 @@ export const Div = styled.div`
     height: 4.5vh;
 `;
 
-export const Text = styled.p`
+export const InputDescription = styled.p`
     color: #343239;
     font-size: 0.8vw;
     font-weight: bold;

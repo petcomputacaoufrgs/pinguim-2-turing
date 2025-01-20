@@ -1,5 +1,3 @@
-import React from "react";
-import { useState } from "react";
 import { TextoErro } from "./styled";
 import { InputErrors } from "../../types/types";
 

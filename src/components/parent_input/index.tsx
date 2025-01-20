@@ -1,4 +1,4 @@
-import Inputs from "../input";
+import TitledInput from "../titled_input";
 import { ChangeEvent, ChangeEventHandler, useState } from "react";
 import Upload_button from "../upload_button";
 import Buttons from "../general_button";
@@ -6,6 +6,7 @@ import Documentation from "../documentation";
 import { DivButtons, DivInputs } from "./styled";
 
 import { InputValues, TokenizedInputValues, InputErrors, Transitions, errorCodes } from '../../types/types';
+import { Title } from "../header/styled";
 
 
 interface i_parent_input{
@@ -250,14 +251,14 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
           </DivButtons>
           
           <DivInputs id="div1_part2">
-            <div id="div1_part2_inputs"> 
-              <Inputs name="states" value={inputValues.states} onChange={handleInputChange} title={"Estados:"}></Inputs>
-              <Inputs name="initState" value={inputValues.initState} onChange={handleInputChange} title={"Estado inicial:"}></Inputs>
-              <Inputs name="finalStates" value={inputValues.finalStates} onChange={handleInputChange} title={"Estados finais:"}></Inputs>
-              <Inputs name="inAlphabet" value={inputValues.inAlphabet} onChange={handleInputChange} title={"Alfabeto de entrada:"}></Inputs>
-              <Inputs name="auxAlphabet" value={inputValues.auxAlphabet} onChange={handleInputChange} title={"Alfabeto auxiliar:"}></Inputs>
-              <Inputs name="initSymbol" value={inputValues.initSymbol} onChange={handleInputChange} title={"Símbolo inicial:"}></Inputs>
-              <Inputs name="blankSymbol" value={inputValues.blankSymbol} onChange={handleInputChange} title={"Símbolo de branco:"}></Inputs>
+            <div id="div1_part2_inputs">
+              <TitledInput name="states" value={inputValues.states} onChange={handleInputChange} title={"Estados:"}></TitledInput>
+              <TitledInput name="initState" value={inputValues.initState} onChange={handleInputChange} title={"Estado inicial:"}></TitledInput>
+              <TitledInput name="finalStates" value={inputValues.finalStates} onChange={handleInputChange} title={"Estados finais:"}></TitledInput>
+              <TitledInput name="inAlphabet" value={inputValues.inAlphabet} onChange={handleInputChange} title={"Alfabeto de entrada:"}></TitledInput>
+              <TitledInput name="auxAlphabet" value={inputValues.auxAlphabet} onChange={handleInputChange} title={"Alfabeto auxiliar:"}></TitledInput>
+              <TitledInput name="initSymbol" value={inputValues.initSymbol} onChange={handleInputChange} title={"Símbolo inicial:"}></TitledInput>
+              <TitledInput name="blankSymbol" value={inputValues.blankSymbol} onChange={handleInputChange} title={"Símbolo de branco:"}></TitledInput>
             </div>  
           </DivInputs>          
         </>
@@ -266,3 +267,7 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
 }
 
 export default ParentInput;
+
+
+
+

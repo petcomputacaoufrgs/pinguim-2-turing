@@ -3,6 +3,9 @@ import {Container, ContainerBody, Div11, Div12, Div13, Div14, Div2p} from "./sty
 import Header from '../../components/header/index.tsx';
 import Buttons from '../../components/general_button/index.tsx';
 
+
+
+
 export function Home() {  
   return (
     <Container>
@@ -41,7 +44,11 @@ export function Home() {
             <p>Grafo:</p>
             <div></div>
         </div>
+
+
       </ContainerBody>
+
+      
     </Container>
   );
 }
