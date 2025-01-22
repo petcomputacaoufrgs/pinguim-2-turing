@@ -9,6 +9,10 @@ import TransitionTable from '../../components/transition_table/index.tsx';
 import { useStateContext } from '../../StateContext.tsx';
 import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
+import SimpleDiagram from '../../components/StateDiagram/index.tsx';
+
+
+
 import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 
 
@@ -86,7 +90,7 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
-          <div></div>
+          <SimpleDiagram inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} />
         </div>
 
 
