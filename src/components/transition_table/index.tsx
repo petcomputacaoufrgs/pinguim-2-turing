@@ -26,10 +26,10 @@ export default function TransitionTable({tokenizedInputs, transitions, OnChangeT
         if(!states.includes(value_tokenized[0]))
             return errorCodes.InvalidState; 
     
-        if(!alphabet.includes(value_tokenized[2]))
+        if(!alphabet.includes(value_tokenized[1]))
             return errorCodes.InvalidSymbol;
 
-        if(value_tokenized[1].toUpperCase() != "L" && value_tokenized[1].toUpperCase() != "R")
+        if(value_tokenized[2].toUpperCase() != "E" && value_tokenized[1].toUpperCase() != "D")
             return errorCodes.InvalidDirection;
 
         return errorCodes.NoError;
@@ -82,14 +82,14 @@ export default function TransitionTable({tokenizedInputs, transitions, OnChangeT
             </thead>
             <tbody>
               {stateList.map((state) => (
-                <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FFD700' : 'white' }}>
-                  <td>{(tokenizedInputs.initState[0] != state)? state : ">" + state}</td>
+                <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FFEB66' : 'white' }}>
+                  <td>{(tokenizedInputs.initState[0] != state)? ( (finalStateList.includes(state))? "*" + state : state ) : ">" + state}</td>
                   {alphabetList.map((symbol) => (
                     <td key={symbol}>
 
                  <StyledInput
                     type="text"
-                    placeholder="State, Direction (R/L), Symbol"
+                    placeholder="Estado,Símbolo,Direção(E/D)"
                     value={transitions[state]?.[symbol]?.next || ''}
                     hasError={hasError(transitions[state]?.[symbol]?.error)}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, state, symbol, alphabetList)} />

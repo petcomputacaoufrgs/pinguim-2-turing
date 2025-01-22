@@ -11,7 +11,7 @@ export const StyledInput = styled.input<InputProps>`
     color: ${({ hasError }) => (hasError ? 'darkred' : 'black')};
     padding: 8px;
     border-radius: 4px;
-    font-size: 0.8vw;
+    font-size:calc(10px + 0.2vw);
 
     text-align: center; 
 

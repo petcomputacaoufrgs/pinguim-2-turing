@@ -14,6 +14,7 @@ export const Container = styled.div`
         height: 100%;
         border: none;
         outline: none;
+        font-size: 14px;
     }
 
     p{

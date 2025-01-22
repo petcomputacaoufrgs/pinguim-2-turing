@@ -11,6 +11,7 @@ export const ContainerBody = styled.div`
 
   overflow: auto;
 
+  gap: 1vw;
   background-color: #E4DADF;
 
   display: grid;

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export const Button = styled.button<{disabled : boolean}>`
     color: #343239;
     font-weight:bolder;
-    font-size: 1vw;
+    font-size: 16px;
     background-color: #DD5B6C; 
 
 

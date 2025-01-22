@@ -18,7 +18,7 @@ const TransitionsErrorMessages = ({ transitions }: ErrorMessageProps) => {
           errors.push(`[${state}, ${symbol}] Movimento deve ser L ou R apenas`);
 
         else if (transition.error == errorCodes.InvalidNumberOfParameters) 
-          errors.push(`[${state}, ${symbol}] Escreva: estado, movimento (R/L), símbolo`);
+          errors.push(`[${state}, ${symbol}] Escreva: estado, símbolo, movimento (E/D)`);
 
         if (transition.error == errorCodes.InvalidState) 
           errors.push(`[${state}, ${symbol}] Novo estado deve pertencer ao conjunto de estados`);

@@ -4,7 +4,7 @@ export const Div = styled.div`
     label{
         color: #343239;
         font-weight:bolder;
-        font-size: 1vw;
+        font-size: 16px;
         background-color: #DD5B6C;
         
         border-radius: 4px;

@@ -11,7 +11,7 @@ export const Div = styled.div`
 
 export const Text = styled.p`
     color: #343239;
-    font-size: 0.8vw;
+    font-size:calc(12px + 0.1vw);
     font-weight: bold;
 `;
 
