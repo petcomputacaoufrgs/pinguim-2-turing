@@ -6,10 +6,10 @@ import Buttons from '../../components/general_button/index.tsx';
 import ParentInput from '../../components/parent_input/index.tsx';
 import ValidationMessage from '../../components/validation_message/index.tsx';
 import TransitionTable from '../../components/transition_table/index.tsx';
-import { useStateContext } from '../../StateContext.tsx';
+import { useStateContext } from '../../StateProvider.tsx';
 import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
-import SimpleDiagram from '../../components/StateDiagram/index.tsx';
+import SimpleDiagram from '../../components/StateDiagram/new_index.tsx';
 
 
 
@@ -90,7 +90,7 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
-          <SimpleDiagram inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} />
+          <div style={{overflow: "visible"}}> <SimpleDiagram inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} /> </div>
         </div>
 
 

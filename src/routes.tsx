@@ -3,9 +3,9 @@ import ReactDOM from 'react-dom/client';
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import Home from "./controller/home/"
 import Computing from "./controller/computing/"
-import StateDiagram from "./components/StateDiagram";
+import StateDiagram from "./components/StateDiagram/new_index";
 
-import { StateProvider } from "./StateContext";
+import { StateProvider } from "./StateProvider";
 
 
 export default function Routess(){
@@ -19,9 +19,7 @@ export default function Routess(){
         <BrowserRouter>
 
         <StateProvider>
-            <Routes>
-               { /*<Route path = "/" element={<StateDiagram strings={strings} onChangeStrings={setStrings}/>}/> */}
-                
+            <Routes>                
                 <Route path="/" element={<Home />}/>
                 <Route path = "/computing" element={<Computing/>}/>
             </Routes>

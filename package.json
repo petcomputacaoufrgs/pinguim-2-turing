@@ -10,11 +10,13 @@
     "@types/node": "^16.18.96",
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",
+    "diagram-js": "^15.2.4",
     "gojs": "^3.0.18",
+    "jointjs": "^3.7.7",
     "react": "^18.2.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "styled-components": "^6.1.11",
     "turing-wasm": "file:turing-wasm/pkg",
     "typescript": "^4.9.5",
@@ -44,5 +46,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/jointjs": "^1.0.5"
   }
 }
