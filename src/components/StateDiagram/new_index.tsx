@@ -13,15 +13,19 @@ interface i_simple_diagram {
 
 export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, transitions }: i_simple_diagram) {
 
-    const containerRef = useRef<HTMLDivElement | null>(null); // Este
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
+    // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
     const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map())
+
+    // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
+    const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
+
     const [currentScale, setCurrentScale] = useState(1); // Estado para controle da escala
-    const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); // Para salvar as posições dos nós
     
+
     const states = inputTokenizedValues.states;
   
-
     useEffect(() => {
 
         if(containerRef.current === null){
@@ -33,15 +37,17 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
         containerRef.current.style.setProperty('position', 'relative');
         containerRef.current.id = "paper-container";
         
+        // O Graph é responsável por manter o estado dos dados do diagrama, ou seja, ele gerencia os elementos, links e a relação entre eles
         const graph = new joint.dia.Graph({});
 
+        // O paper modela o Graph e é responsável por renderizá-lo na tela
         const paper = new joint.dia.Paper({
           el: containerRef.current,
           model: graph,
           width: "100%",
           height: "100%",
           drawGrid: true,
-          defaultConnector: { name: 'smooth' }, // Por padrão, os links fazer curvas suaves (curva de Bézier)
+          defaultConnector: { name: 'smooth' }, // Por padrão, os links fazem curvas suaves (curva de Bézier)
           interactive: { useLinkTools: false }
           
         });
