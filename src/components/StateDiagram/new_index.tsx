@@ -3,6 +3,23 @@ import * as joint from 'jointjs';
 import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 import { GraphConteiner } from "./styled";
 
+
+/*
+TO DO: 
+
+- Arrumar atribuição de nome para os estados ao serem criados com o clique duplo: no momento não funciona porque o nome é sempre q{qtd de estados}, mas como há
+deleção de estados isso pode bugar
+- Rever toda a questão de seleção de nodos
+- Permitir que links sejam adicionados a partir de nodos selecionados e arrastá-los para o nodo alvo
+- Rever forma como a edição de vértices e a mudança de alvo de uma aresta está sendo tratada. No momento, as duas se sobrepõem
+- Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
+- Permitir edição do texto de um link
+- Permitir seleção de estados finais e inicial no próprio grafo
+- Atualizar mensagens de erro quando fizer edições diretamente no grafo
+
+*/
+
+
 interface i_simple_diagram {
   inputValues: InputValues;
   inputTokenizedValues : TokenizedInputValues;
@@ -222,9 +239,12 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
         
         // Verifica se já existe um link igual entre esses nós. Se já existir, é preciso usá-lo para guardar sua posição e vértices
         const existingLink = currentLinks.get(transitionInfo[0])?.get(state)?.get(symbol);
+
+        
         if (existingLink) {
           const text = existingLink.attributes.labels?.[0]?.attrs?.text?.text;
-          if (text && transitionInfo[1] === text.split(",")[1]) {
+
+          if (text && transitionInfo[1] === transition.next.split(',').map(token => token.trim()).filter(token => token.length > 0)[1]) {
             // Clona o link existente preservando vértices e propriedades, o adiciona ao grafo e pula para a próxima transição
             const newLink = new joint.shapes.standard.Link({
               source: { id: sourceNode.id },
@@ -501,7 +521,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     // Deleção de um nodo selecionado
     function deleteNode(e:any){
 
-      if(e.key != 'Delete')
+      if(e.key != 'Delete' || !currentCellView)
         return;
 
       const deletedState = currentCellView.model.attributes.attrs.label.text;
@@ -513,10 +533,14 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       const newTransitions = transitions;
       delete newTransitions[deletedState];
 
+      currentCellView = null;
+
       onChangeInputs({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
         {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
         newTransitions
       )
+
+
     }
 
     // "Desseleção" de um nodo
@@ -556,6 +580,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     // Adiciona um novo nodo ao clicar duas vezes sobre espaço vazio
     paper.on('blank:pointerdblclick', (evt, x, y) => {
       setNodePositions((prev) => new Map(prev.set(`q${states.length}`, { x: x - 50, y: y - 20})));
+
+      
       onChangeInputs({...inputValues, states: (states.length > 0)? `${inputValues.states}, q${states.length}` : `q${states.length}`}, {...inputTokenizedValues, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
     })
 
