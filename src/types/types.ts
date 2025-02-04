@@ -48,3 +48,11 @@ export interface InputErrors {
       auxiliaryAlphabetHasStart: boolean;
       auxiliaryAlphabetHasBlank: boolean;
   }
+
+
+export interface CurrentTool {
+  editLinks: boolean;
+  addNodes: boolean;
+  selection: boolean;
+  standard: boolean;
+}

@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import {Container, ContainerBody} from "./styled.ts";
 import Header from '../../components/header/index.tsx';
 import Documentation from '../../components/documentation/index.tsx';
@@ -10,10 +10,10 @@ import { useStateContext } from '../../StateProvider.tsx';
 import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
 import SimpleDiagram from '../../components/StateDiagram/new_index.tsx';
+import Tools from '../../components/Tools/index.tsx';
 
 
-
-import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
+import { Transitions, InputValues, TokenizedInputValues, InputErrors, CurrentTool } from '../../types/types';
 
 
 export function Home() { 
@@ -25,6 +25,9 @@ export function Home() {
     const {documentation} = inputStates;
     const {inputs} = inputStates;
     const {transitions} = inputStates;
+
+    const [currentTools, setCurrentTool] = useState<CurrentTool>({editLinks: false, addNodes: false, selection: false, standard: true});
+
 
     const setTransitions = (novas_transicoes : Transitions) => {
       setInputStates(prevState => ({
@@ -90,7 +93,7 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
-          <div style={{overflow: "visible"}}> <SimpleDiagram inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} /> </div>
+          <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
         </div>
 
 

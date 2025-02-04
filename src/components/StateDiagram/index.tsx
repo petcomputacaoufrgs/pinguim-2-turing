@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as go from "gojs";
 import { text } from "stream/consumers";
 import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 import { transpileModule } from "typescript";
+import Buttons from "../general_button";
+
+
 
 
 
@@ -21,6 +24,7 @@ export function SimpleDiagram({inputValues, inputTokenizedValues, onChangeInputs
 
   const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 0, y: 0}]])); // Para salvar as posições dos nós
 
+  
 
     // Função para lidar com a movimentação do nó e salvar a posição
     function handleNodeMove(thisPart: go.Part, newLoc: go.Point, snappedLoc: go.Point): go.Point {

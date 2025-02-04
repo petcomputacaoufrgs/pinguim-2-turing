@@ -79,8 +79,6 @@ export const ContainerBody = styled.div`
       }
 
       div{
-        width: 80%;
-        height: 75%;
         background-color: #FFF;
       }
     }

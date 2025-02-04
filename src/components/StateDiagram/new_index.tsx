@@ -2,19 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import * as joint from 'jointjs';
 import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 import { GraphConteiner } from "./styled";
+import { CurrentTool } from "../../types/types";
 
 
 /*
 TO DO: 
 
-- Aba de ferramentas?
 - Arrumar atribuição de nome para os estados ao serem criados com o clique duplo: no momento não funciona porque o nome é sempre q{qtd de estados}, mas como há
 deleção de estados isso pode bugar
-- Rever toda a questão de seleção de nodos
 - Permitir que links sejam adicionados  
-- Rever forma como a edição de vértices e a mudança de alvo de uma aresta está sendo tratada. No momento, as duas se sobrepõem
 - Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
-- Permitir edição do texto de um link. Não permitir mudança de posição do texto do link. Sugestões: ou sempre deixar o texto no meio do link sem curvá-lo ou excluir o texto quando for para editá-lo
 - Permitir seleção de estados finais e inicial no próprio grafo
 - Atualizar mensagens de erro quando fizer edições diretamente no grafo
 - Não determinismo!
@@ -23,15 +20,16 @@ deleção de estados isso pode bugar
 */
 
 
+
 interface i_simple_diagram {
   inputValues: InputValues;
   inputTokenizedValues : TokenizedInputValues;
   onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions) => void;
-
+  currentTool: CurrentTool;
   transitions: Transitions;
 }
 
-export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, transitions }: i_simple_diagram) {
+export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, currentTool, transitions }: i_simple_diagram) {
 
     const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -43,6 +41,16 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
     const [currentScale, setCurrentScale] = useState(1); // Estado para controle da escala
     
+    const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
+
+
+    const alphabet = Array.from(
+      new Set([
+        inputTokenizedValues.initSymbol[0],
+        ...inputTokenizedValues.inAlphabet.filter((symbol) => symbol !== ""),
+        ...inputTokenizedValues.auxAlphabet.filter((symbol) => symbol !== ""),
+        inputTokenizedValues.blankSymbol[0],
+      ]))
 
     const states = inputTokenizedValues.states;
   
@@ -68,7 +76,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
           height: "100%",
           drawGrid: true,
           defaultConnector: { name: 'smooth' }, // Por padrão, os links fazem curvas suaves (curva de Bézier)
-          interactive: { useLinkTools: false }
+          interactive: { useLinkTools: false, labelMove: false }
           
         });
   
@@ -207,14 +215,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
     const initialSymbol = inputTokenizedValues.initSymbol[0];
     const blankSymbol = inputTokenizedValues.blankSymbol[0];
-    const alphabet = Array.from(
-      new Set([
-        initialSymbol,
-        ...inputTokenizedValues.inAlphabet.filter((symbol) => symbol !== ""),
-        ...inputTokenizedValues.auxAlphabet.filter((symbol) => symbol !== ""),
-        blankSymbol,
-      ])
-    );
+ 
 
     // Vai passando por cada transição
     for (const state of states) {
@@ -232,7 +233,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
         // Se o estado alvo da transição não existe, pula para a próxima
         const targetNode = nodes.get(transitionInfo[0]);
         if (!targetNode) continue;
-
+        
         const sourceNode = nodes.get(state);
         if (!targetsMap.has(targetNode.id)) {
           targetsMap.set(targetNode.id, []);
@@ -253,20 +254,35 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
               source: { id: sourceNode.id },
               target: { id: targetNode.id },
               vertices: existingLink.get("vertices"),
-              labels: [
-                {
-                  position: { distance: 0.5, offset: -15 },
-                  attrs: {
-                    text: { text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, fontSize: 12, fontWeight: "bold" },
-                  },
-                },
-              ],
               attrs: existingLink.get("attrs"),
             });
 
+            newLink.appendLabel({
+              position: { distance: 0.5, offset: -15 },
+              attrs: {
+                text: { 
+                  text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
+                  fontSize: 12, 
+                  fontWeight: "bold" 
+                },
+                rect: {
+                  fill: '#fff', // Cor de fundo da caixa de texto
+                  stroke: '#000', // Cor da borda
+                  strokeWidth: 1,
+                  refWidth: '120%',
+                  refHeight: '120%',
+                  refX: '-10%',
+                  refY: '-10%',
+                }
+              }
+            });
             newLink.addTo(graph);
             addLink(links, transitionInfo[0], state, symbol, newLink);
-            attachLinkEvents(newLink);
+
+
+            if(currentTool.standard)
+              attachLinkEvents(newLink);
+
             continue;
           }
         }
@@ -292,19 +308,34 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
                   { x: center.x + 80, y: center.y - 20 },
                 ]
               : [{ x: center.x, y: center.y }],
-          labels: [
-            {
-              position: { distance: 0.5, offset: -15 },
-              attrs: {
-                text: { text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, fontSize: 12, fontWeight: "bold" },
-              },
-            },
-          ],
         });
 
+        linkData.appendLabel({
+          position: { distance: 0.5, offset: -15 },
+          attrs: {
+            text: { 
+              text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
+              fontSize: 12, 
+              fontWeight: "bold" 
+            },
+            rect: {
+              fill: '#fff', // Cor de fundo da caixa de texto
+              stroke: '#000', // Cor da borda
+              strokeWidth: 1,
+              refWidth: '120%',
+              refHeight: '120%',
+              refX: '-10%',
+              refY: '-10%',
+            }
+          }
+        });
+
+        
         linkData.addTo(graph);
         addLink(links, transitionInfo[0], state, symbol, linkData);
-        attachLinkEvents(linkData);
+
+        if(currentTool.standard)
+          attachLinkEvents(linkData);
       }
     }
 
@@ -323,21 +354,22 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
   // Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
   function attachLinkEvents(link: joint.shapes.standard.Link) {
-    const verticesTool = new joint.linkTools.Vertices(); // Permite a adição e edição de vértices num link
+    const verticesTool = new joint.linkTools.Vertices({stopPropagation: false}); // Permite a adição e edição de vértices num link
     const toolsView = new joint.dia.ToolsView({ tools: [verticesTool] });
     const linkView = link.findView(paper);
     
-    linkView.addTools(toolsView);
-    linkView.removeTools();
+    //linkView.addTools(toolsView);
+    //linkView.removeTools();
 
     // Quando o mouse "entra" no link, se ele estiver entre 20% e 80% da extensão do link (modificar isso depois), permite a edição de vértices
     paper.on("link:mouseenter", (linkView, evt) => {
       const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect();
       const isTarget = evt.clientX !== undefined && bbox &&
-        evt.clientX < bbox.left + bbox.width / 1.25 &&
-        evt.clientX > bbox.left + bbox.width / 5;
+        evt.clientX < bbox.left + bbox.width &&
+        evt.clientX > bbox.left;
 
       if (isTarget) linkView.addTools(toolsView);
+
     });
 
     paper.on("link:mouseleave", (linkView) => {
@@ -354,28 +386,39 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
   // Captura a posição inicial de arrate quando ocorre um clique numa área em branco
   paper.on("blank:pointerdown", (evt, x, y) => { 
+    if(evt.target.tagName != "svg")
+      return;
+
+
     const scale = paper.scale();
-    dragStartPosition = { x: x * scale.sx, y: y * scale.sy }; // Ajuste para o escalonamento
+
+    if(dragStartPosition === null)
+      dragStartPosition = { x: x * scale.sx, y: y * scale.sy }; // Ajuste para o escalonamento
+
+    
+    
   });
       
 
   // limpar a posição de arraste quando o mouse for solto
-  paper.on("cell:pointerup blank:pointerup", () => {
+  paper.on("blank:pointerup", () => {
     dragStartPosition = null;
   });
       
   // Função para mover conteúdo do paper conforme o mouse se move
   const handleMouseMove = (event: MouseEvent) => {
     if (dragStartPosition !== null) {
-      const offsetX = event.offsetX;
-      const offsetY = event.offsetY;
-      
+      const deltaX = event.offsetX - dragStartPosition.x;
+      const deltaY = event.offsetY - dragStartPosition.y;
+
       // Translaciona o conteúdo do paper
-      paper.translate(offsetX - dragStartPosition.x, offsetY - dragStartPosition.y);
+      paper.translate(deltaX , deltaY );
+      setTranslation({ x: deltaX, y: deltaY });
     }
   };
-      
+
   containerRef.current?.addEventListener("mousemove", handleMouseMove);
+      
 
 // ------------------------------------------------------------------------------------
 
@@ -415,7 +458,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     let initialPosition:any = null; // Guarda a posição inicial caso precise desfazer
     
     // Início do movimento quando o mouse clica no link
-    paper.on('link:pointerdown', (linkView, evt, x, y) => {
+   /* paper.on('link:pointerdown', (linkView, evt, x, y) => {
       evt.preventDefault();
     
       movingLink = linkView.model; 
@@ -500,6 +543,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       document.removeEventListener('mouseup', handleMouseUp);
     }
 
+    */
+
 // ------------------------------------------------------------------------------------
 
     // Eventos relacionados a nodos
@@ -507,76 +552,9 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     let currentCellView : any = null; // referência ao nodo selecionado no momento
 
 
-    // Seleção do nodo ao clicar sobre ele
-    paper.on('cell:pointerdown', (cellView, evt, x, y) => {
-      if(currentCellView === null)
-        currentCellView = cellView;
-
-      
-      document.addEventListener('keydown', deleteNode);
-
-      currentCellView.el.style.cursor = 'pointer'; // Mudança de cursor para indicar que pode criar um nodo
-      currentCellView.model.attr('body/stroke', 'green');
-
-    })
 
 
-    // Deleção de um nodo selecionado
-    function deleteNode(e:any){
 
-      if(e.key != 'Delete' || !currentCellView)
-        return;
-
-      const deletedState = currentCellView.model.attributes.attrs.label.text;
-
-      const newStates = inputTokenizedValues.states.filter((state) => state != deletedState);
-      const newFinalStates = inputTokenizedValues.finalStates.filter((state) => state != deletedState);
-      const newInitState = inputTokenizedValues.initState.filter((state) => state != deletedState);
-
-      const newTransitions = transitions;
-      delete newTransitions[deletedState];
-
-      currentCellView = null;
-
-      onChangeInputs({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
-        {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
-        newTransitions
-      )
-
-
-    }
-
-    // "Desseleção" de um nodo
-    paper.on('cell:mouseout', function(cellView, evt){
-      if(!currentCellView)
-        return;
-
-      
-      const bbox = currentCellView.getBBox(); // Pega as coordenadas e o tamanho da célula
-
-      // Distância da borda para considerar 
-      const horizontalEdgeThreshold = bbox.width * 0.15; 
-      const verticalEdgeThreshold = bbox.height * 0.15;
-
-      const x = evt.clientX;
-      const y = evt.clientY;
-
-      if(!x || !y)
-        return;
-
-      const mouseX = x - paper.el.getBoundingClientRect().left;
-      const mouseY = y - paper.el.getBoundingClientRect().top;
-
-      // Verifica se o mouse está, de fato, fora dos limites do nodo. A necessidade disso se deve ao fato de que o evento 'mouseout' também ativa se o mouse estiver sobre o texto do nodo
-      if(mouseX < bbox.x + bbox.width && mouseX > bbox.x && mouseY > bbox.y && mouseY < bbox.y + bbox.height){
-        return;
-      }
-
-      currentCellView.model.attr('body/stroke', 'black');
-      currentCellView = null;
-      document.removeEventListener('keydown', deleteNode);
-
-    });
 
     
 
@@ -587,73 +565,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     })
 
 
-    // Habilita a edição de texto ao clicar duas vezes sobre nodo
-    paper.on('element:pointerdblclick', (cellView, event, x, y) => {
 
-      if(containerRef.current === null)
-        return;
-
-      const cell = cellView.model;
-
-      const currentText = cell.attr('label/text');
-      const originalText = currentText;
-
-      const bbox = cellView.getBBox();
-
-      // Cria um elemento input para edição
-      const input = document.createElement('input');
-      input.value = currentText;
-      input.style.position = 'absolute';
-      input.style.left = `${bbox.x}px`;
-      input.style.top = `${bbox.y}px`;
-      input.style.fontSize = '12px';
-      input.style.padding = '2px';
-      input.style.zIndex = '1000';
-      input.style.background = '#fff';
-      input.style.border = '1px solid #ccc';
-      input.style.borderRadius = '4px';
-      input.style.width = `${bbox.width}px`;
-      input.style.height = `${bbox.height}px`;
-
-      containerRef.current.appendChild(input);
-
-      input.focus(); // Permite edição imediata
-
-      // Lida com cliques dados enquanto o texto está sendo editado
-      const handleClick = (event: any) => {
-        // Se o clique for no input, não faz nada
-        if (event.target === input) return;
-        // Se o clique for no diagrama, salva o texto
-        saveText();
-        document.removeEventListener('mousedown', handleClick);
-                  
-      };
-
-      document.addEventListener('mousedown', handleClick);
-
-
-      // Lida com teclas pressionadas enquanto o texto está sendo editado
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key == 'Escape') saveText();
-      });
-    
-
-      const saveText = () => {
-        if (input) {
-          cell.attr('label/text', input.value); 
-
-          document.removeEventListener('mousedown', handleClick);
-          
-          const newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
-          const newStates = newStatesTokenized.join(", ");
-    
-          onChangeInputs({...inputValues, states: newStates}, {...inputTokenizedValues, states: newStatesTokenized}, transitions); 
-
-          input.remove();
-        }
-      };
-    
-    });
 
 
     /*
@@ -730,13 +642,317 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
 // ------------------------------------------------------------------------------------
 
+
+// EVENTOS QUANDO "EDIÇÃO DE LINK" ESTÁ SELECIONADA
+
+    if(currentTool.editLinks){
+      console.log("Editando Link");
+
+    }
+
+
+    else if(currentTool.standard){
+
+
+
+      paper.on("blank:pointerdown", (evt, x, y) => { 
+        if(currentCellView !== null){
+          currentCellView.model.attr('body/stroke', 'black');
+          currentCellView = null;
+        }
+
+        if(movingLink !== null){
+          movingLink.model.attr('line/stroke', 'black');
+          movingLink = null;
+        }
+      });
+
+
+      paper.on("link:pointerdown", (linkView, evt, x, y) => {
+        if(currentCellView !== null){
+          currentCellView.model.attr('body/stroke', 'black');
+          currentCellView = null;
+        }
+
+        if(movingLink != linkView){
+          if(movingLink !== null)
+            movingLink.model.attr('line/stroke', 'black');
+
+          movingLink = linkView;
+          movingLink.model.attr('line/stroke', 'blue');
+        }
+
+        document.addEventListener('keydown', deleteLink);
+
+      })
+
+      
+        // Seleção do nodo ao clicar sobre ele
+        paper.on('cell:pointerdown', (cellView, evt, x, y) => {
+
+          if(cellView != currentCellView){
+            if(currentCellView !== null)
+              currentCellView.model.attr('body/stroke', 'black');
+          
+            currentCellView = cellView;
+          }
+
+          document.addEventListener('keydown', deleteNode);
+    
+          currentCellView.model.attr('body/stroke', 'green');
+
+
+          if(movingLink !== null){
+            movingLink.model.attr('line/stroke', 'black');
+            movingLink = null;
+          }
+        })
+
+
+
+        paper.on('link:pointerdblclick', (linkView, event) => {
+          if (containerRef.current === null) return;
+
+          if(event.target.tagName === "circle") // clicou em um vértice (para editar, é preciso clicar na caixa de texto)
+            return;
+
+          const link = linkView.model;
+          const currentText = link.attributes.labels[0].attrs.text.text; // Obtém o texto atual do rótulo
+          const originalText = currentText;
+        
+          const readSymbol = originalText.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0)[0];
+
+          const originNode = graph.getCell(movingLink.model.attributes.source.id);
+          const originState = originNode?.attributes?.attrs?.label?.text || '';
+
+          const targetNode = graph.getCell(movingLink.model.attributes.target.id);
+          const targetState = targetNode?.attributes?.attrs?.label?.text || '';
+
+          const labelPosition = link.label(0)?.position || { distance: 0.5, offset: -15 };
+        
+          const textBox = event.target.getBoundingClientRect();
+          const containerBox = containerRef.current.getBoundingClientRect();
+
+          
+
+          // Cria um elemento input para edição
+          const input = document.createElement('input');
+          input.value = currentText;
+          input.style.position = 'absolute';
+          input.style.left = `${textBox.x - containerBox.x}px`; // Centraliza na linha
+          input.style.top = `${textBox.y - containerBox.y}px`;
+          input.style.fontSize = '12px';
+          input.style.padding = '2px';
+          input.style.zIndex = '1000';
+          input.style.background = '#fff';
+          input.style.border = '1px solid #ccc';
+          input.style.borderRadius = '4px';
+          input.style.width = `${textBox.width}px`;
+          input.style.height = `${textBox.height}px`;
+        
+          containerRef.current.appendChild(input);
+        
+          input.focus();
+        
+          // Fecha o input ao clicar fora
+          const handleClick = (event: any) => {
+            if (event.target === input) return;
+            saveText();
+            document.removeEventListener('mousedown', handleClick);
+          };
+        
+          document.addEventListener('mousedown', handleClick);
+        
+          // Fecha o input ao pressionar Enter ou Escape
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === 'Escape') saveText();
+          });
+        
+          const saveText = () => {
+            if (input) {
+              link.label(0, {
+                position: labelPosition,
+                attrs: {
+                  text: { text: input.value, fontSize: 12, fontWeight: "bold" },
+                },
+              });
+        
+              document.removeEventListener('mousedown', handleClick);
+        
+              const newTransitions = { ...transitions };
+              if (newTransitions[originState]?.[readSymbol]) {
+                let transitionInfo = input.value.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+                
+                if(!alphabet.includes("undefined"))
+                  transitionInfo = transitionInfo.filter((token:string) => token != "undefined");
+
+
+                let next;
+                if(transitionInfo.length > 1)
+                  next = `${targetState}, ${transitionInfo.slice(1).join(", ")}`;
+                else
+                  next = targetState;
+                
+                newTransitions[originState][readSymbol] = { ...newTransitions[originState][readSymbol], next: next };
+
+              }
+        
+              onChangeInputs(inputValues, inputTokenizedValues, newTransitions);
+              input.remove();
+            }
+          };
+        });
+        
+
+
+    // Habilita a edição de texto ao clicar duas vezes sobre nodo
+    paper.on('element:pointerdblclick', (cellView, event, x, y) => {
+
+      if(containerRef.current === null)
+        return;
+
+      const cell = cellView.model;
+
+      const currentText = cell.attr('label/text');
+      const originalText = currentText;
+
+      const bbox = cellView.getBBox();
+
+      // Cria um elemento input para edição
+      const input = document.createElement('input');
+      input.value = currentText;
+      input.style.position = 'absolute';
+      input.style.left = `${bbox.x}px`;
+      input.style.top = `${bbox.y}px`;
+      input.style.fontSize = '12px';
+      input.style.padding = '2px';
+      input.style.zIndex = '1000';
+      input.style.background = '#fff';
+      input.style.border = '1px solid #ccc';
+      input.style.borderRadius = '4px';
+      input.style.width = `${bbox.width}px`;
+      input.style.height = `${bbox.height}px`;
+
+      containerRef.current.appendChild(input);
+
+      input.focus(); // Permite edição imediata
+
+      // Lida com cliques dados enquanto o texto está sendo editado
+      const handleClick = (event: any) => {
+        // Se o clique for no input, não faz nada
+        if (event.target === input) return;
+        // Se o clique for no diagrama, salva o texto
+        saveText();
+        document.removeEventListener('mousedown', handleClick);
+                  
+      };
+
+      document.addEventListener('mousedown', handleClick);
+
+
+      // Lida com teclas pressionadas enquanto o texto está sendo editado
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key == 'Escape') saveText();
+      });
+    
+
+      const saveText = () => {
+        if (input) {
+          cell.attr('label/text', input.value); 
+
+          document.removeEventListener('mousedown', handleClick);
+          
+          const newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
+          const newStates = newStatesTokenized.join(", ");
+    
+          onChangeInputs({...inputValues, states: newStates}, {...inputTokenizedValues, states: newStatesTokenized}, transitions); 
+
+          input.remove();
+        }
+      };
+    
+    });
+
+
+    
+    // Deleção de um nodo selecionado
+    const deleteNode = (e:any) => {
+
+      if(e.key != 'Delete' || !currentCellView)
+        return;
+
+      const deletedState = currentCellView.model.attributes.attrs.label.text;
+
+      const newStates = inputTokenizedValues.states.filter((state) => state != deletedState);
+      const newFinalStates = inputTokenizedValues.finalStates.filter((state) => state != deletedState);
+      const newInitState = inputTokenizedValues.initState.filter((state) => state != deletedState);
+
+      const newTransitions = transitions;
+      delete newTransitions[deletedState];
+
+      currentCellView = null;
+
+      onChangeInputs({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
+        {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
+        newTransitions
+      )
+
+
+    }
+
+
+
+    // Deleção de um nodo selecionado
+    const deleteLink = (e:any) => {
+
+          if(e.key != 'Delete' || !movingLink)
+            return;
+    
+          const deletedTransition = movingLink.model.attributes.labels[0].attrs.text.text.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+
+          
+          if(deletedTransition.length > 0){
+            const readSymbol = deletedTransition[0];
+            const originNode = graph.getCell(movingLink.model.attributes.source.id);
+
+            // Isso não deveria acontecer...
+            if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
+                return;
+
+            const originState = originNode.attributes.attrs.label.text;
+
+            // Nem isso...
+            if(!originState)
+              return;
+            
+
+
+            if(alphabet.includes(readSymbol)){ 
+              const newTransitions = transitions;
+              newTransitions[originState][readSymbol] = {next: "", error: 0};
+              onChangeInputs(inputValues, inputTokenizedValues, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
+            }
+            else{ // Muito menos isso, mas por enquanto deixa aí
+              alert("Erro: Símbolo lido não existe no alfabeto");
+              onChangeInputs(inputValues, inputTokenizedValues, transitions);
+            }
+          
+          }
+        }
+
+    } 
+
+
+    paper.translate(translation.x, translation.y);
+
     console.log("Terminou o desenho");
 
     return () => {
       // Função de cleanup?
     };
-    }, [inputTokenizedValues, transitions, currentScale]); 
+    }, [inputTokenizedValues, transitions, currentTool, currentScale]); 
   
+
 
 
     return (
