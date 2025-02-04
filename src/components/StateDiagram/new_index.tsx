@@ -7,16 +7,19 @@ import { GraphConteiner } from "./styled";
 /*
 TO DO: 
 
+- Aba de ferramentas?
 - Arrumar atribuição de nome para os estados ao serem criados com o clique duplo: no momento não funciona porque o nome é sempre q{qtd de estados}, mas como há
 deleção de estados isso pode bugar
 - Rever toda a questão de seleção de nodos
-- Permitir que links sejam adicionados a partir de nodos selecionados e arrastá-los para o nodo alvo
+- Permitir que links sejam adicionados  
 - Rever forma como a edição de vértices e a mudança de alvo de uma aresta está sendo tratada. No momento, as duas se sobrepõem
 - Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
-- Permitir edição do texto de um link
+- Permitir edição do texto de um link. Não permitir mudança de posição do texto do link. Sugestões: ou sempre deixar o texto no meio do link sem curvá-lo ou excluir o texto quando for para editá-lo
 - Permitir seleção de estados finais e inicial no próprio grafo
 - Atualizar mensagens de erro quando fizer edições diretamente no grafo
+- Não determinismo!
 
+- Modo de tela cheia para grafo e tabela???
 */
 
 
@@ -580,8 +583,6 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     // Adiciona um novo nodo ao clicar duas vezes sobre espaço vazio
     paper.on('blank:pointerdblclick', (evt, x, y) => {
       setNodePositions((prev) => new Map(prev.set(`q${states.length}`, { x: x - 50, y: y - 20})));
-
-      
       onChangeInputs({...inputValues, states: (states.length > 0)? `${inputValues.states}, q${states.length}` : `q${states.length}`}, {...inputTokenizedValues, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
     })
 
@@ -653,6 +654,78 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       };
     
     });
+
+
+    /*
+
+
+        // Evento de clique
+    paper.on('cell:click', (cellView, evt) => {
+      const bbox = cellView.getBBox();
+      const mouseX = evt.clientX - paper.el.getBoundingClientRect().left;
+      const mouseY = evt.clientY - paper.el.getBoundingClientRect().top;
+    
+      const nearEdge =
+        mouseX < bbox.x + edgeThreshold || 
+        mouseX > bbox.x + bbox.width - edgeThreshold ||
+        mouseY < bbox.y + edgeThreshold ||
+        mouseY > bbox.y + bbox.height - edgeThreshold;
+    
+      if (nearEdge) {
+        // Código para criar novo nodo e adicionar listeners de movimentação e criação de links
+        console.log('Criar novo nodo');
+        // Aqui você pode criar o novo nodo e adicionar as funcionalidades que deseja.
+      } else {
+        // Código para mover a célula
+        console.log('Mover a célula');
+        // Se já tiver a funcionalidade de mover a célula, ela pode ser executada aqui.
+      }
+    });
+
+    function handleMoveOnCell(evt:any){
+
+      if(!currentCellView)
+        return;
+
+      const bbox = currentCellView.getBBox(); // Pega as coordenadas e o tamanho da célula
+      const horizontalEdgeThreshold = bbox.width * 0.15; // Distância da borda para considerar 
+      const verticalEdgeThreshold = bbox.height * 0.15;
+      const x = evt.clientX;
+      const y = evt.clientY;
+
+
+
+      if(!x || !y)
+        return;
+
+      const mouseX = x - paper.el.getBoundingClientRect().left;
+      const mouseY = y - paper.el.getBoundingClientRect().top;
+
+      // Verifica se o mouse está perto da borda
+      const nearEdge =
+        mouseX < bbox.x + horizontalEdgeThreshold || 
+        mouseX > bbox.x + bbox.width - horizontalEdgeThreshold ||
+        mouseY < bbox.y + verticalEdgeThreshold ||
+        mouseY > bbox.y + bbox.height - verticalEdgeThreshold;
+    
+      if (nearEdge) {
+        // Permite criação de um novo nodo (você pode adicionar um clique para isso)
+        currentCellView.el.style.cursor = 'pointer'; // Mudança de cursor para indicar que pode criar um nodo
+        currentCellView.model.attr('body/stroke', 'green');
+
+      
+        document.addEventListener('click', handleClickOnCell);
+
+      } else {
+        // Permite movimentação da célula
+        currentCellView.el.style.cursor = 'default'; 
+        currentCellView.model.attr('body/stroke', 'black');
+        document.removeEventListener('click', handleClickOnCell);
+      }
+    }
+
+
+    */
 
 
 // ------------------------------------------------------------------------------------
