@@ -93,6 +93,7 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
+          <div style={{overflow: "visible",  width: "80%", height: "75%"}}> <SimpleDiagram currentTool={currentTools} inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} /> </div>
           <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
         </div>
 
