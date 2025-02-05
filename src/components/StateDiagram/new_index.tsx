@@ -32,6 +32,7 @@ interface i_simple_diagram {
 export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, currentTool, transitions }: i_simple_diagram) {
 
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const currentCellView = useRef<any>(null);
 
     // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
     const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map())
@@ -42,6 +43,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     const [currentScale, setCurrentScale] = useState(1); // Estado para controle da escala
     
     const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
+
+
 
 
     const alphabet = Array.from(
@@ -549,7 +552,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
     // Eventos relacionados a nodos
 
-    let currentCellView : any = null; // referência ao nodo selecionado no momento
+    
 
 
 
@@ -644,7 +647,118 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
 
 // EVENTOS QUANDO "EDIÇÃO DE LINK" ESTÁ SELECIONADA
+const changeFinalStatus = (cell:any) => {
 
+  const state = cell?.attributes?.attrs?.label?.text || '';
+
+  console.log("A");
+
+  console.log(inputTokenizedValues.finalStates)
+  let newFinalStates : string[];
+
+  if(inputTokenizedValues.finalStates.includes(state)){
+    newFinalStates = inputTokenizedValues.finalStates.filter((s) => s != state);
+    console.log("B");
+  }
+  else{
+    console.log("C");
+    if(inputTokenizedValues.finalStates.length == 1 && inputTokenizedValues.finalStates[0] == "") 
+      newFinalStates = [state];
+    else
+      newFinalStates = [...inputTokenizedValues.finalStates, state];
+  }
+  
+  onChangeInputs({...inputValues, finalStates: newFinalStates.join(", ")}, {...inputTokenizedValues, finalStates: newFinalStates}, transitions);
+}
+
+
+const changeInitStatus = (cell:any) => {
+  const state = cell?.attributes?.attrs?.label?.text || '';
+
+  let newInitState : string[]; 
+
+  if(inputTokenizedValues.initState.includes(state))
+    newInitState = inputTokenizedValues.initState.filter((s) => s != state);
+  else
+    newInitState = [state];
+  
+  onChangeInputs({...inputValues, initState: newInitState.join(", ")}, {...inputTokenizedValues, initState: newInitState}, transitions);
+}
+
+
+
+
+    // Criar função auxiliar para gerar botões
+    const createButton = (text:string, topOffset:number, paperRect:any, bbox:any) => {
+      const button = document.createElement('button');
+      button.textContent = text;
+      button.className = 'node-button';
+      button.style.position = 'absolute';
+      button.style.left = `${paperRect.left + bbox.x + bbox.width + 10}px`; // Ao lado do nó
+      button.style.top = `${paperRect.top + bbox.y + topOffset}px`; // Ajuste vertical
+      button.style.zIndex = "4"; // Garantir que fique acima do SVG
+      document.body.appendChild(button);
+      return button;
+      };
+      
+      // Criar função para posicionar botões dinamicamente
+      const updateButtonPositions = (button1:HTMLButtonElement, button2:HTMLButtonElement) => {
+      const bbox = currentCellView.current.getBBox();
+      const paperRect = paper.el.getBoundingClientRect();
+      
+      button1.style.left = `${paperRect.left + bbox.x + bbox.width + 10}px`;
+      button1.style.top = `${paperRect.top + bbox.y}px`;
+      
+      button2.style.left = `${paperRect.left + bbox.x + bbox.width + 10}px`;
+      button2.style.top = `${paperRect.top + bbox.y + 20}px`;
+      };
+
+
+          // Deleção de um nodo selecionado
+    const deleteNode = (e:any) => {
+
+      if(e.key != 'Delete' || !(currentCellView.current))
+        return;
+
+      const deletedState = currentCellView.current.model.attributes.attrs.label.text;
+
+      const newStates = inputTokenizedValues.states.filter((state) => state != deletedState);
+      const newFinalStates = inputTokenizedValues.finalStates.filter((state) => state != deletedState);
+      const newInitState = inputTokenizedValues.initState.filter((state) => state != deletedState);
+
+      const newTransitions = transitions;
+      delete newTransitions[deletedState];
+
+      currentCellView.current = null;
+
+      onChangeInputs({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
+        {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
+        newTransitions
+      )
+
+
+    }
+
+const buttons = document.querySelectorAll('.node-button')
+if(buttons.length > 0 && currentCellView.current){
+  currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
+
+  const bbox = currentCellView.current.getBBox();
+  const paperRect = paper.el.getBoundingClientRect();
+
+  buttons.forEach(btn => btn.remove());
+
+  const button1 = createButton('Final', 0, paperRect, bbox);
+  button1.onclick = () => changeFinalStatus(currentCellView.current.model);
+
+  const button2 = createButton('Inicial', 20, paperRect, bbox);
+  button2.onclick = () => changeInitStatus(currentCellView.current.model);
+
+  document.addEventListener('keydown', deleteNode);
+  currentCellView.current.model.attr('body/stroke', 'green');
+}
+
+  
     if(currentTool.editLinks){
       console.log("Editando Link");
 
@@ -655,10 +769,14 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
 
 
+
+
+
       paper.on("blank:pointerdown", (evt, x, y) => { 
-        if(currentCellView !== null){
-          currentCellView.model.attr('body/stroke', 'black');
-          currentCellView = null;
+        if(currentCellView.current !== null){
+          currentCellView.current.model.attr('body/stroke', 'black');
+          document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+          currentCellView.current = null;
         }
 
         if(movingLink !== null){
@@ -669,9 +787,10 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
 
       paper.on("link:pointerdown", (linkView, evt, x, y) => {
-        if(currentCellView !== null){
-          currentCellView.model.attr('body/stroke', 'black');
-          currentCellView = null;
+        if(currentCellView.current !== null){
+          currentCellView.current.model.attr('body/stroke', 'black');
+          document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+          currentCellView.current = null;
         }
 
         if(movingLink != linkView){
@@ -687,26 +806,47 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       })
 
       
-        // Seleção do nodo ao clicar sobre ele
-        paper.on('cell:pointerdown', (cellView, evt, x, y) => {
+        // Seleção do nodo ao clicar sobre ele, além da criação dos botões que permitem tornar o nodo estado inicial e estado final
+        paper.on('cell:pointerdown', (cellView, evt, x, y) => {          
+          document.querySelectorAll('.node-button').forEach(btn => btn.remove());
 
-          if(cellView != currentCellView){
-            if(currentCellView !== null)
-              currentCellView.model.attr('body/stroke', 'black');
+          if(cellView != currentCellView.current){
+            if(currentCellView.current !== null)
+              currentCellView.current.model.attr('body/stroke', 'black');
           
-            currentCellView = cellView;
+            document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+            currentCellView.current = cellView;
           }
 
           document.addEventListener('keydown', deleteNode);
     
-          currentCellView.model.attr('body/stroke', 'green');
+          currentCellView.current.model.attr('body/stroke', 'green');
 
 
           if(movingLink !== null){
             movingLink.model.attr('line/stroke', 'black');
             movingLink = null;
           }
+
+          const bbox = currentCellView.current.getBBox();
+          const paperRect = paper.el.getBoundingClientRect();
+
+  // Criar botões e definir suas ações. Deu algum problema de sincronização ao usar a função updateButtonPositions para definir a posição dos botões logo na inicialização
+  // Por isso, as posições estão sendo definidas diretamente na createButtons, e então ao mover as posições são atualizadas
+  const button1 = createButton('Final', 0, paperRect, bbox);
+  button1.onclick = () => changeFinalStatus(currentCellView.current.model);
+
+  const button2 = createButton('Inicial', 20, paperRect, bbox);
+  button2.onclick = () => changeInitStatus(currentCellView.current.model);
+
+
+
+  cellView.model.on('change:position', () => updateButtonPositions(button1, button2));
+
         })
+
+
+        
 
 
 
@@ -811,6 +951,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       if(containerRef.current === null)
         return;
 
+      document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+
       const cell = cellView.model;
 
       const currentText = cell.attr('label/text');
@@ -858,11 +1000,18 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
       const saveText = () => {
         if (input) {
+
           cell.attr('label/text', input.value); 
 
           document.removeEventListener('mousedown', handleClick);
+
+          let newStatesTokenized;
+
+          if(input.value == '')
+            newStatesTokenized = states.filter((s) => (s != originalText));
+          else
+            newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
           
-          const newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
           const newStates = newStatesTokenized.join(", ");
     
           onChangeInputs({...inputValues, states: newStates}, {...inputTokenizedValues, states: newStatesTokenized}, transitions); 
@@ -875,30 +1024,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
 
     
-    // Deleção de um nodo selecionado
-    const deleteNode = (e:any) => {
 
-      if(e.key != 'Delete' || !currentCellView)
-        return;
-
-      const deletedState = currentCellView.model.attributes.attrs.label.text;
-
-      const newStates = inputTokenizedValues.states.filter((state) => state != deletedState);
-      const newFinalStates = inputTokenizedValues.finalStates.filter((state) => state != deletedState);
-      const newInitState = inputTokenizedValues.initState.filter((state) => state != deletedState);
-
-      const newTransitions = transitions;
-      delete newTransitions[deletedState];
-
-      currentCellView = null;
-
-      onChangeInputs({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
-        {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
-        newTransitions
-      )
-
-
-    }
 
 
 
@@ -945,6 +1071,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
     paper.translate(translation.x, translation.y);
 
+    console.log(currentCellView.current);
     console.log("Terminou o desenho");
 
     return () => {
