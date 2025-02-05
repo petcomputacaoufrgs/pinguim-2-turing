@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import * as joint from 'jointjs';
 import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 import { GraphConteiner } from "./styled";
 import { CurrentTool } from "../../types/types";
+import { useStateContext } from "../../ContextProvider";
 
 
 /*
@@ -12,10 +13,10 @@ TO DO:
 deleção de estados isso pode bugar
 - Permitir que links sejam adicionados  
 - Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
-- Permitir seleção de estados finais e inicial no próprio grafo
 - Atualizar mensagens de erro quando fizer edições diretamente no grafo
 - Não determinismo!
 
+- Control + Z e Control + Y?
 - Modo de tela cheia para grafo e tabela???
 */
 
@@ -34,11 +35,14 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     const containerRef = useRef<HTMLDivElement | null>(null);
     const currentCellView = useRef<any>(null);
 
+    // Se é pra tirar as posições já do contexto, talvez seja melhor já pegar tudo do contexto, aí não precisa ficar passando coisas como parâmetro
+    const {graphNodes, graphLinks} = useStateContext();
+
     // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
-    const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map())
+    const {currentLinks, setLinks} = graphLinks;
 
     // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
-    const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
+    const {nodePositions, setNodePositions} = graphNodes;
 
     const [currentScale, setCurrentScale] = useState(1); // Estado para controle da escala
     

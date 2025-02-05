@@ -1,13 +1,17 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Transitions, InputValues, TokenizedInputValues, InputErrors } from './types/types';
+import * as joint from 'jointjs';
 
 
 const InputStatesContext = createContext<{
   inputStates: {inputs : InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions};
   setInputStates: React.Dispatch<React.SetStateAction<{inputs: InputValues, tokenizedInputs: TokenizedInputValues; errors: InputErrors; documentation: string, transitions : Transitions}>>;
+  graphNodes: {nodePositions: Map<string, { x: number; y: number }>, setNodePositions: React.Dispatch<React.SetStateAction<Map<string, { x: number; y: number }>>>};
+  graphLinks: {currentLinks: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>, setLinks: React.Dispatch<React.SetStateAction<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>>};
 } | null>(null);
 
 export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+
   const [inputStates, setInputStates] = useState<{inputs: InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions}>({ 
     tokenizedInputs : {states: ["q0"],
     initState: ["q0"],
@@ -44,10 +48,17 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       blankSymbol: "-"   
     }
 
+
+
+
 }); // Estado inicial do simulador do Rodrigo
 
+
+  const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map());
+  const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
+
   return (
-    <InputStatesContext.Provider value={{ inputStates, setInputStates }}>
+    <InputStatesContext.Provider value={{ inputStates, setInputStates, graphNodes: {nodePositions, setNodePositions}, graphLinks: {currentLinks, setLinks} }}>
       {children}
     </InputStatesContext.Provider>
   );

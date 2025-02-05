@@ -6,7 +6,7 @@ import Buttons from '../../components/general_button/index.tsx';
 import ParentInput from '../../components/parent_input/index.tsx';
 import ValidationMessage from '../../components/validation_message/index.tsx';
 import TransitionTable from '../../components/transition_table/index.tsx';
-import { useStateContext } from '../../StateProvider.tsx';
+import { useStateContext } from '../../ContextProvider.tsx';
 import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
 
 import SimpleDiagram from '../../components/StateDiagram/new_index.tsx';
