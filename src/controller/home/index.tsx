@@ -88,13 +88,14 @@ export function Home() {
           <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={setTransitions} transitions={transitions} />
           </div>
 
-          <Buttons to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
+          <Buttons height="4.5vh" width="14vw" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
         </div>
 
         <div id="div3">
           <p>Grafo:</p>
-          <div style={{overflow: "visible",  width: "80%", height: "75%"}}> <SimpleDiagram currentTool={currentTools} inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} /> </div>
-          <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
+        <div style={{width: "80%", height: "75%"}}> <SimpleDiagram currentTool={currentTools} inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} transitions={transitions} /> </div>
+        <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
+
         </div>
 
 

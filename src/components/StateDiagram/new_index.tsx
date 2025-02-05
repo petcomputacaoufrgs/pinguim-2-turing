@@ -66,6 +66,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
         containerRef.current.style.setProperty('width', '100%');
         containerRef.current.style.setProperty('height', '100%');
         containerRef.current.style.setProperty('position', 'relative');
+        containerRef.current.style.setProperty("overflow", "hidden");
+
         containerRef.current.id = "paper-container";
         
         // O Graph é responsável por manter o estado dos dados do diagrama, ou seja, ele gerencia os elementos, links e a relação entre eles
@@ -359,7 +361,6 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
   function attachLinkEvents(link: joint.shapes.standard.Link) {
     const verticesTool = new joint.linkTools.Vertices({stopPropagation: false}); // Permite a adição e edição de vértices num link
     const toolsView = new joint.dia.ToolsView({ tools: [verticesTool] });
-    const linkView = link.findView(paper);
     
     //linkView.addTools(toolsView);
     //linkView.removeTools();
@@ -646,22 +647,17 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 // ------------------------------------------------------------------------------------
 
 
-// EVENTOS QUANDO "EDIÇÃO DE LINK" ESTÁ SELECIONADA
 const changeFinalStatus = (cell:any) => {
 
   const state = cell?.attributes?.attrs?.label?.text || '';
 
-  console.log("A");
 
-  console.log(inputTokenizedValues.finalStates)
   let newFinalStates : string[];
 
   if(inputTokenizedValues.finalStates.includes(state)){
     newFinalStates = inputTokenizedValues.finalStates.filter((s) => s != state);
-    console.log("B");
   }
   else{
-    console.log("C");
     if(inputTokenizedValues.finalStates.length == 1 && inputTokenizedValues.finalStates[0] == "") 
       newFinalStates = [state];
     else
@@ -694,10 +690,11 @@ const changeInitStatus = (cell:any) => {
       button.textContent = text;
       button.className = 'node-button';
       button.style.position = 'absolute';
-      button.style.left = `${paperRect.left + bbox.x + bbox.width + 10}px`; // Ao lado do nó
-      button.style.top = `${paperRect.top + bbox.y + topOffset}px`; // Ajuste vertical
+      button.style.left = `${bbox.x + bbox.width + 10}px`; // Ao lado do nó
+      button.style.top = `${bbox.y + topOffset}px`; // Ajuste vertical
       button.style.zIndex = "4"; // Garantir que fique acima do SVG
-      document.body.appendChild(button);
+      if(containerRef.current)
+        containerRef.current.appendChild(button);
       return button;
       };
       
@@ -705,12 +702,13 @@ const changeInitStatus = (cell:any) => {
       const updateButtonPositions = (button1:HTMLButtonElement, button2:HTMLButtonElement) => {
       const bbox = currentCellView.current.getBBox();
       const paperRect = paper.el.getBoundingClientRect();
-      
-      button1.style.left = `${paperRect.left + bbox.x + bbox.width + 10}px`;
-      button1.style.top = `${paperRect.top + bbox.y}px`;
-      
-      button2.style.left = `${paperRect.left + bbox.x + bbox.width + 10}px`;
-      button2.style.top = `${paperRect.top + bbox.y + 20}px`;
+
+
+      button1.style.left = `${bbox.x + bbox.width + 10}px`;
+      button1.style.top = `${bbox.y}px`;
+            
+      button2.style.left = `${bbox.x + bbox.width + 10}px`;
+      button2.style.top = `${bbox.y + 20}px`;
       };
 
 
@@ -720,14 +718,18 @@ const changeInitStatus = (cell:any) => {
       if(e.key != 'Delete' || !(currentCellView.current))
         return;
 
+      document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+
       const deletedState = currentCellView.current.model.attributes.attrs.label.text;
+
 
       const newStates = inputTokenizedValues.states.filter((state) => state != deletedState);
       const newFinalStates = inputTokenizedValues.finalStates.filter((state) => state != deletedState);
       const newInitState = inputTokenizedValues.initState.filter((state) => state != deletedState);
 
-      const newTransitions = transitions;
+      const newTransitions = {...transitions};
       delete newTransitions[deletedState];
+
 
       currentCellView.current = null;
 
@@ -736,12 +738,28 @@ const changeInitStatus = (cell:any) => {
         newTransitions
       )
 
+      
+
 
     }
 
-const buttons = document.querySelectorAll('.node-button')
-if(buttons.length > 0 && currentCellView.current){
-  currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
+let buttons = document.querySelectorAll('.node-button');
+
+if(currentCellView.current){
+  if(!nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '')){
+    buttons.forEach(btn => btn.remove());
+    currentCellView.current = null
+  }
+  else{
+    currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
+    document.addEventListener('keydown', deleteNode);
+    currentCellView.current.model.attr('body/stroke', 'green');
+  }
+}
+
+
+buttons = document.querySelectorAll('.node-button');
+if(buttons.length > 0){  
 
   const bbox = currentCellView.current.getBBox();
   const paperRect = paper.el.getBoundingClientRect();
@@ -754,8 +772,8 @@ if(buttons.length > 0 && currentCellView.current){
   const button2 = createButton('Inicial', 20, paperRect, bbox);
   button2.onclick = () => changeInitStatus(currentCellView.current.model);
 
-  document.addEventListener('keydown', deleteNode);
-  currentCellView.current.model.attr('body/stroke', 'green');
+ 
+
 }
 
   
@@ -773,7 +791,11 @@ if(buttons.length > 0 && currentCellView.current){
 
 
       paper.on("blank:pointerdown", (evt, x, y) => { 
+        if(evt.target.tagName != "svg")
+          return;
+
         if(currentCellView.current !== null){
+          
           currentCellView.current.model.attr('body/stroke', 'black');
           document.querySelectorAll('.node-button').forEach(btn => btn.remove());
           currentCellView.current = null;
@@ -781,6 +803,7 @@ if(buttons.length > 0 && currentCellView.current){
 
         if(movingLink !== null){
           movingLink.model.attr('line/stroke', 'black');
+          document.removeEventListener('keydown', deleteLink);
           movingLink = null;
         }
       });
@@ -797,6 +820,8 @@ if(buttons.length > 0 && currentCellView.current){
           if(movingLink !== null)
             movingLink.model.attr('line/stroke', 'black');
 
+          document.removeEventListener('keydown', deleteLink);
+
           movingLink = linkView;
           movingLink.model.attr('line/stroke', 'blue');
         }
@@ -809,8 +834,11 @@ if(buttons.length > 0 && currentCellView.current){
         // Seleção do nodo ao clicar sobre ele, além da criação dos botões que permitem tornar o nodo estado inicial e estado final
         paper.on('cell:pointerdown', (cellView, evt, x, y) => {          
           document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-
+          
+          
           if(cellView != currentCellView.current){
+
+
             if(currentCellView.current !== null)
               currentCellView.current.model.attr('body/stroke', 'black');
           
@@ -820,11 +848,13 @@ if(buttons.length > 0 && currentCellView.current){
 
           document.addEventListener('keydown', deleteNode);
     
+          
           currentCellView.current.model.attr('body/stroke', 'green');
 
 
           if(movingLink !== null){
             movingLink.model.attr('line/stroke', 'black');
+            document.removeEventListener('keydown', deleteLink);
             movingLink = null;
           }
 
@@ -1004,29 +1034,39 @@ if(buttons.length > 0 && currentCellView.current){
           cell.attr('label/text', input.value); 
 
           document.removeEventListener('mousedown', handleClick);
+          if(currentCellView.current)
+            currentCellView.current = null;
+          
 
           let newStatesTokenized;
+          let newFinalStatesTokenized = inputTokenizedValues.finalStates;
+          let newInitState = inputTokenizedValues.initState;
 
-          if(input.value == '')
+          if(input.value == ''){
             newStatesTokenized = states.filter((s) => (s != originalText));
-          else
+            newFinalStatesTokenized = newFinalStatesTokenized.filter((s) => (s != originalText));
+            newInitState = newInitState.filter((s) => (s != originalText));
+          }
+          else{
+            if(inputTokenizedValues.finalStates.includes(originalText))
+              newFinalStatesTokenized = newFinalStatesTokenized.map((s) => (s === originalText ? input.value : s));
+
+            if(inputTokenizedValues.initState.includes(originalText))
+              newInitState = newInitState.map((s) => (s === originalText ? input.value : s));
+
             newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
-          
-          const newStates = newStatesTokenized.join(", ");
-    
-          onChangeInputs({...inputValues, states: newStates}, {...inputTokenizedValues, states: newStatesTokenized}, transitions); 
+          }
+            
+            
+          onChangeInputs({...inputValues, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
+            {...inputTokenizedValues, states: newStatesTokenized, finalStates:newFinalStatesTokenized, initState:newInitState}, 
+            transitions); 
 
           input.remove();
         }
       };
     
     });
-
-
-    
-
-
-
 
     // Deleção de um nodo selecionado
     const deleteLink = (e:any) => {
@@ -1071,11 +1111,17 @@ if(buttons.length > 0 && currentCellView.current){
 
     paper.translate(translation.x, translation.y);
 
-    console.log(currentCellView.current);
     console.log("Terminou o desenho");
-
+    
     return () => {
-      // Função de cleanup?
+      document.removeEventListener("keydown", deleteNode);
+     // document.removeEventListener("keydown", deleteLink);
+      document.removeEventListener("mousemove", handleMouseMove);
+
+      if(movingLink){
+        movingLink.model.attr('line/stroke', 'black');
+        movingLink = null;
+      }
     };
     }, [inputTokenizedValues, transitions, currentTool, currentScale]); 
   

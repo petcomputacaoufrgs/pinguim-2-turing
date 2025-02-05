@@ -247,7 +247,7 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
         <>
           <DivButtons id="div1_buttons">
             <Upload_button onFileUpload={handleFileUpload}/>
-            <Buttons title="Salvar"/>
+            <Buttons height="4.5vh" width="14vw" title="Salvar"/>
           </DivButtons>
           
           <DivInputs id="div1_part2">
