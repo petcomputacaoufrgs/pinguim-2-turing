@@ -26,29 +26,43 @@ interface i_simple_diagram {
   inputValues: InputValues;
   inputTokenizedValues : TokenizedInputValues;
   onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions) => void;
+  saveStateToHistory: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions) => void;
   currentTool: CurrentTool;
   transitions: Transitions;
 }
 
-export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, currentTool, transitions }: i_simple_diagram) {
+export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, saveStateToHistory, currentTool, transitions }: i_simple_diagram) {
 
     const containerRef = useRef<HTMLDivElement | null>(null);
+
     const currentCellView = useRef<any>(null);
 
-    // Se é pra tirar as posições já do contexto, talvez seja melhor já pegar tudo do contexto, aí não precisa ficar passando coisas como parâmetro
-    const {graphNodes, graphLinks} = useStateContext();
+    // Se é pra tirar as posições e o histórico já do contexto, talvez seja melhor já pegar tudo do contexto, aí não precisa ficar passando coisas como parâmetro
+    const {graphNodes, graphLinks, changesHistory, changesIndex} = useStateContext();
 
+    const {history, setHistory} = changesHistory;
+    const {historyIndex, setHistoryIndex} = changesIndex;
+
+    
     // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
     const {currentLinks, setLinks} = graphLinks;
 
     // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
     const {nodePositions, setNodePositions} = graphNodes;
 
+
+
     const [currentScale, setCurrentScale] = useState(1); // Estado para controle da escala
     
     const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
 
 
+    
+    const handleInputsChange = (newInputs: InputValues, newTokenizedInputs: TokenizedInputValues, newTransitions: Transitions) => {
+      saveStateToHistory(newInputs, newTokenizedInputs, newTransitions);
+      onChangeInputs(newInputs, newTokenizedInputs, newTransitions);
+    };
+    
 
 
     const alphabet = Array.from(
@@ -62,6 +76,10 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     const states = inputTokenizedValues.states;
   
     useEffect(() => {
+
+
+      console.log(history);
+      console.log(historyIndex);
 
         if(containerRef.current === null){
             return;
@@ -569,7 +587,7 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     // Adiciona um novo nodo ao clicar duas vezes sobre espaço vazio
     paper.on('blank:pointerdblclick', (evt, x, y) => {
       setNodePositions((prev) => new Map(prev.set(`q${states.length}`, { x: x - 50, y: y - 20})));
-      onChangeInputs({...inputValues, states: (states.length > 0)? `${inputValues.states}, q${states.length}` : `q${states.length}`}, {...inputTokenizedValues, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
+      handleInputsChange({...inputValues, states: (states.length > 0)? `${inputValues.states}, q${states.length}` : `q${states.length}`}, {...inputTokenizedValues, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
     })
 
 
@@ -650,6 +668,47 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
 // ------------------------------------------------------------------------------------
 
+// Lógica de control + Z (undo) e control + Y (redo)
+
+
+const undo = () => {
+  
+  if (historyIndex > 0) {
+    const state = history[historyIndex - 1];
+    console.log("Fazendo o undo");
+    setHistoryIndex(historyIndex - 1);
+    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}); // Restaura o estado anterior
+  }
+};
+
+const redo = () => {
+  console.log(history);
+  console.log(historyIndex);
+  if (historyIndex < history.length - 1) {
+    console.log("Fazendo o redo");
+    console.log("A");
+    const state = history[historyIndex + 1];
+    setHistoryIndex(historyIndex + 1);
+    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}); // Restaura o próximo estado
+  }
+};
+
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.key.toLowerCase() === "z") {
+      e.preventDefault(); // Evita ações padrão do navegador
+    undo();
+  } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
+      e.preventDefault();
+    redo();
+  }
+};
+
+document.addEventListener("keydown", handleKeyDown);
+
+// ------------------------------------------------------------------------------------
+
+
 
 const changeFinalStatus = (cell:any) => {
 
@@ -668,7 +727,7 @@ const changeFinalStatus = (cell:any) => {
       newFinalStates = [...inputTokenizedValues.finalStates, state];
   }
   
-  onChangeInputs({...inputValues, finalStates: newFinalStates.join(", ")}, {...inputTokenizedValues, finalStates: newFinalStates}, transitions);
+  handleInputsChange({...inputValues, finalStates: newFinalStates.join(", ")}, {...inputTokenizedValues, finalStates: newFinalStates}, transitions);
 }
 
 
@@ -682,7 +741,7 @@ const changeInitStatus = (cell:any) => {
   else
     newInitState = [state];
   
-  onChangeInputs({...inputValues, initState: newInitState.join(", ")}, {...inputTokenizedValues, initState: newInitState}, transitions);
+  handleInputsChange({...inputValues, initState: newInitState.join(", ")}, {...inputTokenizedValues, initState: newInitState}, transitions);
 }
 
 
@@ -737,7 +796,7 @@ const changeInitStatus = (cell:any) => {
 
       currentCellView.current = null;
 
-      onChangeInputs({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
+      handleInputsChange({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
         {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
         newTransitions
       )
@@ -971,7 +1030,7 @@ if(buttons.length > 0){
 
               }
         
-              onChangeInputs(inputValues, inputTokenizedValues, newTransitions);
+              handleInputsChange(inputValues, inputTokenizedValues, newTransitions);
               input.remove();
             }
           };
@@ -1062,7 +1121,7 @@ if(buttons.length > 0){
           }
             
             
-          onChangeInputs({...inputValues, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
+          handleInputsChange({...inputValues, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
             {...inputTokenizedValues, states: newStatesTokenized, finalStates:newFinalStatesTokenized, initState:newInitState}, 
             transitions); 
 
@@ -1100,11 +1159,11 @@ if(buttons.length > 0){
             if(alphabet.includes(readSymbol)){ 
               const newTransitions = transitions;
               newTransitions[originState][readSymbol] = {next: "", error: 0};
-              onChangeInputs(inputValues, inputTokenizedValues, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
+              handleInputsChange(inputValues, inputTokenizedValues, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
             }
             else{ // Muito menos isso, mas por enquanto deixa aí
               alert("Erro: Símbolo lido não existe no alfabeto");
-              onChangeInputs(inputValues, inputTokenizedValues, transitions);
+              handleInputsChange(inputValues, inputTokenizedValues, transitions);
             }
           
           }
@@ -1119,8 +1178,12 @@ if(buttons.length > 0){
     
     return () => {
       document.removeEventListener("keydown", deleteNode);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", undo);
+      document.removeEventListener("keydown", redo);
      // document.removeEventListener("keydown", deleteLink);
       document.removeEventListener("mousemove", handleMouseMove);
+      
 
       if(movingLink){
         movingLink.model.attr('line/stroke', 'black');

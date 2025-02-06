@@ -5,9 +5,11 @@ import * as joint from 'jointjs';
 
 const InputStatesContext = createContext<{
   inputStates: {inputs : InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions};
-  setInputStates: React.Dispatch<React.SetStateAction<{inputs: InputValues, tokenizedInputs: TokenizedInputValues; errors: InputErrors; documentation: string, transitions : Transitions}>>;
+  setInputStates: React.Dispatch<React.SetStateAction<{inputs: InputValues, tokenizedInputs: TokenizedInputValues, errors: InputErrors; documentation: string, transitions : Transitions}>>;
   graphNodes: {nodePositions: Map<string, { x: number; y: number }>, setNodePositions: React.Dispatch<React.SetStateAction<Map<string, { x: number; y: number }>>>};
   graphLinks: {currentLinks: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>, setLinks: React.Dispatch<React.SetStateAction<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>>};
+  changesHistory: {history: Array<{inputs : InputValues, tokenizedInputs : TokenizedInputValues, transitions : Transitions}>, setHistory: React.Dispatch<React.SetStateAction<Array<{inputs : InputValues, tokenizedInputs : TokenizedInputValues, transitions : Transitions}>>>};
+  changesIndex: {historyIndex: number, setHistoryIndex: React.Dispatch<React.SetStateAction<number>>};
 } | null>(null);
 
 export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -57,8 +59,10 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map());
   const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
 
+  const [history, setHistory] = useState<Array<{inputs : InputValues, tokenizedInputs : TokenizedInputValues, transitions : Transitions}>>([{inputs: inputStates.inputs, tokenizedInputs: inputStates.tokenizedInputs, transitions: inputStates.transitions}])
+  const [historyIndex, setHistoryIndex] = useState<number>(0); 
   return (
-    <InputStatesContext.Provider value={{ inputStates, setInputStates, graphNodes: {nodePositions, setNodePositions}, graphLinks: {currentLinks, setLinks} }}>
+    <InputStatesContext.Provider value={{ inputStates, setInputStates, graphNodes: {nodePositions, setNodePositions}, graphLinks: {currentLinks, setLinks}, changesHistory: {history, setHistory}, changesIndex: {historyIndex, setHistoryIndex} }}>
       {children}
     </InputStatesContext.Provider>
   );
