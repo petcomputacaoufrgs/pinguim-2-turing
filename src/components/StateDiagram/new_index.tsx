@@ -106,6 +106,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
           interactive: { useLinkTools: false, labelMove: false }
           
         });
+
+        paper.translate(translation.x, translation.y);
   
 
   /**
@@ -807,7 +809,6 @@ const changeInitStatus = (cell:any) => {
     }
 
 let buttons = document.querySelectorAll('.node-button');
-
 if(currentCellView.current){
   if(!nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '')){
     buttons.forEach(btn => btn.remove());
@@ -817,26 +818,20 @@ if(currentCellView.current){
     currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
     document.addEventListener('keydown', deleteNode);
     currentCellView.current.model.attr('body/stroke', 'green');
+
+    document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+
+    const bbox = currentCellView.current.getBBox();
+    const paperRect = paper.el.getBoundingClientRect();
+
+    const button1 = createButton('Final', 0, paperRect, bbox);
+    button1.onclick = () => changeFinalStatus(currentCellView.current.model);
+  
+    const button2 = createButton('Inicial', 20, paperRect, bbox);
+    button2.onclick = () => changeInitStatus(currentCellView.current.model);
+
+
   }
-}
-
-
-buttons = document.querySelectorAll('.node-button');
-if(buttons.length > 0){  
-
-  const bbox = currentCellView.current.getBBox();
-  const paperRect = paper.el.getBoundingClientRect();
-
-  buttons.forEach(btn => btn.remove());
-
-  const button1 = createButton('Final', 0, paperRect, bbox);
-  button1.onclick = () => changeFinalStatus(currentCellView.current.model);
-
-  const button2 = createButton('Inicial', 20, paperRect, bbox);
-  button2.onclick = () => changeInitStatus(currentCellView.current.model);
-
- 
-
 }
 
   
@@ -905,7 +900,6 @@ if(buttons.length > 0){
             if(currentCellView.current !== null)
               currentCellView.current.model.attr('body/stroke', 'black');
           
-            document.querySelectorAll('.node-button').forEach(btn => btn.remove());
             currentCellView.current = cellView;
           }
 
@@ -1172,7 +1166,7 @@ if(buttons.length > 0){
     } 
 
 
-    paper.translate(translation.x, translation.y);
+
 
     console.log("Terminou o desenho");
     
