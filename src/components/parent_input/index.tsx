@@ -14,7 +14,7 @@ interface i_parent_input{
     onFileInputDoc : (doc_value : string) => void;
     inputValues: InputValues;
     inputTokenizedValues : TokenizedInputValues;
-    onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions) => void;
+    onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
 
     old_errors: InputErrors;
     transitions: Transitions;
@@ -97,7 +97,7 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
       }
 
 
-      const validate_inputs = (tokenized_inputs: TokenizedInputValues) => {
+      const validateInputs = (tokenized_inputs: TokenizedInputValues) => {
         const newErrors = {...old_errors};
 
         newErrors.validInitialState = isInitialStateValid(tokenized_inputs.initState, tokenized_inputs.states);
@@ -112,7 +112,7 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
         newErrors.auxiliaryAlphabetHasStart = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.initSymbol[0]);
         newErrors.auxiliaryAlphabetHasBlank = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.blankSymbol[0]);
       
-        onChangeErrors(newErrors)
+        return newErrors;
       }
 
 
@@ -168,8 +168,8 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
         const newTransitions = revalidateTransitions(transitions, inputTokenizedValues, newTokenizedValues);
 
         
-        onChangeInputs(newValues, newTokenizedValues, newTransitions);
-        validate_inputs(newTokenizedValues);
+        onChangeInputs(newValues, newTokenizedValues, newTransitions, validateInputs(newTokenizedValues));
+        
     
       };
 
@@ -238,8 +238,8 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
         i = i + 1;
 
         onFileInputDoc(lines[i]);
-        onChangeInputs(newInputs, newInputsTokenized, transitions);
-        validate_inputs(newInputsTokenized);
+        onChangeInputs(newInputs, newInputsTokenized, transitions, validateInputs(newInputsTokenized));
+        
 
     };
 

@@ -39,27 +39,28 @@ export function Home() {
     }
 
 
-    const setInputValues = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions) => {
+    const setInputValues = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) => {
       setInputStates(prevState => ({
         ...prevState,
         inputs: new_values,
         tokenizedInputs: new_tokenized_values,
-        transitions: new_transitions
+        transitions: new_transitions,
+        errors: newErrors
       }));
     }
 
-    const saveStateToHistory = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions) => {
+    const saveStateToHistory = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) => {
       const newHistory = history.slice(0, historyIndex + 1); 
-      newHistory.push({inputs: new_values, tokenizedInputs: new_tokenized_values, transitions: new_transitions});
+      newHistory.push({inputs: new_values, tokenizedInputs: new_tokenized_values, transitions: new_transitions, errors: newErrors});
       setHistory(newHistory);
       setHistoryIndex(historyIndex + 1);
     }
 
 
   
-    const handleInputsChange = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions) =>{
-      saveStateToHistory(new_values, new_tokenized_values, new_transitions);
-      setInputValues(new_values, new_tokenized_values, new_transitions);
+    const handleInputsChange = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) =>{
+      saveStateToHistory(new_values, new_tokenized_values, new_transitions, newErrors);
+      setInputValues(new_values, new_tokenized_values, new_transitions, newErrors);
     }
 
     const OnChangeDocumentationValue = (e : ChangeEvent<HTMLTextAreaElement>) => {
@@ -94,7 +95,7 @@ export function Home() {
         <div id="div2">
           <p>Tabela de Transição:</p>
           <div>
-          <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={(newTransitions) => handleInputsChange(inputs, tokenizedInputs, newTransitions)} transitions={transitions} />
+          <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={(newTransitions) => handleInputsChange(inputs, tokenizedInputs, newTransitions, errors)} transitions={transitions} />
           </div>
 
           <Buttons height="4.5vh" width="14vw" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>

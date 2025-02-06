@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import * as joint from 'jointjs';
-import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
+import { Transitions, InputValues, TokenizedInputValues, InputErrors, errorCodes } from '../../types/types';
 import { GraphConteiner } from "./styled";
 import { CurrentTool } from "../../types/types";
 import { useStateContext } from "../../ContextProvider";
+import { read } from "fs";
 
 
 /*
@@ -25,13 +26,153 @@ deleção de estados isso pode bugar
 interface i_simple_diagram {
   inputValues: InputValues;
   inputTokenizedValues : TokenizedInputValues;
-  onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions) => void;
-  saveStateToHistory: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions) => void;
+  onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
+  saveStateToHistory: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   currentTool: CurrentTool;
   transitions: Transitions;
 }
 
+
 export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, saveStateToHistory, currentTool, transitions }: i_simple_diagram) {
+
+  const {inputStates, setInputStates} = useStateContext();
+
+  const {errors} = inputStates;
+
+
+
+  const hasUniqueTokens = (tokens: string[]): boolean => {
+    const seen_tokens = new Set<string>();
+
+    for (const token of tokens) {
+        if (seen_tokens.has(token)) {
+            return false; 
+        }
+        seen_tokens.add(token);
+    }
+
+    return true; 
+};
+
+  /* Para o estado inicial, o simulador do Rodrigo mostra a mesma mensagem para as duas situacoes: haver mais de um estado inicial e o estado inicial
+  nao estar no conjunto de  (mesmo se houver varios estados iniciais e eles estarem todos contidos no conjunto de estados a mensagem é:
+  O estado inicial deve pertencer ao conjunto de estados!).  Isso talvez poderia ser dividido */
+
+  const isInitialStateValid = (initial_state: string[], states: string[]) => {
+    if (initial_state.length > 1)
+      return false;
+
+    return states.includes(initial_state[0]);
+  }
+
+  const areFinalStatesValid = (states: string[], finalStates: string[]) => {
+    for (const state of finalStates){
+      if(!states.includes(state) && state != "")
+        return false;
+    }
+
+    return true;
+  }
+
+  const hasDisjointAlphabets = (alphabet: string[], auxAlphabet: string[]) => {
+    const set = new Set(alphabet);
+
+    for (const item of auxAlphabet) {
+        if (set.has(item) && item != "") {
+            return false; 
+        }
+    }
+
+    return true;
+  }
+
+
+  const validateInputs = (tokenized_inputs: TokenizedInputValues, old_errors: InputErrors) => {
+    const newErrors = {...old_errors};
+
+    newErrors.validInitialState = isInitialStateValid(tokenized_inputs.initState, tokenized_inputs.states);
+    newErrors.validFinalStates = areFinalStatesValid(tokenized_inputs.states, tokenized_inputs.finalStates);
+    newErrors.uniqueStates = hasUniqueTokens(tokenized_inputs.states);
+    newErrors.uniqueAlphabetSymbols = hasUniqueTokens(tokenized_inputs.inAlphabet);
+    newErrors.disjointAlphabets = hasDisjointAlphabets(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet);
+
+    newErrors.alphabetHasStart = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.initSymbol[0]);
+    newErrors.alphabetHasBlank = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.blankSymbol[0]);
+
+    newErrors.auxiliaryAlphabetHasStart = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.initSymbol[0]);
+    newErrors.auxiliaryAlphabetHasBlank = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.blankSymbol[0]);
+  
+    return newErrors;
+  }
+
+
+      const updateTransition = (previous_transitions : Transitions, previous_inputs : TokenizedInputValues, states: string[], alphabet: string[], state: string, symbol: string) => {
+        const previous_alphabet = [previous_inputs.initSymbol[0], ...(previous_inputs.inAlphabet.filter((x) => x != "").concat(previous_inputs.auxAlphabet.filter((x) => x != ""))), previous_inputs.blankSymbol[0]];
+        
+        // Se anteriormente esse novo estado existia e se o símbolo novo também existia
+        if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
+  
+            if(previous_transitions[state] === undefined) 
+              return {next: "", error: errorCodes.NoError};
+            
+            const transition = previous_transitions[state][symbol];
+  
+            if(transition === undefined)
+              return {next: "", error: errorCodes.NoError};
+  
+            // Então apenas toma a transicao anterior validada para os novos estados e novo alfabeto
+            return {next : transition.next, error: validateTransition(transition.next, states, alphabet)};
+          }
+        
+        // Se o estado novo não existia ou o símbolo novo não existia
+          // Então cria uma nova transição vazia a partir do novo estado para esse símbolo
+          return { next: "", error: errorCodes.NoError };
+        
+        };
+  
+      const revalidateTransitions = (previous_transitions : Transitions, previous_inputs : TokenizedInputValues, tokenized_inputs : TokenizedInputValues) => {
+        const new_transitions: Transitions = {};
+        const initial_symbol = tokenized_inputs.initSymbol[0];
+        const blankSymbol = tokenized_inputs.blankSymbol[0];
+        const new_states = Array.from(new Set(tokenized_inputs.states));
+  
+        const new_alphabet = Array.from(new Set([initial_symbol, ...(tokenized_inputs.inAlphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.auxAlphabet.filter((symbol) => symbol != ""))), blankSymbol]));
+      
+        for (const state of new_states) {
+          new_transitions[state] = {};
+  
+          for (const symbol of new_alphabet) 
+            new_transitions[state][symbol] = updateTransition(previous_transitions, previous_inputs, new_states, new_alphabet, state, symbol);
+        }
+  
+        return new_transitions
+      }
+
+
+  const validateTransition = (value:string, states:string[], alphabet:string[]) => {
+  
+    const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
+          
+      if(value_tokenized === null || value_tokenized.length == 0)
+        return errorCodes.NoError;
+  
+      if(value_tokenized.length !== 3)
+        return errorCodes.InvalidNumberOfParameters;
+  
+      if(!states.includes(value_tokenized[0]))
+        return errorCodes.InvalidState; 
+      
+      if(!alphabet.includes(value_tokenized[2]))
+        return errorCodes.InvalidSymbol;
+  
+      if(value_tokenized[1].toUpperCase() !== "L" && value_tokenized[1].toUpperCase() !== "R")
+        return errorCodes.InvalidDirection;
+  
+      return errorCodes.NoError;
+
+    }
+
+
 
     const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -59,8 +200,14 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
     
     const handleInputsChange = (newInputs: InputValues, newTokenizedInputs: TokenizedInputValues, newTransitions: Transitions) => {
-      saveStateToHistory(newInputs, newTokenizedInputs, newTransitions);
-      onChangeInputs(newInputs, newTokenizedInputs, newTransitions);
+
+      const newErrors = validateInputs(newTokenizedInputs, errors);
+      const revalidatedTransitions = revalidateTransitions(newTransitions, inputTokenizedValues, newTokenizedInputs);
+
+      saveStateToHistory(newInputs, newTokenizedInputs, newTransitions, newErrors);
+      onChangeInputs(newInputs, newTokenizedInputs, revalidatedTransitions, newErrors);
+      
+
     };
     
 
@@ -414,10 +561,10 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
   // Captura a posição inicial de arrate quando ocorre um clique numa área em branco
   paper.on("blank:pointerdown", (evt, x, y) => { 
-    if(evt.target.tagName != "svg")
-      return;
 
 
+    if(evt.target.tagName != "svg") return;
+    
     const scale = paper.scale();
 
     if(dragStartPosition === null)
@@ -679,7 +826,7 @@ const undo = () => {
     const state = history[historyIndex - 1];
     console.log("Fazendo o undo");
     setHistoryIndex(historyIndex - 1);
-    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}); // Restaura o estado anterior
+    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o estado anterior
   }
 };
 
@@ -691,7 +838,7 @@ const redo = () => {
     console.log("A");
     const state = history[historyIndex + 1];
     setHistoryIndex(historyIndex + 1);
-    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}); // Restaura o próximo estado
+    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o próximo estado
   }
 };
 
@@ -940,6 +1087,8 @@ if(currentCellView.current){
         paper.on('link:pointerdblclick', (linkView, event) => {
           if (containerRef.current === null) return;
 
+
+
           if(event.target.tagName === "circle") // clicou em um vértice (para editar, é preciso clicar na caixa de texto)
             return;
 
@@ -958,7 +1107,6 @@ if(currentCellView.current){
           const labelPosition = link.label(0)?.position || { distance: 0.5, offset: -15 };
         
           const textBox = event.target.getBoundingClientRect();
-          const containerBox = containerRef.current.getBoundingClientRect();
 
           
 
@@ -966,8 +1114,8 @@ if(currentCellView.current){
           const input = document.createElement('input');
           input.value = currentText;
           input.style.position = 'absolute';
-          input.style.left = `${textBox.x - containerBox.x}px`; // Centraliza na linha
-          input.style.top = `${textBox.y - containerBox.y}px`;
+          input.style.left = `${textBox.x}px`; // Centraliza na linha
+          input.style.top = `${textBox.y}px`;
           input.style.fontSize = '12px';
           input.style.padding = '2px';
           input.style.zIndex = '1000';
@@ -977,7 +1125,8 @@ if(currentCellView.current){
           input.style.width = `${textBox.width}px`;
           input.style.height = `${textBox.height}px`;
         
-          containerRef.current.appendChild(input);
+
+          document.body.appendChild(input);
         
           input.focus();
         
@@ -1020,6 +1169,11 @@ if(currentCellView.current){
                 else
                   next = targetState;
                 
+                if(newTransitions[originState][readSymbol].next == next){
+                  input.remove();
+                  return;
+                }
+
                 newTransitions[originState][readSymbol] = { ...newTransitions[originState][readSymbol], next: next };
 
               }
@@ -1046,13 +1200,14 @@ if(currentCellView.current){
       const originalText = currentText;
 
       const bbox = cellView.getBBox();
+      const paperRect = containerRef.current.getBoundingClientRect();
 
       // Cria um elemento input para edição
       const input = document.createElement('input');
       input.value = currentText;
       input.style.position = 'absolute';
-      input.style.left = `${bbox.x}px`;
-      input.style.top = `${bbox.y}px`;
+      input.style.left = `${paperRect.x + bbox.x}px`;
+      input.style.top = `${paperRect.y + bbox.y}px`;
       input.style.fontSize = '12px';
       input.style.padding = '2px';
       input.style.zIndex = '1000';
@@ -1062,21 +1217,16 @@ if(currentCellView.current){
       input.style.width = `${bbox.width}px`;
       input.style.height = `${bbox.height}px`;
 
-      containerRef.current.appendChild(input);
 
+      document.body.appendChild(input);
+
+      
       input.focus(); // Permite edição imediata
 
-      // Lida com cliques dados enquanto o texto está sendo editado
-      const handleClick = (event: any) => {
-        // Se o clique for no input, não faz nada
-        if (event.target === input) return;
-        // Se o clique for no diagrama, salva o texto
-        saveText();
-        document.removeEventListener('mousedown', handleClick);
-                  
-      };
 
-      document.addEventListener('mousedown', handleClick);
+      document.addEventListener('mousedown', (event) => {
+        if (event.target !== input) saveText();
+      });
 
 
       // Lida com teclas pressionadas enquanto o texto está sendo editado
@@ -1088,9 +1238,13 @@ if(currentCellView.current){
       const saveText = () => {
         if (input) {
 
+          if(input.value == originalText){
+            input.remove();
+            return;
+          }
+
           cell.attr('label/text', input.value); 
 
-          document.removeEventListener('mousedown', handleClick);
           if(currentCellView.current)
             currentCellView.current = null;
           
