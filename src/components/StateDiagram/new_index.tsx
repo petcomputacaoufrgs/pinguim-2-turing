@@ -4,8 +4,8 @@ import { Transitions, InputValues, TokenizedInputValues, InputErrors, errorCodes
 import { GraphConteiner } from "./styled";
 import { CurrentTool } from "../../types/types";
 import { useStateContext } from "../../ContextProvider";
-import { read } from "fs";
 
+import { validateInputs, revalidateTransitions } from "../../utils/validation";
 
 /*
 TO DO: 
@@ -14,254 +14,122 @@ TO DO:
 deleção de estados isso pode bugar
 - Permitir que links sejam adicionados  
 - Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
-- Atualizar mensagens de erro quando fizer edições diretamente no grafo
 - Não determinismo!
 
-- Control + Z e Control + Y?
 - Modo de tela cheia para grafo e tabela???
 */
 
 
-
 interface i_simple_diagram {
-  inputValues: InputValues;
-  inputTokenizedValues : TokenizedInputValues;
   onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   saveStateToHistory: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   currentTool: CurrentTool;
-  transitions: Transitions;
 }
 
 
-export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInputs, saveStateToHistory, currentTool, transitions }: i_simple_diagram) {
+export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}: i_simple_diagram) {
 
-  const {inputStates, setInputStates} = useStateContext();
 
+// ====================================================================================
+// DEFINIÇÃO DE STATES E CONSTANTES
+// ====================================================================================
+  
+  const {inputStates, graphNodes, graphLinks, changesHistory, changesIndex} = useStateContext();
+
+  // Dados relacionados aos inputs
   const {errors} = inputStates;
+  const {inputs} = inputStates;
+  const {tokenizedInputs} = inputStates;
+  const {transitions} = inputStates;
+
+  // Histórico de ações (habilita control + Z e control + Y). Consiste de uma pilha de todas as modificações
+  const {history, setHistory} = changesHistory;
+  const {historyIndex, setHistoryIndex} = changesIndex;
+
+  // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
+  const {currentLinks, setLinks} = graphLinks;
+
+  // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
+  const {nodePositions, setNodePositions} = graphNodes;
+
+  // Estado para controle da escala
+  const [currentScale, setCurrentScale] = useState(1); 
+     
+  // Salva a referência para a visão (câmera, se quiser chamar assim) atual do paper, ou seja, o quanto ele foi transladado
+  const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
 
 
-
-  const hasUniqueTokens = (tokens: string[]): boolean => {
-    const seen_tokens = new Set<string>();
-
-    for (const token of tokens) {
-        if (seen_tokens.has(token)) {
-            return false; 
-        }
-        seen_tokens.add(token);
-    }
-
-    return true; 
-};
-
-  /* Para o estado inicial, o simulador do Rodrigo mostra a mesma mensagem para as duas situacoes: haver mais de um estado inicial e o estado inicial
-  nao estar no conjunto de  (mesmo se houver varios estados iniciais e eles estarem todos contidos no conjunto de estados a mensagem é:
-  O estado inicial deve pertencer ao conjunto de estados!).  Isso talvez poderia ser dividido */
-
-  const isInitialStateValid = (initial_state: string[], states: string[]) => {
-    if (initial_state.length > 1)
-      return false;
-
-    return states.includes(initial_state[0]);
-  }
-
-  const areFinalStatesValid = (states: string[], finalStates: string[]) => {
-    for (const state of finalStates){
-      if(!states.includes(state) && state != "")
-        return false;
-    }
-
-    return true;
-  }
-
-  const hasDisjointAlphabets = (alphabet: string[], auxAlphabet: string[]) => {
-    const set = new Set(alphabet);
-
-    for (const item of auxAlphabet) {
-        if (set.has(item) && item != "") {
-            return false; 
-        }
-    }
-
-    return true;
-  }
+  // Referências ao container que contém o grado e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const currentCellView = useRef<any>(null);
 
 
-  const validateInputs = (tokenized_inputs: TokenizedInputValues, old_errors: InputErrors) => {
-    const newErrors = {...old_errors};
+  // Constantes para facilitar o acesso
+  const alphabet = Array.from(
+    new Set([
+      tokenizedInputs.initSymbol[0],
+      ...tokenizedInputs.inAlphabet.filter((symbol) => symbol !== ""),
+      ...tokenizedInputs.auxAlphabet.filter((symbol) => symbol !== ""),
+      tokenizedInputs.blankSymbol[0],
+    ]))
 
-    newErrors.validInitialState = isInitialStateValid(tokenized_inputs.initState, tokenized_inputs.states);
-    newErrors.validFinalStates = areFinalStatesValid(tokenized_inputs.states, tokenized_inputs.finalStates);
-    newErrors.uniqueStates = hasUniqueTokens(tokenized_inputs.states);
-    newErrors.uniqueAlphabetSymbols = hasUniqueTokens(tokenized_inputs.inAlphabet);
-    newErrors.disjointAlphabets = hasDisjointAlphabets(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet);
-
-    newErrors.alphabetHasStart = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.initSymbol[0]);
-    newErrors.alphabetHasBlank = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.blankSymbol[0]);
-
-    newErrors.auxiliaryAlphabetHasStart = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.initSymbol[0]);
-    newErrors.auxiliaryAlphabetHasBlank = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.blankSymbol[0]);
-  
-    return newErrors;
-  }
+  const states = tokenizedInputs.states;
 
 
-      const updateTransition = (previous_transitions : Transitions, previous_inputs : TokenizedInputValues, states: string[], alphabet: string[], state: string, symbol: string) => {
-        const previous_alphabet = [previous_inputs.initSymbol[0], ...(previous_inputs.inAlphabet.filter((x) => x != "").concat(previous_inputs.auxAlphabet.filter((x) => x != ""))), previous_inputs.blankSymbol[0]];
-        
-        // Se anteriormente esse novo estado existia e se o símbolo novo também existia
-        if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
-  
-            if(previous_transitions[state] === undefined) 
-              return {next: "", error: errorCodes.NoError};
-            
-            const transition = previous_transitions[state][symbol];
-  
-            if(transition === undefined)
-              return {next: "", error: errorCodes.NoError};
-  
-            // Então apenas toma a transicao anterior validada para os novos estados e novo alfabeto
-            return {next : transition.next, error: validateTransition(transition.next, states, alphabet)};
-          }
-        
-        // Se o estado novo não existia ou o símbolo novo não existia
-          // Então cria uma nova transição vazia a partir do novo estado para esse símbolo
-          return { next: "", error: errorCodes.NoError };
-        
-        };
-  
-      const revalidateTransitions = (previous_transitions : Transitions, previous_inputs : TokenizedInputValues, tokenized_inputs : TokenizedInputValues) => {
-        const new_transitions: Transitions = {};
-        const initial_symbol = tokenized_inputs.initSymbol[0];
-        const blankSymbol = tokenized_inputs.blankSymbol[0];
-        const new_states = Array.from(new Set(tokenized_inputs.states));
-  
-        const new_alphabet = Array.from(new Set([initial_symbol, ...(tokenized_inputs.inAlphabet.filter((symbol) => symbol != "").concat(tokenized_inputs.auxAlphabet.filter((symbol) => symbol != ""))), blankSymbol]));
+  // Dados novos valores aos inputs, faz a validação deles, salva o estado no histórico de edições e então atualiza os valores
+  const handleInputsChange = (newInputs: InputValues, newTokenizedInputs: TokenizedInputValues, newTransitions: Transitions) => {
+    const newErrors = validateInputs(newTokenizedInputs, errors);
+    const revalidatedTransitions = revalidateTransitions(newTransitions, tokenizedInputs, newTokenizedInputs);
+    saveStateToHistory(newInputs, newTokenizedInputs, newTransitions, newErrors);
+    onChangeInputs(newInputs, newTokenizedInputs, revalidatedTransitions, newErrors);
       
-        for (const state of new_states) {
-          new_transitions[state] = {};
-  
-          for (const symbol of new_alphabet) 
-            new_transitions[state][symbol] = updateTransition(previous_transitions, previous_inputs, new_states, new_alphabet, state, symbol);
-        }
-  
-        return new_transitions
-      }
+  };
 
+// RENDERIZAÇÃO
 
-  const validateTransition = (value:string, states:string[], alphabet:string[]) => {
-  
-    const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
+  useEffect(() => {
+
+// ====================================================================================
+// INICIALIZAÇÃO
+// ====================================================================================
+
+    if(containerRef.current === null) return;
+      
+    containerRef.current.style.setProperty('width', '100%');
+    containerRef.current.style.setProperty('height', '100%');
+    containerRef.current.style.setProperty('position', 'relative');
+    containerRef.current.style.setProperty("overflow", "hidden");
+
+    containerRef.current.id = "paper-container";
+        
+    // O Graph é responsável por manter o estado dos dados do diagrama, ou seja, ele gerencia os elementos, links e a relação entre eles
+    const graph = new joint.dia.Graph({});
+
+    // O paper modela o Graph e é responsável por renderizá-lo na tela
+    const paper = new joint.dia.Paper({
+      el: containerRef.current,
+      model: graph,
+      width: "100%",
+      height: "100%",
+      drawGrid: true,
+      defaultConnector: { name: 'smooth' }, // Por padrão, os links fazem curvas suaves (curva de Bézier)
+      interactive: { useLinkTools: false, labelMove: false }
           
-      if(value_tokenized === null || value_tokenized.length == 0)
-        return errorCodes.NoError;
+    });
+
+    // Translada o paper para a atual visão
+    paper.translate(translation.x, translation.y);
   
-      if(value_tokenized.length !== 3)
-        return errorCodes.InvalidNumberOfParameters;
-  
-      if(!states.includes(value_tokenized[0]))
-        return errorCodes.InvalidState; 
-      
-      if(!alphabet.includes(value_tokenized[2]))
-        return errorCodes.InvalidSymbol;
-  
-      if(value_tokenized[1].toUpperCase() !== "L" && value_tokenized[1].toUpperCase() !== "R")
-        return errorCodes.InvalidDirection;
-  
-      return errorCodes.NoError;
 
-    }
-
-
-
-    const containerRef = useRef<HTMLDivElement | null>(null);
-
-    const currentCellView = useRef<any>(null);
-
-    // Se é pra tirar as posições e o histórico já do contexto, talvez seja melhor já pegar tudo do contexto, aí não precisa ficar passando coisas como parâmetro
-    const {graphNodes, graphLinks, changesHistory, changesIndex} = useStateContext();
-
-    const {history, setHistory} = changesHistory;
-    const {historyIndex, setHistoryIndex} = changesIndex;
-
-    
-    // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
-    const {currentLinks, setLinks} = graphLinks;
-
-    // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
-    const {nodePositions, setNodePositions} = graphNodes;
-
-
-
-    const [currentScale, setCurrentScale] = useState(1); // Estado para controle da escala
-    
-    const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
-
-
-    
-    const handleInputsChange = (newInputs: InputValues, newTokenizedInputs: TokenizedInputValues, newTransitions: Transitions) => {
-
-      const newErrors = validateInputs(newTokenizedInputs, errors);
-      const revalidatedTransitions = revalidateTransitions(newTransitions, inputTokenizedValues, newTokenizedInputs);
-
-      saveStateToHistory(newInputs, newTokenizedInputs, newTransitions, newErrors);
-      onChangeInputs(newInputs, newTokenizedInputs, revalidatedTransitions, newErrors);
-      
-
-    };
-    
-
-
-    const alphabet = Array.from(
-      new Set([
-        inputTokenizedValues.initSymbol[0],
-        ...inputTokenizedValues.inAlphabet.filter((symbol) => symbol !== ""),
-        ...inputTokenizedValues.auxAlphabet.filter((symbol) => symbol !== ""),
-        inputTokenizedValues.blankSymbol[0],
-      ]))
-
-    const states = inputTokenizedValues.states;
-  
-    useEffect(() => {
-
-
-      console.log(history);
-      console.log(historyIndex);
-
-        if(containerRef.current === null){
-            return;
-        }
-
-        containerRef.current.style.setProperty('width', '100%');
-        containerRef.current.style.setProperty('height', '100%');
-        containerRef.current.style.setProperty('position', 'relative');
-        containerRef.current.style.setProperty("overflow", "hidden");
-
-        containerRef.current.id = "paper-container";
-        
-        // O Graph é responsável por manter o estado dos dados do diagrama, ou seja, ele gerencia os elementos, links e a relação entre eles
-        const graph = new joint.dia.Graph({});
-
-        // O paper modela o Graph e é responsável por renderizá-lo na tela
-        const paper = new joint.dia.Paper({
-          el: containerRef.current,
-          model: graph,
-          width: "100%",
-          height: "100%",
-          drawGrid: true,
-          defaultConnector: { name: 'smooth' }, // Por padrão, os links fazem curvas suaves (curva de Bézier)
-          interactive: { useLinkTools: false, labelMove: false }
-          
-        });
-
-        paper.translate(translation.x, translation.y);
-  
+// ====================================================================================
+// CRIAÇÃO DOS LINKS E NODOS
+// ====================================================================================
 
   /**
    * Cria e posiciona os nós do grafo representando os estados.
    * 
    * @param {string[]} states - Lista de estados.
-   * @returns {Map<string, any>} - Mapa associando os nomes dos estados ao id correspondente deles no grafo.
+   * @returns {Map<string, any>} - Mapa associando os nomes dos estados ao nodo no grafo
    */
   const createNodes = (states:string[]) => {
     const nodesMap = new Map();
@@ -271,8 +139,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     const spacing = 20;
 
     states.forEach((state, index) => {
-        const isFinal = inputTokenizedValues.finalStates.includes(state);
-        const isInitial = inputTokenizedValues.initState[0] === state;
+        const isFinal = tokenizedInputs.finalStates.includes(state);
+        const isInitial = tokenizedInputs.initState[0] === state;
         
         // Determina a largura do nó dinamicamente baseado no tamanho do nome do estado
         const standardWidth = Math.max(100, state.length * 12);
@@ -344,13 +212,14 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     return nodesMap;
   };
 
-    function addLink(
+  
+    const addLink = (
       links: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>,
       target: string,
       source: string,
       symbol: string,
       link: joint.shapes.standard.Link
-    ) {
+    ) => {
       // Se não existir um mapa para o target, inicializa
       if (!links.has(target)) {
         links.set(target, new Map());
@@ -369,29 +238,47 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       linksToTargetFromSource.set(symbol, link);
     }
     
+    const attachLinkEvents = (link: joint.shapes.standard.Link) => {
+      const verticesTool = new joint.linkTools.Vertices({stopPropagation: false}); // Permite a adição e edição de vértices num link
+      const toolsView = new joint.dia.ToolsView({ tools: [verticesTool] });
+      
+      //linkView.addTools(toolsView);
+      //linkView.removeTools();
+  
+      // Quando o mouse "entra" no link, se ele estiver entre 20% e 80% da extensão do link (modificar isso depois), permite a edição de vértices
+      paper.on("link:mouseenter", (linkView, evt) => {
+        const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect();
+        const isTarget = evt.clientX !== undefined && bbox &&
+          evt.clientX < bbox.left + bbox.width &&
+          evt.clientX > bbox.left;
+  
+        if (isTarget) linkView.addTools(toolsView);
+  
+      });
+  
+      paper.on("link:mouseleave", (linkView) => {
+        linkView.removeTools();
+      });
+    }
 
   /**
    * Toma as transições da máquina e as adiciona ao grafo para serem representadas graficamente.
-   * @param inputTokenizedValues - Valores tokenizados da entrada, incluindo símbolos iniciais e do alfabeto.
+   * @param tokenizedInputs - Valores tokenizados da entrada, incluindo símbolos iniciais e do alfabeto.
    * @param transitions - Objeto contendo as transições da máquina de Turing.
    * @param nodes - Mapa do nome dos estados para o id deles no grafo
-   * @returns Um mapa de links organizados por estados de destino.
+   * @returns Um Map que mapeia estados de destino, símbolos de leitura e escrita, respectivamente, para o link correspondente.
    */
-  function getTransitions(
-    inputTokenizedValues: TokenizedInputValues,
+  const getTransitions = (
+    tokenizedInputs: TokenizedInputValues,
     transitions: Transitions,
     nodes: Map<string, any>
-  ) {
+  ) => {
 
     // Atualiza o state que contém os links
     const links = new Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>();
 
     
     const targetsMap = new Map<string, joint.shapes.standard.Link[]>();
-
-    const initialSymbol = inputTokenizedValues.initSymbol[0];
-    const blankSymbol = inputTokenizedValues.blankSymbol[0];
- 
 
     // Vai passando por cada transição
     for (const state of states) {
@@ -486,8 +373,9 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
               : [{ x: center.x, y: center.y }],
         });
 
+        // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
         linkData.appendLabel({
-          position: { distance: 0.5, offset: -15 },
+          position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
           attrs: {
             text: { 
               text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
@@ -495,8 +383,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
               fontWeight: "bold" 
             },
             rect: {
-              fill: '#fff', // Cor de fundo da caixa de texto
-              stroke: '#000', // Cor da borda
+              fill: '#fff', 
+              stroke: '#000', 
               strokeWidth: 1,
               refWidth: '120%',
               refHeight: '120%',
@@ -515,46 +403,71 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
       }
     }
 
-    setLinks(links);
-    return targetsMap;
+    return links;
   }
 
   const nodes = createNodes(states);
+
   graph.addCells(Array.from(nodes.values()));
-  getTransitions(inputTokenizedValues, transitions, nodes);
+  const links = getTransitions(tokenizedInputs, transitions, nodes);
+  setLinks(links);
 
 
 // ====================================================================================
-// EVENTOS E LISTENERS
+// EVENTOS E LISTENERS 
 // ====================================================================================
 
-  // Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
-  function attachLinkEvents(link: joint.shapes.standard.Link) {
-    const verticesTool = new joint.linkTools.Vertices({stopPropagation: false}); // Permite a adição e edição de vértices num link
-    const toolsView = new joint.dia.ToolsView({ tools: [verticesTool] });
-    
-    //linkView.addTools(toolsView);
-    //linkView.removeTools();
 
-    // Quando o mouse "entra" no link, se ele estiver entre 20% e 80% da extensão do link (modificar isso depois), permite a edição de vértices
-    paper.on("link:mouseenter", (linkView, evt) => {
-      const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect();
-      const isTarget = evt.clientX !== undefined && bbox &&
-        evt.clientX < bbox.left + bbox.width &&
-        evt.clientX > bbox.left;
+// ------------------------------------------------------------------------------------
+// GERAIS:
+// ------------------------------------------------------------------------------------
 
-      if (isTarget) linkView.addTools(toolsView);
+// Lógica de control + Z (undo) e control + Y (redo)
 
-    });
-
-    paper.on("link:mouseleave", (linkView) => {
-      linkView.removeTools();
-    });
+const undo = () => {
+  
+  if (historyIndex > 0) {
+    const state = history[historyIndex - 1];
+    console.log("Fazendo o undo");
+    setHistoryIndex(historyIndex - 1);
+    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o estado anterior
   }
+};
+
+const redo = () => {
+  console.log(history);
+  console.log(historyIndex);
+  if (historyIndex < history.length - 1) {
+    console.log("Fazendo o redo");
+    console.log("A");
+    const state = history[historyIndex + 1];
+    setHistoryIndex(historyIndex + 1);
+    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o próximo estado
+  }
+};
+
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.key.toLowerCase() === "z") {
+      e.preventDefault(); // Evita ações padrão do navegador
+    undo();
+  } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
+      e.preventDefault();
+    redo();
+  }
+};
+
+document.addEventListener("keydown", handleKeyDown);
 
 // ------------------------------------------------------------------------------------
 
-  // Permitir movimento do paper através do arraste
+  // Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
+
+
+
+// ------------------------------------------------------------------------------------
+
+  // Permite movimento do paper através do arraste
 
   let dragStartPosition: { x: number; y: number } | null = null; // Variável para armazenar a posição inicial de arraste
 
@@ -573,9 +486,8 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     
     
   });
-      
 
-  // limpar a posição de arraste quando o mouse for solto
+  // limpa a posição de arraste quando o mouse é solto
   paper.on("blank:pointerup", () => {
     dragStartPosition = null;
   });
@@ -623,9 +535,18 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
     }
 
 
+
+
+// ------------------------------------------------------------------------------------
+// ESPECÍFICOS DE FERRAMENTAS
 // ------------------------------------------------------------------------------------
 
-  // Movimento de links
+  // ------------------------------------------------------------------------------------
+  // EDITAR LINKS
+  // ------------------------------------------------------------------------------------
+
+
+  // Permite mover os links
 
     let movingLink:any = null; // Referência ao link sendo movido
     let targetNode:any = null;  // Referência ao nodo que o link está em cima
@@ -720,183 +641,70 @@ export function SimpleDiagram({ inputValues, inputTokenizedValues, onChangeInput
 
     */
 
-// ------------------------------------------------------------------------------------
-
-    // Eventos relacionados a nodos
-
-    
 
 
 
+  // ------------------------------------------------------------------------------------
+  // ADICIONAR NODOS (talvez desnecessário?)
+  // ------------------------------------------------------------------------------------
 
-
-
-    
-
+    if(currentTool.addNodes || currentTool.standard){
+  
     // Adiciona um novo nodo ao clicar duas vezes sobre espaço vazio
     paper.on('blank:pointerdblclick', (evt, x, y) => {
       setNodePositions((prev) => new Map(prev.set(`q${states.length}`, { x: x - 50, y: y - 20})));
-      handleInputsChange({...inputValues, states: (states.length > 0)? `${inputValues.states}, q${states.length}` : `q${states.length}`}, {...inputTokenizedValues, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
+      handleInputsChange({...inputs, states: (states.length > 0)? `${inputs.states}, q${states.length}` : `q${states.length}`}, {...tokenizedInputs, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
     })
 
+  }
+
+  
+  // ------------------------------------------------------------------------------------
+  // PADRÃO
+  // ------------------------------------------------------------------------------------
+
+    if(currentTool.standard){
 
 
+    // FUNÇÕES AUXILIARES
 
 
-    /*
+    // Dada uma célula (um nodo), checa se o estado representado por aquela célula é um estado final. Se for, torna ele um estado não final. Se não for, torna ele um estado final
+    const changeFinalStatus = (cell:any) => {
+      const state = cell?.attributes?.attrs?.label?.text || '';
+      let newFinalStates : string[];
 
-
-        // Evento de clique
-    paper.on('cell:click', (cellView, evt) => {
-      const bbox = cellView.getBBox();
-      const mouseX = evt.clientX - paper.el.getBoundingClientRect().left;
-      const mouseY = evt.clientY - paper.el.getBoundingClientRect().top;
-    
-      const nearEdge =
-        mouseX < bbox.x + edgeThreshold || 
-        mouseX > bbox.x + bbox.width - edgeThreshold ||
-        mouseY < bbox.y + edgeThreshold ||
-        mouseY > bbox.y + bbox.height - edgeThreshold;
-    
-      if (nearEdge) {
-        // Código para criar novo nodo e adicionar listeners de movimentação e criação de links
-        console.log('Criar novo nodo');
-        // Aqui você pode criar o novo nodo e adicionar as funcionalidades que deseja.
-      } else {
-        // Código para mover a célula
-        console.log('Mover a célula');
-        // Se já tiver a funcionalidade de mover a célula, ela pode ser executada aqui.
+      if(tokenizedInputs.finalStates.includes(state)){
+        newFinalStates = tokenizedInputs.finalStates.filter((s) => s != state);
       }
-    });
-
-    function handleMoveOnCell(evt:any){
-
-      if(!currentCellView)
-        return;
-
-      const bbox = currentCellView.getBBox(); // Pega as coordenadas e o tamanho da célula
-      const horizontalEdgeThreshold = bbox.width * 0.15; // Distância da borda para considerar 
-      const verticalEdgeThreshold = bbox.height * 0.15;
-      const x = evt.clientX;
-      const y = evt.clientY;
-
-
-
-      if(!x || !y)
-        return;
-
-      const mouseX = x - paper.el.getBoundingClientRect().left;
-      const mouseY = y - paper.el.getBoundingClientRect().top;
-
-      // Verifica se o mouse está perto da borda
-      const nearEdge =
-        mouseX < bbox.x + horizontalEdgeThreshold || 
-        mouseX > bbox.x + bbox.width - horizontalEdgeThreshold ||
-        mouseY < bbox.y + verticalEdgeThreshold ||
-        mouseY > bbox.y + bbox.height - verticalEdgeThreshold;
-    
-      if (nearEdge) {
-        // Permite criação de um novo nodo (você pode adicionar um clique para isso)
-        currentCellView.el.style.cursor = 'pointer'; // Mudança de cursor para indicar que pode criar um nodo
-        currentCellView.model.attr('body/stroke', 'green');
-
-      
-        document.addEventListener('click', handleClickOnCell);
-
-      } else {
-        // Permite movimentação da célula
-        currentCellView.el.style.cursor = 'default'; 
-        currentCellView.model.attr('body/stroke', 'black');
-        document.removeEventListener('click', handleClickOnCell);
+      else{
+        if(tokenizedInputs.finalStates.length == 1 && tokenizedInputs.finalStates[0] == "") 
+          newFinalStates = [state];
+        else
+          newFinalStates = [...tokenizedInputs.finalStates, state];
       }
+  
+      handleInputsChange({...inputs, finalStates: newFinalStates.join(", ")}, {...tokenizedInputs, finalStates: newFinalStates}, transitions);
     }
 
 
-    */
+    // Dada uma célula (um nodo), checa se o estado representado por aquela célula é um estado inicial. Se for, torna ele um estado não inicial. Se não for, torna ele um estado inicial
+    const changeInitStatus = (cell:any) => {
+      const state = cell?.attributes?.attrs?.label?.text || '';
 
+      let newInitState : string[]; 
 
-// ------------------------------------------------------------------------------------
-
-// Lógica de control + Z (undo) e control + Y (redo)
-
-
-const undo = () => {
+      if(tokenizedInputs.initState.includes(state))
+        newInitState = tokenizedInputs.initState.filter((s) => s != state);
+      else
+        newInitState = [state];
   
-  if (historyIndex > 0) {
-    const state = history[historyIndex - 1];
-    console.log("Fazendo o undo");
-    setHistoryIndex(historyIndex - 1);
-    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o estado anterior
-  }
-};
-
-const redo = () => {
-  console.log(history);
-  console.log(historyIndex);
-  if (historyIndex < history.length - 1) {
-    console.log("Fazendo o redo");
-    console.log("A");
-    const state = history[historyIndex + 1];
-    setHistoryIndex(historyIndex + 1);
-    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o próximo estado
-  }
-};
+      handleInputsChange({...inputs, initState: newInitState.join(", ")}, {...tokenizedInputs, initState: newInitState}, transitions);
+    }
 
 
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.ctrlKey && e.key.toLowerCase() === "z") {
-      e.preventDefault(); // Evita ações padrão do navegador
-    undo();
-  } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
-      e.preventDefault();
-    redo();
-  }
-};
-
-document.addEventListener("keydown", handleKeyDown);
-
-// ------------------------------------------------------------------------------------
-
-
-
-const changeFinalStatus = (cell:any) => {
-
-  const state = cell?.attributes?.attrs?.label?.text || '';
-
-
-  let newFinalStates : string[];
-
-  if(inputTokenizedValues.finalStates.includes(state)){
-    newFinalStates = inputTokenizedValues.finalStates.filter((s) => s != state);
-  }
-  else{
-    if(inputTokenizedValues.finalStates.length == 1 && inputTokenizedValues.finalStates[0] == "") 
-      newFinalStates = [state];
-    else
-      newFinalStates = [...inputTokenizedValues.finalStates, state];
-  }
-  
-  handleInputsChange({...inputValues, finalStates: newFinalStates.join(", ")}, {...inputTokenizedValues, finalStates: newFinalStates}, transitions);
-}
-
-
-const changeInitStatus = (cell:any) => {
-  const state = cell?.attributes?.attrs?.label?.text || '';
-
-  let newInitState : string[]; 
-
-  if(inputTokenizedValues.initState.includes(state))
-    newInitState = inputTokenizedValues.initState.filter((s) => s != state);
-  else
-    newInitState = [state];
-  
-  handleInputsChange({...inputValues, initState: newInitState.join(", ")}, {...inputTokenizedValues, initState: newInitState}, transitions);
-}
-
-
-
-
-    // Criar função auxiliar para gerar botões
+    // Função auxiliar usada para criar os botões que permitem tornar o estado de um nodo selecionado um estado inicial/final. Ela é usada para criar os botões ao lado dos nodos
+    // Dado um texto, um deslocamento no eixo y e as informações de uma caixa, cria um botão no lado direito da caixa deslocado em y pelo valor passado e com o texto passado
     const createButton = (text:string, topOffset:number, paperRect:any, bbox:any) => {
       const button = document.createElement('button');
       button.textContent = text;
@@ -910,7 +718,8 @@ const changeInitStatus = (cell:any) => {
       return button;
       };
       
-      // Criar função para posicionar botões dinamicamente
+      // Função usada para atualizar as posições dos botões que alteram o status inicial/final do nodo selecionado conforme ele se mexe
+      // Dados dois botões, atualiza a posição deles para eles ficarem ao lado do nodo selecionado no momento. 
       const updateButtonPositions = (button1:HTMLButtonElement, button2:HTMLButtonElement) => {
       const bbox = currentCellView.current.getBBox();
       const paperRect = paper.el.getBoundingClientRect();
@@ -924,7 +733,7 @@ const changeInitStatus = (cell:any) => {
       };
 
 
-          // Deleção de um nodo selecionado
+    // Deleta o nodo selecionado quando a tecla Delete é apertada
     const deleteNode = (e:any) => {
 
       if(e.key != 'Delete' || !(currentCellView.current))
@@ -935,72 +744,73 @@ const changeInitStatus = (cell:any) => {
       const deletedState = currentCellView.current.model.attributes.attrs.label.text;
 
 
-      const newStates = inputTokenizedValues.states.filter((state) => state != deletedState);
-      const newFinalStates = inputTokenizedValues.finalStates.filter((state) => state != deletedState);
-      const newInitState = inputTokenizedValues.initState.filter((state) => state != deletedState);
+      const newStates = tokenizedInputs.states.filter((state) => state != deletedState);
+      const newFinalStates = tokenizedInputs.finalStates.filter((state) => state != deletedState);
+      const newInitState = tokenizedInputs.initState.filter((state) => state != deletedState);
 
       const newTransitions = {...transitions};
       delete newTransitions[deletedState];
 
 
       currentCellView.current = null;
+      
+      document.removeEventListener("keydown", deleteNode);
 
-      handleInputsChange({...inputValues, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
-        {...inputTokenizedValues, states: newStates, finalStates: newFinalStates, initState: newInitState},
+
+      handleInputsChange({...inputs, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
+        {...tokenizedInputs, states: newStates, finalStates: newFinalStates, initState: newInitState},
         newTransitions
       )
-
-      
-
-
     }
 
-let buttons = document.querySelectorAll('.node-button');
-if(currentCellView.current){
-  if(!nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '')){
-    buttons.forEach(btn => btn.remove());
-    currentCellView.current = null
-  }
-  else{
-    currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
-    document.addEventListener('keydown', deleteNode);
-    currentCellView.current.model.attr('body/stroke', 'green');
 
+
+// ------------------------------------------------------------------------------------
+
+    // INICIALIZAÇÃO
+  
+    // Elimina resquícios de listeners e botões de outras renderizações (poderia colocar no cleanup, mas aí teria que tirar a função auxiliar deleteNode do condicional)
+    document.removeEventListener("keydown", deleteNode);
     document.querySelectorAll('.node-button').forEach(btn => btn.remove());
 
-    const bbox = currentCellView.current.getBBox();
-    const paperRect = paper.el.getBoundingClientRect();
 
-    const button1 = createButton('Final', 0, paperRect, bbox);
-    button1.onclick = () => changeFinalStatus(currentCellView.current.model);
+    // Se existir uma célula selecionada
+    if(currentCellView.current){
+      // Mas a célula não representa nenhum estado (o que não deveria acontecer), desceleciona a célula 
+      if(!nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || ''))
+        currentCellView.current = null
+      
+      // Se a célula representa algum estado, é preciso atualizá-la para a nova renderização, pois currentCellView guarda as informações do nodo da renderização passada
+      else{
+        // Atribui à célula selecionada o novo nodo
+        currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
+
+        currentCellView.current.model.attr('body/stroke', 'green'); 
+
+        // e cria novamente os botões de edição de estado final/inicial
+        const bbox = currentCellView.current.getBBox();
+        const paperRect = paper.el.getBoundingClientRect();
+
+        const button1 = createButton('Final', 0, paperRect, bbox);
+        button1.onclick = () => changeFinalStatus(currentCellView.current.model);
   
-    const button2 = createButton('Inicial', 20, paperRect, bbox);
-    button2.onclick = () => changeInitStatus(currentCellView.current.model);
-
-
-  }
-}
-
-  
-    if(currentTool.editLinks){
-      console.log("Editando Link");
-
+        const button2 = createButton('Inicial', 20, paperRect, bbox);
+        button2.onclick = () => changeInitStatus(currentCellView.current.model);
+      }
     }
 
+// ------------------------------------------------------------------------------------
 
-    else if(currentTool.standard){
+    // Seleção/Desceleção de nodo/link
 
-
-
-
-
-
+      // Desceleciona ao clicar no vazio
       paper.on("blank:pointerdown", (evt, x, y) => { 
+        document.removeEventListener("keydown", deleteNode);
+
         if(evt.target.tagName != "svg")
           return;
 
         if(currentCellView.current !== null){
-          
           currentCellView.current.model.attr('body/stroke', 'black');
           document.querySelectorAll('.node-button').forEach(btn => btn.remove());
           currentCellView.current = null;
@@ -1014,10 +824,12 @@ if(currentCellView.current){
       });
 
 
+      // Ao clicar em um link, seleciona ele e desceleciona qualquer outra coisa selecionada 
       paper.on("link:pointerdown", (linkView, evt, x, y) => {
         if(currentCellView.current !== null){
           currentCellView.current.model.attr('body/stroke', 'black');
           document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+          document.removeEventListener("keydown", deleteNode);
           currentCellView.current = null;
         }
 
@@ -1036,14 +848,13 @@ if(currentCellView.current){
       })
 
       
-        // Seleção do nodo ao clicar sobre ele, além da criação dos botões que permitem tornar o nodo estado inicial e estado final
-        paper.on('cell:pointerdown', (cellView, evt, x, y) => {          
+        // Ao clicar em um nodo, seleciona ele e cria os botões que permitem tornar o nodo estado inicial e estado final, além de descelecionar qualquer outra coisa
+        paper.on('cell:pointerdown', (cellView, evt, x, y) => {    
+          
           document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-          
-          
+          document.removeEventListener("keydown", deleteNode);
+
           if(cellView != currentCellView.current){
-
-
             if(currentCellView.current !== null)
               currentCellView.current.model.attr('body/stroke', 'black');
           
@@ -1051,10 +862,7 @@ if(currentCellView.current){
           }
 
           document.addEventListener('keydown', deleteNode);
-    
-          
           currentCellView.current.model.attr('body/stroke', 'green');
-
 
           if(movingLink !== null){
             movingLink.model.attr('line/stroke', 'black');
@@ -1065,89 +873,146 @@ if(currentCellView.current){
           const bbox = currentCellView.current.getBBox();
           const paperRect = paper.el.getBoundingClientRect();
 
-  // Criar botões e definir suas ações. Deu algum problema de sincronização ao usar a função updateButtonPositions para definir a posição dos botões logo na inicialização
-  // Por isso, as posições estão sendo definidas diretamente na createButtons, e então ao mover as posições são atualizadas
-  const button1 = createButton('Final', 0, paperRect, bbox);
-  button1.onclick = () => changeFinalStatus(currentCellView.current.model);
+          // Cria os botões e define suas ações. Deu algum problema de sincronização ao usar a função updateButtonPositions para definir a posição dos botões logo na inicialização
+          // Por isso, as posições estão sendo definidas diretamente na createButtons, e então ao mover as posições são atualizadas
+          const button1 = createButton('Final', 0, paperRect, bbox);
+          button1.onclick = () => changeFinalStatus(currentCellView.current.model);
 
-  const button2 = createButton('Inicial', 20, paperRect, bbox);
-  button2.onclick = () => changeInitStatus(currentCellView.current.model);
+          const button2 = createButton('Inicial', 20, paperRect, bbox);
+          button2.onclick = () => changeInitStatus(currentCellView.current.model);
 
-
-
-  cellView.model.on('change:position', () => updateButtonPositions(button1, button2));
+          cellView.model.on('change:position', () => updateButtonPositions(button1, button2));
 
         })
 
 
-        
+// ------------------------------------------------------------------------------------
 
+    // Edição de nodos/links
 
-
+        // Edição de link ao clicar 2 vezes sobre ele
         paper.on('link:pointerdblclick', (linkView, event) => {
+
           if (containerRef.current === null) return;
 
-
-
-          if(event.target.tagName === "circle") // clicou em um vértice (para editar, é preciso clicar na caixa de texto)
+          // Se clicou sobre um círculo é porque clicou em um vértice (para editar, é preciso clicar direto na caixa de texto)
+          if(event.target.tagName === "circle") 
             return;
 
           const link = linkView.model;
-          const currentText = link.attributes.labels[0].attrs.text.text; // Obtém o texto atual do rótulo
+
+          // Obtém o texto antes da edição
+          const currentText = link.attributes.labels[0].attrs.text.text;
           const originalText = currentText;
         
+          // tokeniza o texto e obtém o símbolo de leitura da transição
           const readSymbol = originalText.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0)[0];
 
+          // Obtém o alvo e a fonte
           const originNode = graph.getCell(movingLink.model.attributes.source.id);
           const originState = originNode?.attributes?.attrs?.label?.text || '';
 
           const targetNode = graph.getCell(movingLink.model.attributes.target.id);
           const targetState = targetNode?.attributes?.attrs?.label?.text || '';
-
-          const labelPosition = link.label(0)?.position || { distance: 0.5, offset: -15 };
         
-          const textBox = event.target.getBoundingClientRect();
-
           
 
-          // Cria um elemento input para edição
+          // Cria um elemento input para edição e o adiciona ao documento
+
+          const textBox = event.target.getBoundingClientRect();
+
           const input = document.createElement('input');
           input.value = currentText;
           input.style.position = 'absolute';
-          input.style.left = `${textBox.x}px`; // Centraliza na linha
+          input.style.left = `${textBox.x}px`; 
           input.style.top = `${textBox.y}px`;
           input.style.fontSize = '12px';
           input.style.padding = '2px';
-          input.style.zIndex = '1000';
+          input.style.zIndex = '4';
           input.style.background = '#fff';
           input.style.border = '1px solid #ccc';
           input.style.borderRadius = '4px';
           input.style.width = `${textBox.width}px`;
           input.style.height = `${textBox.height}px`;
         
-
           document.body.appendChild(input);
         
           input.focus();
         
-          // Fecha o input ao clicar fora
+          // Salva o texto e fecha o input ao teclar enter ou esc
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === 'Escape') saveText();
+          });
+
+          // salva o texto e fecha o input ao cliar fora dele
           const handleClick = (event: any) => {
             if (event.target === input) return;
+          
             saveText();
             document.removeEventListener('mousedown', handleClick);
           };
         
           document.addEventListener('mousedown', handleClick);
         
-          // Fecha o input ao pressionar Enter ou Escape
-          input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === 'Escape') saveText();
-          });
-        
           const saveText = () => {
+            // tokeniza o texto editado
+            let transitionInfo = input.value.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+            const newTransitions = { ...transitions };
+            
+            // A configuração atual inclui, quando algo não pe definido na transição, a palavra "undefined" na hora do desenho
+            // Se o alfabeto não incluir essa palavra, elimina ela. Não tem perigo de ela ser o símbolo de leitura (índice 0), porque a transição nem existiria se fosse assim, vide abaixo
+            if(!alphabet.includes("undefined"))
+              transitionInfo = transitionInfo.filter((token:string) => token != "undefined");
+
+            // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO, retorna. Ou seja, não salva a edição e deixa como estava
+            if(transitionInfo.length != 0 && !alphabet.includes(transitionInfo[0])){
+              input.remove();
+              document.removeEventListener('mousedown', handleClick);
+              return;
+            }
+
+            // Apaga a transição antiga
+            newTransitions[originState][readSymbol].next = "";
+
+            // Se no texto editado não tem nada escrito, atualiza as transições e retorna
+            if(transitionInfo.length == 0){
+              
+              input.remove();
+              document.removeEventListener('mousedown', handleClick);
+              handleInputsChange(inputs, tokenizedInputs, newTransitions);
+              return;
+            }
+
+            // Se tiver algo, tem que tomar cuidado com o não determinismo:
+
+            // Pega a transição antiga do estado de origem lendo o símbolo definido na edição 
+            const prevTransition = newTransitions[originState][transitionInfo[0]];
+
+              // Se o símbolo de leitura foi trocado na edição e a transição antiga não é vazia, temos 2 transições diferentes partindo do mesmo estado e lendo o mesmo símbolo: não determinismo
+              // Aqui a edição está apenas sendo ignorada
+            if(readSymbol != transitionInfo[0] && prevTransition.next != ""){
+              alert("Não determinismo detectado"); 
+              input.remove();
+              document.removeEventListener('mousedown', handleClick);
+              return;
+            }
+
+
+            // Passando do teste do não determinismo, pode salvar a transição, colocar o valor nela na nova label do link e atualizar as transições
+              let next;
+              if(transitionInfo.length > 1)
+                next = `${targetState}, ${transitionInfo.slice(1).join(", ")}`;
+              else
+                next = targetState;
+
+
+              newTransitions[originState][transitionInfo[0]] = { ...newTransitions[originState][transitionInfo[0]], next: next };
+
+            
+            
             if (input) {
               link.label(0, {
-                position: labelPosition,
+                position: { distance: 0.5, offset: -15 },
                 attrs: {
                   text: { text: input.value, fontSize: 12, fontWeight: "bold" },
                 },
@@ -1155,30 +1020,7 @@ if(currentCellView.current){
         
               document.removeEventListener('mousedown', handleClick);
         
-              const newTransitions = { ...transitions };
-              if (newTransitions[originState]?.[readSymbol]) {
-                let transitionInfo = input.value.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
-                
-                if(!alphabet.includes("undefined"))
-                  transitionInfo = transitionInfo.filter((token:string) => token != "undefined");
-
-
-                let next;
-                if(transitionInfo.length > 1)
-                  next = `${targetState}, ${transitionInfo.slice(1).join(", ")}`;
-                else
-                  next = targetState;
-                
-                if(newTransitions[originState][readSymbol].next == next){
-                  input.remove();
-                  return;
-                }
-
-                newTransitions[originState][readSymbol] = { ...newTransitions[originState][readSymbol], next: next };
-
-              }
-        
-              handleInputsChange(inputValues, inputTokenizedValues, newTransitions);
+              handleInputsChange(inputs, tokenizedInputs, newTransitions);
               input.remove();
             }
           };
@@ -1188,6 +1030,8 @@ if(currentCellView.current){
 
     // Habilita a edição de texto ao clicar duas vezes sobre nodo
     paper.on('element:pointerdblclick', (cellView, event, x, y) => {
+
+      document.removeEventListener("keydown", deleteNode);
 
       if(containerRef.current === null)
         return;
@@ -1224,9 +1068,14 @@ if(currentCellView.current){
       input.focus(); // Permite edição imediata
 
 
-      document.addEventListener('mousedown', (event) => {
-        if (event.target !== input) saveText();
-      });
+      const handleClick = (event: any) => {
+        if (event.target === input) return;
+        saveText();
+        document.removeEventListener('mousedown', handleClick);
+      };
+
+
+      document.addEventListener("mousedown", handleClick);
 
 
       // Lida com teclas pressionadas enquanto o texto está sendo editado
@@ -1250,8 +1099,8 @@ if(currentCellView.current){
           
 
           let newStatesTokenized;
-          let newFinalStatesTokenized = inputTokenizedValues.finalStates;
-          let newInitState = inputTokenizedValues.initState;
+          let newFinalStatesTokenized = tokenizedInputs.finalStates;
+          let newInitState = tokenizedInputs.initState;
 
           if(input.value == ''){
             newStatesTokenized = states.filter((s) => (s != originalText));
@@ -1259,18 +1108,18 @@ if(currentCellView.current){
             newInitState = newInitState.filter((s) => (s != originalText));
           }
           else{
-            if(inputTokenizedValues.finalStates.includes(originalText))
+            if(tokenizedInputs.finalStates.includes(originalText))
               newFinalStatesTokenized = newFinalStatesTokenized.map((s) => (s === originalText ? input.value : s));
 
-            if(inputTokenizedValues.initState.includes(originalText))
+            if(tokenizedInputs.initState.includes(originalText))
               newInitState = newInitState.map((s) => (s === originalText ? input.value : s));
 
             newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
           }
             
             
-          handleInputsChange({...inputValues, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
-            {...inputTokenizedValues, states: newStatesTokenized, finalStates:newFinalStatesTokenized, initState:newInitState}, 
+          handleInputsChange({...inputs, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
+            {...tokenizedInputs, states: newStatesTokenized, finalStates:newFinalStatesTokenized, initState:newInitState}, 
             transitions); 
 
           input.remove();
@@ -1307,11 +1156,11 @@ if(currentCellView.current){
             if(alphabet.includes(readSymbol)){ 
               const newTransitions = transitions;
               newTransitions[originState][readSymbol] = {next: "", error: 0};
-              handleInputsChange(inputValues, inputTokenizedValues, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
+              handleInputsChange(inputs, tokenizedInputs, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
             }
             else{ // Muito menos isso, mas por enquanto deixa aí
               alert("Erro: Símbolo lido não existe no alfabeto");
-              handleInputsChange(inputValues, inputTokenizedValues, transitions);
+              handleInputsChange(inputs, tokenizedInputs, transitions);
             }
           
           }
@@ -1325,11 +1174,9 @@ if(currentCellView.current){
     console.log("Terminou o desenho");
     
     return () => {
-      document.removeEventListener("keydown", deleteNode);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keydown", undo);
       document.removeEventListener("keydown", redo);
-     // document.removeEventListener("keydown", deleteLink);
       document.removeEventListener("mousemove", handleMouseMove);
       
 
@@ -1338,7 +1185,7 @@ if(currentCellView.current){
         movingLink = null;
       }
     };
-    }, [inputTokenizedValues, transitions, currentTool, currentScale]); 
+    }, [tokenizedInputs, transitions, currentTool, currentScale]); 
   
 
 

@@ -7,8 +7,6 @@ import Buttons from "../general_button";
 
 
 
-
-
 interface i_simple_diagram {
   inputValues: InputValues;
   inputTokenizedValues : TokenizedInputValues;

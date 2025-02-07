@@ -56,8 +56,6 @@ export function Home() {
       setHistoryIndex(historyIndex + 1);
     }
 
-
-  
     const handleInputsChange = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) =>{
       saveStateToHistory(new_values, new_tokenized_values, new_transitions, newErrors);
       setInputValues(new_values, new_tokenized_values, new_transitions, newErrors);
@@ -103,7 +101,7 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
-        <div style={{width: "80%", height: "75%"}}> <SimpleDiagram currentTool={currentTools} inputValues={inputs} inputTokenizedValues={tokenizedInputs} onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} transitions={transitions} /> </div>
+        <div style={{width: "80%", height: "75%"}}> <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} /> </div>
         <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
 
         </div>
