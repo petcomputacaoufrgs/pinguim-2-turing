@@ -14,7 +14,7 @@ TO DO:
 deleção de estados isso pode bugar
 - Permitir que links sejam adicionados  
 - Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
-- Não determinismo!
+- Não determinismo (para adição de nodos)!
 
 - Modo de tela cheia para grafo e tabela???
 */
@@ -52,9 +52,10 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
   const {nodePositions, setNodePositions} = graphNodes;
 
+
   // Estado para controle da escala
   const [currentScale, setCurrentScale] = useState(1); 
-     
+  
   // Salva a referência para a visão (câmera, se quiser chamar assim) atual do paper, ou seja, o quanto ele foi transladado
   const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
 
@@ -89,6 +90,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
   useEffect(() => {
 
+
 // ====================================================================================
 // INICIALIZAÇÃO
 // ====================================================================================
@@ -113,9 +115,12 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
       height: "100%",
       drawGrid: true,
       defaultConnector: { name: 'smooth' }, // Por padrão, os links fazem curvas suaves (curva de Bézier)
-      interactive: { useLinkTools: false, labelMove: false }
+      interactive: { useLinkTools: false, labelMove: false, elementMove: !currentTool.selection }
           
     });
+
+
+    let eventHandlers = [];
 
     // Translada o paper para a atual visão
     paper.translate(translation.x, translation.y);
@@ -428,18 +433,16 @@ const undo = () => {
   
   if (historyIndex > 0) {
     const state = history[historyIndex - 1];
-    console.log("Fazendo o undo");
+
     setHistoryIndex(historyIndex - 1);
     onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o estado anterior
   }
 };
 
 const redo = () => {
-  console.log(history);
-  console.log(historyIndex);
+
   if (historyIndex < history.length - 1) {
-    console.log("Fazendo o redo");
-    console.log("A");
+
     const state = history[historyIndex + 1];
     setHistoryIndex(historyIndex + 1);
     onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o próximo estado
@@ -458,7 +461,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
 };
 
 document.addEventListener("keydown", handleKeyDown);
-
+eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown});
 // ------------------------------------------------------------------------------------
 
   // Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
@@ -469,6 +472,8 @@ document.addEventListener("keydown", handleKeyDown);
 
   // Permite movimento do paper através do arraste
 
+
+  if(!currentTool.selection){
   let dragStartPosition: { x: number; y: number } | null = null; // Variável para armazenar a posição inicial de arraste
 
 
@@ -505,7 +510,8 @@ document.addEventListener("keydown", handleKeyDown);
   };
 
   containerRef.current?.addEventListener("mousemove", handleMouseMove);
-      
+  eventHandlers.push({element: containerRef.current, event: "mousemove", handler: handleMouseMove});
+}
 
 // ------------------------------------------------------------------------------------
 
@@ -658,7 +664,201 @@ document.addEventListener("keydown", handleKeyDown);
 
   }
 
+
+
+
+  // ------------------------------------------------------------------------------------
+  // SELEÇÃO
+  // ------------------------------------------------------------------------------------
+
+  if(currentTool.selection){
+
+    // Todas as células selecionadas
+    let selectedCells:joint.dia.Cell[] = [];
+
+    
+    const deleteSelectedCells = (selectedCells: joint.dia.Cell[]) => {
+      let newTransitions = {...transitions};
+      let newStates = [...states];
+      let newFinalStates = [...tokenizedInputs.finalStates];
+      let newInitState = [...tokenizedInputs.initState];
+
+      // Para cada célula selecionada
+      selectedCells.forEach((cell) => {
+
+        // Se ela for um nodo (estado)
+        if(cell.isElement()){
+          const deletedState = cell.attributes?.attrs?.label?.text || ""; // pega o nome dele
+          newStates = newStates.filter((state) => state != deletedState); // tira ele dos estados
+          newFinalStates = newFinalStates.filter((state) => state != deletedState); // tira dos estados finais
+          newInitState = newInitState.filter((state) => state != deletedState); // tira do estado inicial
+
+          delete newTransitions[deletedState]; // deleta todas as transições com ele como origem
+        }
+
+        // Se ela for um link
+        else if(cell.isLink()){
+
+          // Pega o texto da transição
+          const deletedTransition = cell.attributes.labels[0].attrs.text.text.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+
+          // Se tiver algo no texto da transição
+          if(deletedTransition.length > 0){
+            const readSymbol = deletedTransition[0];
+            const originNode = graph.getCell(cell.attributes.source.id);
+
+            // Isso não deveria acontecer, pois se há um link desenhado deve haver um estado de origem para esse link
+            if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
+                return;
+
+            const originState = originNode.attributes.attrs.label.text;
+
+            // Isso também não deveria acontecer, pois se há um estado desenhado ele deveria ter um nome (um texto)
+            if(!originState)
+              return;
+            
+            // Como estamos apagando os estados também e junto deles todas as suas transições, essa situação pode ocorrer (apaguei o estado e todos os links nele e agora estou tentando apagar o link de novo)
+            if(!newTransitions[originState])
+              return;
+
+            // Por fim, se o símbolo de leitura for válido para o alfabeto, aí sim apaga a transição
+            if(alphabet.includes(readSymbol))
+              newTransitions[originState] = {...newTransitions[originState], [readSymbol]: { next: "", error: 0 } };
+          }
+          
+          else{ // Não ter nada no texto da transição não deveria acontecer, pois nesse caso a transição já deveria ter sido excluída
+            alert("Transição sem texto");
+          }
+          
+        }
+      });
+
+      handleInputsChange({...inputs, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
+                         {...tokenizedInputs, states: newStates, finalStates: newFinalStates, initState: newInitState},
+                         newTransitions);
+    }
+
+    // Quando clica com o mouse, reseta todas as seleções e cria uma nova caixa de seleção, permitindo que ela cresça/diminua conforme o movimento do mouse
+    const handleMouseDown = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+    
+      selectedCells.forEach((cell) => {
+        if(cell.isLink()){
+          cell.attr('line/stroke', 'black');
+        }
+        else if(cell.isElement()){
+          cell.attr('body/stroke', 'black'); 
+
+        }
+      });
+
+      selectedCells = [];
+
+      // todas as posições devem ser relativas ao container do grafo
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+
+      // Pega a posição inicial absoluta do clique
+      const startX = event.clientX;
+      const startY = event.clientY;
+    
+      // Cria um retângulo de seleção iniciando na posição do clique
+      const selectionBox = document.createElement("div");
+      selectionBox.style.position = "absolute";
+      selectionBox.style.border = "1px dashed blue";
+      selectionBox.style.background = "rgba(0, 0, 255, 0.2)";
+      selectionBox.style.left = `${startX - containerRect.x}px`;
+      selectionBox.style.top = `${startY - containerRect.y}px`;
+      selectionBox.style.zIndex = "10";
+      selectionBox.style.pointerEvents = "none"; // Para não bloquear outros eventos
+      container.appendChild(selectionBox);
+    
+      // Atualiza o retângulo conforme o mouse se mexe
+      const handleMouseMoveSelection = (moveEvent: MouseEvent) => {
+        const currentX = moveEvent.clientX;
+        const currentY = moveEvent.clientY;
+    
+
+        // Calcula a largura e altura da seleção 
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+    
+
+        // Ajusta a posição caso o usuário arraste para cima/esquerda - left e top sempre serão, respectivamente, o menor x e o menor y entre a posição do primeiro clique ou a posição atual do mouse (relativas ao container) 
+        selectionBox.style.left = `${Math.min(startX - containerRect.x, currentX - containerRect.x)}px`;
+        selectionBox.style.top = `${Math.min(startY - containerRect.y, currentY - containerRect.y)}px`;
+        selectionBox.style.width = `${width}px`;
+        selectionBox.style.height = `${height}px`;
+
+
+        // Verifica quais elementos foram selecionados
+
+        const selectionRect = new joint.g.Rect((Math.min(startX, moveEvent.clientX) - containerRect.left - translation.x) / currentScale, 
+                                               (Math.min(startY, moveEvent.clientY) - containerRect.top - translation.y) / currentScale, 
+                                               (Math.abs(startX - moveEvent.clientX)) / currentScale, 
+                                               (Math.abs(startY - moveEvent.clientY)) / currentScale);
+
+
+        const allCells = graph.getCells();
+
+
+        // As células selecionadas são aquelas dentre todas as células no grafo que intersectam o retângulo de seleção
+        selectedCells = allCells.filter((cell) => {
+        const bbox = cell.getBBox(); 
+
+        if(selectionRect.intersect(bbox)){
+          if(cell.isLink())
+            cell.attr('line/stroke', 'blue');
+          else if(cell.isElement())
+            cell.attr('body/stroke', 'green'); 
+
+          return true;
+        }
+        else{
+          if(cell.isLink())
+            cell.attr('line/stroke', 'black');
+          else if(cell.isElement())
+            cell.attr('body/stroke', 'black'); 
   
+          return false;
+          
+        }});
+
+      };
+    
+      // Quando solta o clique do mouse, permite a deleção de todas as células selecionadas
+      const handleMouseUp = (event:any) => {
+        document.removeEventListener("mousemove", handleMouseMoveSelection);
+        document.removeEventListener("mouseup", handleMouseUp);
+  
+        const handleDeleteSelectedCells = (evt:any) => {
+          if(evt.key != 'Delete')
+            return;
+
+          deleteSelectedCells(selectedCells);
+          document.removeEventListener("keydown", handleDeleteSelectedCells);
+        }
+
+        document.addEventListener("keydown", handleDeleteSelectedCells);
+        eventHandlers.push({element: document, event: "keydown", handler: handleDeleteSelectedCells});
+    
+        selectionBox.remove();
+      };
+    
+      // Finalmente, adiciona os listeners de movimento do mouse e de solte
+      document.addEventListener("mousemove", handleMouseMoveSelection);
+      document.addEventListener("mouseup", handleMouseUp);
+      eventHandlers.push({element: document, event: "mousemove", handler: handleMouseMoveSelection});
+      eventHandlers.push({element: document, event: "mouseup", handler: handleMouseUp});
+    };
+    
+    // Adiciona o evento de clique ao container
+    if (containerRef.current) {
+      containerRef.current.addEventListener("mousedown", handleMouseDown);
+      eventHandlers.push({element: containerRef.current, event: "mousedown", handler: handleMouseDown});
+    }
+  }
+
   // ------------------------------------------------------------------------------------
   // PADRÃO
   // ------------------------------------------------------------------------------------
@@ -765,6 +965,9 @@ document.addEventListener("keydown", handleKeyDown);
 
 
 
+
+
+
 // ------------------------------------------------------------------------------------
 
     // INICIALIZAÇÃO
@@ -844,6 +1047,7 @@ document.addEventListener("keydown", handleKeyDown);
         }
 
         document.addEventListener('keydown', deleteLink);
+        eventHandlers.push({element: document, event: "keydown", handler: deleteLink});
 
       })
 
@@ -862,6 +1066,7 @@ document.addEventListener("keydown", handleKeyDown);
           }
 
           document.addEventListener('keydown', deleteNode);
+          eventHandlers.push({element: document, event: "keydown", handler: deleteNode});
           currentCellView.current.model.attr('body/stroke', 'green');
 
           if(movingLink !== null){
@@ -953,6 +1158,7 @@ document.addEventListener("keydown", handleKeyDown);
           };
         
           document.addEventListener('mousedown', handleClick);
+          eventHandlers.push({element: document, event: "mousedown", handler: handleClick});
         
           const saveText = () => {
             // tokeniza o texto editado
@@ -1076,6 +1282,7 @@ document.addEventListener("keydown", handleKeyDown);
 
 
       document.addEventListener("mousedown", handleClick);
+      eventHandlers.push({element: document, event: "mousedown", handler: handleClick});
 
 
       // Lida com teclas pressionadas enquanto o texto está sendo editado
@@ -1154,8 +1361,6 @@ document.addEventListener("keydown", handleKeyDown);
 
 
             if(alphabet.includes(readSymbol)){ 
-              const newTransitions = transitions;
-              newTransitions[originState][readSymbol] = {next: "", error: 0};
               handleInputsChange(inputs, tokenizedInputs, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
             }
             else{ // Muito menos isso, mas por enquanto deixa aí
@@ -1177,7 +1382,10 @@ document.addEventListener("keydown", handleKeyDown);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keydown", undo);
       document.removeEventListener("keydown", redo);
-      document.removeEventListener("mousemove", handleMouseMove);
+
+      eventHandlers.forEach((listener) => listener.element.removeEventListener(listener.event, listener.handler as EventListener));
+      
+      //document.removeEventListener("mousemove", handleMouseMove);
       
 
       if(movingLink){
