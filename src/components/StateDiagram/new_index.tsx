@@ -12,13 +12,19 @@ import { getLinkText, getElementText } from "./utils";
 /*
 TO DO: 
 
-- Arrumar atribuição de nome para os estados ao serem criados com o clique duplo: no momento não funciona porque o nome é sempre q{qtd de estados}, mas como há
-deleção de estados isso pode bugar
-- Permitir que links sejam adicionados  
-- Arrumar bug em que quando o link é redirecionado para o próprio nodo fonte formando um loop ele fica estranho (adicionar vértices nessa condição)
-- Não determinismo (para adição de nodos)!
+- Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
+1) Permitir que links sejam adicionados
+2) Tratar não determinismo (para adição de links)!
+3) Arrumar atribuição de nome para os estados ao serem criados com o clique duplo: no momento não funciona porque o nome é sempre q{qtd de estados}, mas como há
+deleção de estados isso pode bugar 
+4) Arrumar situação em que quando o link é redirecionado para o próprio nodo fonte formando um loop ou quando o loop tem seus vértices retirados ele fica estranho (adicionar vértices nessa condição)
 
-- Modo de tela cheia para grafo e tabela???
+- Acessórios (estilos e funcionalidades extras)
+5) Modo de tela cheia para grafo e tabela
+6) Deixar botões de edição de estado final/inicial mais bonitinhos
+7) Deixar caixa de ferramentas mais bonitinha
+8) Salvar movimento dos nodos e links no histórioco de ações para permitir que o control + Z e o control + Y capturem ações que sejam apaenas movimento
+
 */
 
 
