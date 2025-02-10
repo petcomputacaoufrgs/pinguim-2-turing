@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as joint from 'jointjs';
 import { Transitions, InputValues, TokenizedInputValues, InputErrors, errorCodes } from '../../types/types';
 import { GraphConteiner } from "./styled";
@@ -6,6 +6,8 @@ import { CurrentTool } from "../../types/types";
 import { useStateContext } from "../../ContextProvider";
 
 import { validateInputs, revalidateTransitions } from "../../utils/validation";
+import { tokenize } from "../../utils/tokenize";
+import { getLinkText, getElementText } from "./utils";
 
 /*
 TO DO: 
@@ -207,7 +209,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
         // Define um listener para o nó que atualiza a posição dele quando ele é movido
         node.on('change:position', (cell, newPosition) => {
-            const nodeName = cell.attributes.attrs.label.text;
+            const nodeName = getElementText(cell);
             setNodePositions((prev) => new Map(prev.set(nodeName, { x: newPosition.x, y: newPosition.y })));
         });
 
@@ -293,10 +295,8 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
         if (!transition || transition.next === "") continue;
 
         // E tomando as informações da transição
-        const transitionInfo = transition.next
-          .split(",")
-          .map((token) => token.trim())
-          .filter((token) => token.length > 0);
+        const transitionInfo = tokenize(transition.next);
+
 
         // Se o estado alvo da transição não existe, pula para a próxima
         const targetNode = nodes.get(transitionInfo[0]);
@@ -314,9 +314,9 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
         
         if (existingLink) {
-          const text = existingLink.attributes.labels?.[0]?.attrs?.text?.text;
+          const text = getLinkText(existingLink);
 
-          if (text && transitionInfo[1] === transition.next.split(',').map(token => token.trim()).filter(token => token.length > 0)[1]) {
+          if (text && transitionInfo[1] === tokenize(transition.next)[1]) {
             // Clona o link existente preservando vértices e propriedades, o adiciona ao grafo e pula para a próxima transição
             const newLink = new joint.shapes.standard.Link({
               source: { id: sourceNode.id },
@@ -688,7 +688,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
 
         // Se ela for um nodo (estado)
         if(cell.isElement()){
-          const deletedState = cell.attributes?.attrs?.label?.text || ""; // pega o nome dele
+          const deletedState = getElementText(cell); // pega o nome dele
           newStates = newStates.filter((state) => state != deletedState); // tira ele dos estados
           newFinalStates = newFinalStates.filter((state) => state != deletedState); // tira dos estados finais
           newInitState = newInitState.filter((state) => state != deletedState); // tira do estado inicial
@@ -700,7 +700,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
         else if(cell.isLink()){
 
           // Pega o texto da transição
-          const deletedTransition = cell.attributes.labels[0].attrs.text.text.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+          const deletedTransition = tokenize(getLinkText(cell));
 
           // Se tiver algo no texto da transição
           if(deletedTransition.length > 0){
@@ -711,7 +711,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
             if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
                 return;
 
-            const originState = originNode.attributes.attrs.label.text;
+            const originState = getElementText(originNode as joint.dia.Element);
 
             // Isso também não deveria acontecer, pois se há um estado desenhado ele deveria ter um nome (um texto)
             if(!originState)
@@ -870,8 +870,8 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
 
 
     // Dada uma célula (um nodo), checa se o estado representado por aquela célula é um estado final. Se for, torna ele um estado não final. Se não for, torna ele um estado final
-    const changeFinalStatus = (cell:any) => {
-      const state = cell?.attributes?.attrs?.label?.text || '';
+    const changeFinalStatus = (cell:joint.dia.Element) => {
+      const state = getElementText(cell);
       let newFinalStates : string[];
 
       if(tokenizedInputs.finalStates.includes(state)){
@@ -889,8 +889,8 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
 
 
     // Dada uma célula (um nodo), checa se o estado representado por aquela célula é um estado inicial. Se for, torna ele um estado não inicial. Se não for, torna ele um estado inicial
-    const changeInitStatus = (cell:any) => {
-      const state = cell?.attributes?.attrs?.label?.text || '';
+    const changeInitStatus = (cell:joint.dia.Element) => {
+      const state = getElementText(cell)
 
       let newInitState : string[]; 
 
@@ -941,7 +941,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
 
       document.querySelectorAll('.node-button').forEach(btn => btn.remove());
 
-      const deletedState = currentCellView.current.model.attributes.attrs.label.text;
+      const deletedState = getElementText(currentCellView.current.model);
 
 
       const newStates = tokenizedInputs.states.filter((state) => state != deletedState);
@@ -980,13 +980,13 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
     // Se existir uma célula selecionada
     if(currentCellView.current){
       // Mas a célula não representa nenhum estado (o que não deveria acontecer), desceleciona a célula 
-      if(!nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || ''))
+      if(!nodes.get(getElementText(currentCellView.current.model)))
         currentCellView.current = null
       
       // Se a célula representa algum estado, é preciso atualizá-la para a nova renderização, pois currentCellView guarda as informações do nodo da renderização passada
       else{
         // Atribui à célula selecionada o novo nodo
-        currentCellView.current =  nodes.get(currentCellView.current.model?.attributes?.attrs?.label?.text || '').findView(paper);
+        currentCellView.current =  nodes.get(getElementText(currentCellView.current.model)).findView(paper);
 
         currentCellView.current.model.attr('body/stroke', 'green'); 
 
@@ -1107,18 +1107,18 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
           const link = linkView.model;
 
           // Obtém o texto antes da edição
-          const currentText = link.attributes.labels[0].attrs.text.text;
+          const currentText = getLinkText(link);
           const originalText = currentText;
         
           // tokeniza o texto e obtém o símbolo de leitura da transição
-          const readSymbol = originalText.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0)[0];
+          const readSymbol = tokenize(originalText)[0];
 
           // Obtém o alvo e a fonte
           const originNode = graph.getCell(movingLink.model.attributes.source.id);
-          const originState = originNode?.attributes?.attrs?.label?.text || '';
+          const originState = getElementText(originNode as joint.dia.Element);
 
           const targetNode = graph.getCell(movingLink.model.attributes.target.id);
-          const targetState = targetNode?.attributes?.attrs?.label?.text || '';
+          const targetState = getElementText(targetNode as joint.dia.Element);
         
           
 
@@ -1162,7 +1162,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
         
           const saveText = () => {
             // tokeniza o texto editado
-            let transitionInfo = input.value.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+            let transitionInfo = tokenize(input.value);
             const newTransitions = { ...transitions };
             
             // A configuração atual inclui, quando algo não pe definido na transição, a palavra "undefined" na hora do desenho
@@ -1341,7 +1341,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
           if(e.key != 'Delete' || !movingLink)
             return;
     
-          const deletedTransition = movingLink.model.attributes.labels[0].attrs.text.text.split(',').map((token: string) => token.trim()).filter((token:string) => token.length > 0);
+          const deletedTransition = tokenize(getLinkText(movingLink.model));
 
           
           if(deletedTransition.length > 0){
@@ -1352,7 +1352,7 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
             if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
                 return;
 
-            const originState = originNode.attributes.attrs.label.text;
+            const originState = getElementText(originNode as joint.dia.Element);
 
             // Nem isso...
             if(!originState)
@@ -1379,15 +1379,9 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
     console.log("Terminou o desenho");
     
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("keydown", undo);
-      document.removeEventListener("keydown", redo);
 
       eventHandlers.forEach((listener) => listener.element.removeEventListener(listener.event, listener.handler as EventListener));
-      
-      //document.removeEventListener("mousemove", handleMouseMove);
-      
-
+            
       if(movingLink){
         movingLink.model.attr('line/stroke', 'black');
         movingLink = null;
