@@ -8,9 +8,17 @@ import { useStateContext } from "../../ContextProvider";
 import { validateInputs, revalidateTransitions } from "../../utils/validation";
 import { tokenize } from "../../utils/tokenize";
 import { getLinkText, getElementText } from "./utils";
+import { drawNodes, drawTransitions } from "./graph/drawGraph";
+import { initUndoRedo } from "./events/general/undoRedo";
+import { initZoomHandler } from "./events/general/zoomHandler";
+import { initDragHandler } from "./events/general/dragHandler";
 
 /*
 TO DO: 
+
+- REFATORAÇÃO:
+1) Tentar separar esse único hook useEffect gigantesco em vários menores controlando aspectos diferentes: desenho do grafo, escala, seleção, deleção, etc
+2) Tentar separar os eventos
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
 1) Permitir que links sejam adicionados
@@ -67,6 +75,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   // Salva a referência para a visão (câmera, se quiser chamar assim) atual do paper, ou seja, o quanto ele foi transladado
   const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
 
+  
 
   // Referências ao container que contém o grado e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -138,120 +147,8 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 // CRIAÇÃO DOS LINKS E NODOS
 // ====================================================================================
 
-  /**
-   * Cria e posiciona os nós do grafo representando os estados.
-   * 
-   * @param {string[]} states - Lista de estados.
-   * @returns {Map<string, any>} - Mapa associando os nomes dos estados ao nodo no grafo
-   */
-  const createNodes = (states:string[]) => {
-    const nodesMap = new Map();
-
-    // Futuramente mudar forma como os nodos estão sendo dimensionados para ser mais dinâmico em relação à altura
-    const nodeHeight = 40;
-    const spacing = 20;
-
-    states.forEach((state, index) => {
-        const isFinal = tokenizedInputs.finalStates.includes(state);
-        const isInitial = tokenizedInputs.initState[0] === state;
-        
-        // Determina a largura do nó dinamicamente baseado no tamanho do nome do estado
-        const standardWidth = Math.max(100, state.length * 12);
-        const nodeWidth = isInitial ? 1.2 * standardWidth : standardWidth;
-
-        // Criação do nó e dimensionamento
-        const node = new joint.shapes.standard.Path();
-        node.resize(nodeWidth, nodeHeight);
-
-        // Define a posição do nó: se o nó já estava no grafo, sua posição já está guardada
-        if (nodePositions.has(state)) {
-            const position = nodePositions.get(state);
-            if(position)
-              node.position(position.x, position.y);
-
-        // Do contrário tem que definir alguma posição. Futuramente mudar forma como posição está sendo definida
-        } else {
-            const position = { x: spacing + index * (nodeWidth + spacing), y: 100 };
-            node.position(position.x, position.y);
-            setNodePositions((prev) => new Map(prev.set(state, position)));
-        }
-
-        // Define atributos visuais do nodo
-        node.attr({
-            body: { fill: isInitial ? '#c6e9d4' : '#dfe3e6', stroke: '#000' },
-            label: {
-                text: state,
-                fill: '#000',
-                fontSize: 12,
-                refX: isInitial ? "60%" : "50%", // Se ele é inicial, estamos desenhando uma seta que ocupa 20% do espaço dele. A centralização do texto precisa considerá-la
-                refY: "50%",
-                textAnchor: 'middle',
-                textVerticalAnchor: 'middle'
-            }
-        });
-
-        // Define a forma do nó dependendo do tipo de estado
-        if (!isInitial && !isFinal) {
-            // Um retângulo simples
-            node.attr('body/refD', ['M 0 0 0 10 10 10 10 0 0 0']);
-        } else if (isInitial && isFinal) {
-            // 2 retângulos: 1 interno e outro externo + 1 seta no lado esquerdo apontando que o nodo é inicial
-            node.attr('body/refD', [
-                'M 0 0 0 10 2 5 0 0',
-                'M 2 0 2 10 10 10 10 0 2 0',
-                'M 2.75 1.5 2.75 8.5 9.25 8.5 9.25 1.5 2.75 1.5'
-            ]);
-          
-        } else if (isFinal) {
-            // 2 retângulos: 1 interno e outro externo
-            node.attr('body/refD', [
-                'M 0 0 0 10 10 10 10 0 0 0',
-                'M 0.75 1.5 0.75 8.5 9.25 8.5 9.25 1.5 0.75 1.5'
-            ]);
-        } else {
-            // 1 seta no lado esquerdo apontando que o nodo é inicial
-            node.attr('body/refD', ['M 0 0 0 10 2 5 0 0', 'M 2 0 2 10 10 10 10 0 2 0']);
-        }
-
-        // Define um listener para o nó que atualiza a posição dele quando ele é movido
-        node.on('change:position', (cell, newPosition) => {
-            const nodeName = getElementText(cell);
-            setNodePositions((prev) => new Map(prev.set(nodeName, { x: newPosition.x, y: newPosition.y })));
-        });
-
-        nodesMap.set(state, node);
-    });
-
-    return nodesMap;
-  };
-
-  
-    const addLink = (
-      links: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>,
-      target: string,
-      source: string,
-      symbol: string,
-      link: joint.shapes.standard.Link
-    ) => {
-      // Se não existir um mapa para o target, inicializa
-      if (!links.has(target)) {
-        links.set(target, new Map());
-      }
     
-      const linksToTarget = links.get(target)!;
-    
-      // Se não existir um mapa para o source dentro do target, inicializa
-      if (!linksToTarget.has(source)) {
-        linksToTarget.set(source, new Map());
-      }
-    
-      const linksToTargetFromSource = linksToTarget.get(source)!;
-    
-      // Insere o link associado ao símbolo
-      linksToTargetFromSource.set(symbol, link);
-    }
-    
-    const attachLinkEvents = (link: joint.shapes.standard.Link) => {
+    const attachLinkEvents = () => {
       const verticesTool = new joint.linkTools.Vertices({stopPropagation: false}); // Permite a adição e edição de vértices num link
       const toolsView = new joint.dia.ToolsView({ tools: [verticesTool] });
       
@@ -274,154 +171,15 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
       });
     }
 
-  /**
-   * Toma as transições da máquina e as adiciona ao grafo para serem representadas graficamente.
-   * @param tokenizedInputs - Valores tokenizados da entrada, incluindo símbolos iniciais e do alfabeto.
-   * @param transitions - Objeto contendo as transições da máquina de Turing.
-   * @param nodes - Mapa do nome dos estados para o id deles no grafo
-   * @returns Um Map que mapeia estados de destino, símbolos de leitura e escrita, respectivamente, para o link correspondente.
-   */
-  const getTransitions = (
-    tokenizedInputs: TokenizedInputValues,
-    transitions: Transitions,
-    nodes: Map<string, any>
-  ) => {
 
-    // Atualiza o state que contém os links
-    const links = new Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>();
-
-    
-    const targetsMap = new Map<string, joint.shapes.standard.Link[]>();
-
-    // Vai passando por cada transição
-    for (const state of states) {
-      for (const symbol of alphabet) {
-        if (!transitions[state]) continue;
-        const transition = transitions[state][symbol];
-        if (!transition || transition.next === "") continue;
-
-        // E tomando as informações da transição
-        const transitionInfo = tokenize(transition.next);
-
-
-        // Se o estado alvo da transição não existe, pula para a próxima
-        const targetNode = nodes.get(transitionInfo[0]);
-        if (!targetNode) continue;
-        
-        const sourceNode = nodes.get(state);
-        if (!targetsMap.has(targetNode.id)) {
-          targetsMap.set(targetNode.id, []);
-        }
-
-        // Se ele existe, inevitavelmente um link será colocado entre o alvo e a origem.
-        
-        // Verifica se já existe um link igual entre esses nós. Se já existir, é preciso usá-lo para guardar sua posição e vértices
-        const existingLink = currentLinks.get(transitionInfo[0])?.get(state)?.get(symbol);
-
-        
-        if (existingLink) {
-          const text = getLinkText(existingLink);
-
-          if (text && transitionInfo[1] === tokenize(transition.next)[1]) {
-            // Clona o link existente preservando vértices e propriedades, o adiciona ao grafo e pula para a próxima transição
-            const newLink = new joint.shapes.standard.Link({
-              source: { id: sourceNode.id },
-              target: { id: targetNode.id },
-              vertices: existingLink.get("vertices"),
-              attrs: existingLink.get("attrs"),
-            });
-
-            newLink.appendLabel({
-              position: { distance: 0.5, offset: -15 },
-              attrs: {
-                text: { 
-                  text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
-                  fontSize: 12, 
-                  fontWeight: "bold" 
-                },
-                rect: {
-                  fill: '#fff', // Cor de fundo da caixa de texto
-                  stroke: '#000', // Cor da borda
-                  strokeWidth: 1,
-                  refWidth: '120%',
-                  refHeight: '120%',
-                  refX: '-10%',
-                  refY: '-10%',
-                }
-              }
-            });
-            newLink.addTo(graph);
-            addLink(links, transitionInfo[0], state, symbol, newLink);
-
-
-            if(currentTool.standard)
-              attachLinkEvents(newLink);
-
-            continue;
-          }
-        }
-
-        // Se já não existir um link, é preciso criar um novo
-
-        // Definiremos um único vértice inicial para esse novo link: o ponto central entre source e target
-        const targetNodePosition = graph.getCell(targetNode).position();
-        const sourceNodePosition = graph.getCell(sourceNode).position();
-        const center = {
-          x: (targetNodePosition.x + sourceNodePosition.x) / 2,
-          y: (targetNodePosition.y + sourceNodePosition.y) / 2,
-        };
-        
-        // Criação de um novo link e adição ao grafo
-        const linkData = new joint.shapes.standard.Link({
-          source: { id: sourceNode.id },
-          target: { id: targetNode.id },
-          vertices:
-            sourceNode === targetNode // Se o link é na verdade um loop, vamos definir dois vértices para que o loop seja visível (pois o ponto central é o próprio centro do nodo)
-              ? [
-                  { x: center.x + 10, y: center.y - 20 },
-                  { x: center.x + 80, y: center.y - 20 },
-                ]
-              : [{ x: center.x, y: center.y }],
-        });
-
-        // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
-        linkData.appendLabel({
-          position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
-          attrs: {
-            text: { 
-              text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
-              fontSize: 12, 
-              fontWeight: "bold" 
-            },
-            rect: {
-              fill: '#fff', 
-              stroke: '#000', 
-              strokeWidth: 1,
-              refWidth: '120%',
-              refHeight: '120%',
-              refX: '-10%',
-              refY: '-10%',
-            }
-          }
-        });
-
-        
-        linkData.addTo(graph);
-        addLink(links, transitionInfo[0], state, symbol, linkData);
-
-        if(currentTool.standard)
-          attachLinkEvents(linkData);
-      }
-    }
-
-    return links;
-  }
-
-  const nodes = createNodes(states);
+  const nodes = drawNodes(states, tokenizedInputs, nodePositions, setNodePositions);
 
   graph.addCells(Array.from(nodes.values()));
-  const links = getTransitions(tokenizedInputs, transitions, nodes);
+  const links = drawTransitions(states, alphabet, transitions, nodes, paper, currentTool, currentLinks);
   setLinks(links);
+
+  if(currentTool.standard)
+    attachLinkEvents();
 
 
 // ====================================================================================
@@ -434,122 +192,18 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 // ------------------------------------------------------------------------------------
 
 // Lógica de control + Z (undo) e control + Y (redo)
-
-const undo = () => {
-  
-  if (historyIndex > 0) {
-    const state = history[historyIndex - 1];
-
-    setHistoryIndex(historyIndex - 1);
-    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o estado anterior
-  }
-};
-
-const redo = () => {
-
-  if (historyIndex < history.length - 1) {
-
-    const state = history[historyIndex + 1];
-    setHistoryIndex(historyIndex + 1);
-    onChangeInputs({...state.inputs}, {...state.tokenizedInputs}, {...state.transitions}, {...state.errors}); // Restaura o próximo estado
-  }
-};
-
-
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.ctrlKey && e.key.toLowerCase() === "z") {
-      e.preventDefault(); // Evita ações padrão do navegador
-    undo();
-  } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
-      e.preventDefault();
-    redo();
-  }
-};
-
-document.addEventListener("keydown", handleKeyDown);
-eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown});
+  eventHandlers.push(initUndoRedo(history, historyIndex, setHistoryIndex, onChangeInputs));
+// -----------------------------------------------------------------------------------
+// Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
 // ------------------------------------------------------------------------------------
-
-  // Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
-
-
-
+// Permite movimento do paper através do arraste
+  if(!currentTool.selection)
+   eventHandlers.push(initDragHandler(paper, containerRef.current, setTranslation))
 // ------------------------------------------------------------------------------------
-
-  // Permite movimento do paper através do arraste
-
-
-  if(!currentTool.selection){
-  let dragStartPosition: { x: number; y: number } | null = null; // Variável para armazenar a posição inicial de arraste
-
-
-  // Captura a posição inicial de arrate quando ocorre um clique numa área em branco
-  paper.on("blank:pointerdown", (evt, x, y) => { 
-
-
-    if(evt.target.tagName != "svg") return;
-    
-    const scale = paper.scale();
-
-    if(dragStartPosition === null)
-      dragStartPosition = { x: x * scale.sx, y: y * scale.sy }; // Ajuste para o escalonamento
-
-    
-    
-  });
-
-  // limpa a posição de arraste quando o mouse é solto
-  paper.on("blank:pointerup", () => {
-    dragStartPosition = null;
-  });
-      
-  // Função para mover conteúdo do paper conforme o mouse se move
-  const handleMouseMove = (event: MouseEvent) => {
-    if (dragStartPosition !== null) {
-      const deltaX = event.offsetX - dragStartPosition.x;
-      const deltaY = event.offsetY - dragStartPosition.y;
-
-      // Translaciona o conteúdo do paper
-      paper.translate(deltaX , deltaY );
-      setTranslation({ x: deltaX, y: deltaY });
-    }
-  };
-
-  containerRef.current?.addEventListener("mousemove", handleMouseMove);
-  eventHandlers.push({element: containerRef.current, event: "mousemove", handler: handleMouseMove});
-}
-
-// ------------------------------------------------------------------------------------
-
-  // Controle da escala (zoom)
-
+// Controle da escala (zoom)
   paper.scale(currentScale);
-
-  const paperContainer = document.getElementById('paper-container');
-
-  const scaleIncrement = 0.1; // Incremento/decremento da escala
-  const minScale = 0.2; // Escala mínima
-  const maxScale = 2; // Escala máxima
-
-
-  if (paperContainer) {
-    paperContainer.addEventListener('wheel', function (event){
-    event.preventDefault(); // Evita o scroll padrão da página
-
-    if (event.deltaY < 0) {
-        // Scroll para cima (zoom in)
-        setCurrentScale(Math.min(currentScale + scaleIncrement, maxScale));
-    } else {
-        // Scroll para baixo (zoom out)
-        setCurrentScale(Math.max(currentScale - scaleIncrement, minScale));
-    }
-        });
-    }
-
-
-
-
-// ------------------------------------------------------------------------------------
+  eventHandlers.push(initZoomHandler(currentScale, setCurrentScale));
+// -----------------------------------------------------------------------------------
 // ESPECÍFICOS DE FERRAMENTAS
 // ------------------------------------------------------------------------------------
 
@@ -1176,8 +830,30 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
             if(!alphabet.includes("undefined"))
               transitionInfo = transitionInfo.filter((token:string) => token != "undefined");
 
+            console.log(transitionInfo);
+
             // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO, retorna. Ou seja, não salva a edição e deixa como estava
-            if(transitionInfo.length != 0 && !alphabet.includes(transitionInfo[0])){
+            if(transitionInfo.length == 0 || !alphabet.includes(transitionInfo[0])){
+              newTransitions[originState][readSymbol].next = "";
+              input.remove();
+              document.removeEventListener('mousedown', handleClick);
+              handleInputsChange(inputs, tokenizedInputs, newTransitions);
+              return;
+            }
+
+
+
+
+            // Se tiver algo, tem que tomar cuidado com o não determinismo:
+
+            // Pega a transição antiga do estado de origem lendo o símbolo definido na edição 
+            const prevTransition = newTransitions[originState][transitionInfo[0]];
+
+
+              // Se o símbolo de leitura foi trocado na edição e a transição antiga não é vazia, temos 2 transições diferentes partindo do mesmo estado e lendo o mesmo símbolo: não determinismo
+              // Aqui a edição está apenas sendo ignorada
+            if(readSymbol != transitionInfo[0] && prevTransition.next != ""){
+              alert(`Não determinismo detectado: [${originState}, ${transitionInfo[0]}]`); 
               input.remove();
               document.removeEventListener('mousedown', handleClick);
               return;
@@ -1185,30 +861,6 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
 
             // Apaga a transição antiga
             newTransitions[originState][readSymbol].next = "";
-
-            // Se no texto editado não tem nada escrito, atualiza as transições e retorna
-            if(transitionInfo.length == 0){
-              
-              input.remove();
-              document.removeEventListener('mousedown', handleClick);
-              handleInputsChange(inputs, tokenizedInputs, newTransitions);
-              return;
-            }
-
-            // Se tiver algo, tem que tomar cuidado com o não determinismo:
-
-            // Pega a transição antiga do estado de origem lendo o símbolo definido na edição 
-            const prevTransition = newTransitions[originState][transitionInfo[0]];
-
-              // Se o símbolo de leitura foi trocado na edição e a transição antiga não é vazia, temos 2 transições diferentes partindo do mesmo estado e lendo o mesmo símbolo: não determinismo
-              // Aqui a edição está apenas sendo ignorada
-            if(readSymbol != transitionInfo[0] && prevTransition.next != ""){
-              alert("Não determinismo detectado"); 
-              input.remove();
-              document.removeEventListener('mousedown', handleClick);
-              return;
-            }
-
 
             // Passando do teste do não determinismo, pode salvar a transição, colocar o valor nela na nova label do link e atualizar as transições
               let next;
@@ -1381,13 +1033,13 @@ eventHandlers.push({element: document, event: "keydown", handler: handleKeyDown}
 
 
 
-
     console.log("Terminou o desenho");
-    
+    console.log(transitions);
     return () => {
 
-      eventHandlers.forEach((listener) => listener.element.removeEventListener(listener.event, listener.handler as EventListener));
+      eventHandlers.forEach((listener) => listener.element?.removeEventListener(listener.event, listener.handler as EventListener));
             
+      
       if(movingLink){
         movingLink.model.attr('line/stroke', 'black');
         movingLink = null;

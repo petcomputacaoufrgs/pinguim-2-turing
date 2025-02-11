@@ -56,3 +56,5 @@ export interface CurrentTool {
   selection: boolean;
   standard: boolean;
 }
+
+export type State = {inputs : InputValues, tokenizedInputs : TokenizedInputValues, transitions : Transitions, errors: InputErrors};
