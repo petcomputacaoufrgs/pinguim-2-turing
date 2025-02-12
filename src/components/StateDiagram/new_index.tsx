@@ -19,7 +19,6 @@ import { initCellsSelection } from "./graph/events/selectionTool/selectCells";
 /*
 TO DO: 
 
-
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
 1) Permitir que links sejam adicionados
 2) Tratar não determinismo (para adição de links)!
@@ -32,6 +31,7 @@ deleção de estados isso pode bugar
 6) Deixar botões de edição de estado final/inicial mais bonitinhos
 7) Deixar caixa de ferramentas mais bonitinha
 8) Salvar movimento dos nodos e links no histórioco de ações para permitir que o control + Z e o control + Y capturem ações que sejam apaenas movimento
+9) Possibilitar movimento de todas as células selecionadas na opção "seleção"
 
 - REFATORAÇÃO:
 1) Arrumar uma forma de diminuir o número de argumentos passados para cada evento (de novo usar o contexto?)
