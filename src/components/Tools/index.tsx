@@ -48,12 +48,11 @@ const setEditLinks = () => {
 
 
   return (
-  <div style={{display: "flex", width: "80%", alignItems: "center", height: "auto"}}>
-  <Button width="11vw" height="4.5vh" onClick={setEditLinks} disabled={currentTool.editLinks}>Links</Button>
-  <Button width="11vw" height="4.5vh" onClick={setSelection} disabled={currentTool.selection}>Seleção</Button>
-  <Button width="11vw" height="4.5vh" onClick={setAddNodes} disabled={currentTool.addNodes}>Adicionar Nodos</Button>
-  <Button width="11vw" height="4.5vh" onClick={setStandard} disabled={currentTool.standard}>Padrão</Button>
-  
+  <div style={{display: "flex", width: "80%", alignItems: "center", height: "auto", fontSize: "0.5vw"}}>
+    <Button width="11vw" height="4.5vh" onClick={setEditLinks} disabled={currentTool.editLinks} style={{borderRadius:"0"}}>Links</Button>
+    <Button width="11vw" height="4.5vh" onClick={setSelection} disabled={currentTool.selection} style={{borderRadius:"0"}}>Seleção</Button>
+    <Button width="11vw" height="4.5vh" onClick={setAddNodes} disabled={currentTool.addNodes} style={{borderRadius:"0"}}>Adic. Nodos</Button>
+    <Button width="11vw" height="4.5vh" onClick={setStandard} disabled={currentTool.standard} style={{borderRadius:"0"}}>Padrão</Button>
   </div>
 
   )
