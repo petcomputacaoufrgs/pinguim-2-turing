@@ -1,6 +1,6 @@
 import * as joint from 'jointjs';
 import { CurrentTool, TokenizedInputValues, Transitions } from '../../../types/types';
-import { getElementText, getLinkText } from '../utils';
+import { getElementText, getLinkText } from './utils';
 import { tokenize } from '../../../utils/tokenize';
  
 
@@ -10,7 +10,7 @@ import { tokenize } from '../../../utils/tokenize';
    * @param {string[]} states - Lista de estados.
    * @returns {Map<string, any>} - Mapa associando os nomes dos estados ao nodo no grafo
    */
-  export const drawNodes = (states:string[], 
+  export const getNodes = (states:string[], 
                        tokenizedInputs: TokenizedInputValues, 
                        nodePositions: Map<string, {x: number, y: number;}>, 
                        setNodePositions: React.Dispatch<React.SetStateAction<Map<string, {x: number, y: number;}>>> ) => 
@@ -129,7 +129,7 @@ import { tokenize } from '../../../utils/tokenize';
    * @param nodes - Mapa do nome dos estados para o id deles no grafo
    * @returns Um Map que mapeia estados de destino, símbolos de leitura e escrita, respectivamente, para o link correspondente.
    */
-  export const drawTransitions = (
+  export const getAndDrawTransitions = (
     states: string[],
     alphabet: string[],
     transitions: Transitions,

@@ -3,7 +3,8 @@ import { dia } from "jointjs";
 export function initDragHandler(
   paper: dia.Paper,
   container: any,
-  setTranslation: (translation: { x: number; y: number }) => void
+  setTranslation: (translation: { x: number; y: number }) => void,
+  eventHandlers: any[]
 ) {
   let dragStartPosition: { x: number; y: number } | null = null;
 
@@ -38,5 +39,5 @@ export function initDragHandler(
   if(container)
     container.addEventListener("mousemove", handleMouseMove);
 
-  return {element: container, event: "mousemove", handler: handleMouseMove };
+  eventHandlers.push({element: container, event: "mousemove", handler: handleMouseMove });
 }

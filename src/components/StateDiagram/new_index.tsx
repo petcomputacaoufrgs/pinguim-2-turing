@@ -6,19 +6,19 @@ import { CurrentTool } from "../../types/types";
 import { useStateContext } from "../../ContextProvider";
 
 import { validateInputs, revalidateTransitions } from "../../utils/validation";
-import { tokenize } from "../../utils/tokenize";
-import { getLinkText, getElementText } from "./utils";
-import { drawNodes, drawTransitions } from "./graph/drawGraph";
-import { initUndoRedo } from "./events/general/undoRedo";
-import { initZoomHandler } from "./events/general/zoomHandler";
-import { initDragHandler } from "./events/general/dragHandler";
+import { getNodes, getAndDrawTransitions } from "./graph/drawGraph";
+import { initUndoRedo } from "./graph/events/general/undoRedo";
+import { initZoomHandler } from "./graph/events/general/zoomHandler";
+import { initDragHandler } from "./graph/events/general/dragHandler";
+import { initCellSelection } from "./graph/events/standardTool/cellSelection";
+import { initEditLink } from "./graph/events/standardTool/editLink";
+import { initEditNode } from "./graph/events/standardTool/editNode";
+import { attachLinkEvents } from "./graph/events/standardTool/attachLinkEvents";
+import { initCellsSelection } from "./graph/events/selectionTool/selectCells";
 
 /*
 TO DO: 
 
-- REFATORAÇÃO:
-1) Tentar separar esse único hook useEffect gigantesco em vários menores controlando aspectos diferentes: desenho do grafo, escala, seleção, deleção, etc
-2) Tentar separar os eventos
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
 1) Permitir que links sejam adicionados
@@ -32,6 +32,10 @@ deleção de estados isso pode bugar
 6) Deixar botões de edição de estado final/inicial mais bonitinhos
 7) Deixar caixa de ferramentas mais bonitinha
 8) Salvar movimento dos nodos e links no histórioco de ações para permitir que o control + Z e o control + Y capturem ações que sejam apaenas movimento
+
+- REFATORAÇÃO:
+1) Arrumar uma forma de diminuir o número de argumentos passados para cada evento (de novo usar o contexto?)
+2) Tentar separar esse único hook useEffect gigantesco em vários menores controlando aspectos diferentes: desenho do grafo, escala, seleção, deleção, etc - primeira tentativa falhou porque introduziu atraso na renderização
 
 */
 
@@ -59,7 +63,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   const {transitions} = inputStates;
 
   // Histórico de ações (habilita control + Z e control + Y). Consiste de uma pilha de todas as modificações
-  const {history, setHistory} = changesHistory;
+  const {history} = changesHistory;
   const {historyIndex, setHistoryIndex} = changesIndex;
 
   // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
@@ -80,7 +84,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   // Referências ao container que contém o grado e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
   const containerRef = useRef<HTMLDivElement | null>(null);
   const currentCellView = useRef<any>(null);
-
+  const movingLink = useRef<any>(null); // Referência ao link sendo movido
 
   // Constantes para facilitar o acesso
   const alphabet = Array.from(
@@ -98,7 +102,8 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   const handleInputsChange = (newInputs: InputValues, newTokenizedInputs: TokenizedInputValues, newTransitions: Transitions) => {
     const newErrors = validateInputs(newTokenizedInputs, errors);
     const revalidatedTransitions = revalidateTransitions(newTransitions, tokenizedInputs, newTokenizedInputs);
-    saveStateToHistory(newInputs, newTokenizedInputs, newTransitions, newErrors);
+
+    saveStateToHistory(newInputs, newTokenizedInputs, revalidatedTransitions, newErrors);
     onChangeInputs(newInputs, newTokenizedInputs, revalidatedTransitions, newErrors);
       
   };
@@ -137,7 +142,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
     });
 
 
-    let eventHandlers = [];
+    let eventHandlers:{element: any, event: string, handler: any}[] = [];
 
     // Translada o paper para a atual visão
     paper.translate(translation.x, translation.y);
@@ -147,62 +152,32 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 // CRIAÇÃO DOS LINKS E NODOS
 // ====================================================================================
 
-    
-    const attachLinkEvents = () => {
-      const verticesTool = new joint.linkTools.Vertices({stopPropagation: false}); // Permite a adição e edição de vértices num link
-      const toolsView = new joint.dia.ToolsView({ tools: [verticesTool] });
-      
-      //linkView.addTools(toolsView);
-      //linkView.removeTools();
-  
-      // Quando o mouse "entra" no link, se ele estiver entre 20% e 80% da extensão do link (modificar isso depois), permite a edição de vértices
-      paper.on("link:mouseenter", (linkView, evt) => {
-        const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect();
-        const isTarget = evt.clientX !== undefined && bbox &&
-          evt.clientX < bbox.left + bbox.width &&
-          evt.clientX > bbox.left;
-  
-        if (isTarget) linkView.addTools(toolsView);
-  
-      });
-  
-      paper.on("link:mouseleave", (linkView) => {
-        linkView.removeTools();
-      });
-    }
-
-
-  const nodes = drawNodes(states, tokenizedInputs, nodePositions, setNodePositions);
-
+  const nodes = getNodes(states, tokenizedInputs, nodePositions, setNodePositions);
   graph.addCells(Array.from(nodes.values()));
-  const links = drawTransitions(states, alphabet, transitions, nodes, paper, currentTool, currentLinks);
+  
+  const links = getAndDrawTransitions(states, alphabet, transitions, nodes, paper, currentTool, currentLinks);
   setLinks(links);
-
-  if(currentTool.standard)
-    attachLinkEvents();
-
 
 // ====================================================================================
 // EVENTOS E LISTENERS 
 // ====================================================================================
-
 
 // ------------------------------------------------------------------------------------
 // GERAIS:
 // ------------------------------------------------------------------------------------
 
 // Lógica de control + Z (undo) e control + Y (redo)
-  eventHandlers.push(initUndoRedo(history, historyIndex, setHistoryIndex, onChangeInputs));
-// -----------------------------------------------------------------------------------
-// Adiciona eventos para exibição de ferramentas ao passar o mouse sobre um link
-// ------------------------------------------------------------------------------------
+  initUndoRedo(history, historyIndex, setHistoryIndex, onChangeInputs, eventHandlers);
+
 // Permite movimento do paper através do arraste
   if(!currentTool.selection)
-   eventHandlers.push(initDragHandler(paper, containerRef.current, setTranslation))
-// ------------------------------------------------------------------------------------
+    initDragHandler(paper, containerRef.current, setTranslation, eventHandlers)
+
 // Controle da escala (zoom)
   paper.scale(currentScale);
-  eventHandlers.push(initZoomHandler(currentScale, setCurrentScale));
+  initZoomHandler(currentScale, setCurrentScale, eventHandlers);
+
+
 // -----------------------------------------------------------------------------------
 // ESPECÍFICOS DE FERRAMENTAS
 // ------------------------------------------------------------------------------------
@@ -214,7 +189,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
   // Permite mover os links
 
-    let movingLink:any = null; // Referência ao link sendo movido
+
     let targetNode:any = null;  // Referência ao nodo que o link está em cima
     let mustMove = false; // Indica se de fato clicamos para mover o link
     let initialPosition:any = null; // Guarda a posição inicial caso precise desfazer
@@ -223,15 +198,15 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
    /* paper.on('link:pointerdown', (linkView, evt, x, y) => {
       evt.preventDefault();
     
-      movingLink = linkView.model; 
+      movingLink.current = linkView.model; 
     
       initialPosition = {
-        source: movingLink.get('source'),
-        target: movingLink.get('target'),
+        source: movingLink.current.get('source'),
+        target: movingLink.current.get('target'),
       };
 
       // Remove os vértices pra não ficar feio o movimento (teria que guardar eles pra caso não ocorra mudança, retorná-los)
-      movingLink.set('vertices', []);      
+      movingLink.current.set('vertices', []);      
 
 
       // Identifica se de fato clicou para mover o link (logo no começo dele ou logo no fim)
@@ -248,7 +223,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
     // Atualiza a posição do link enquanto o mouse se move
     const handleMouseMoveLink = (evt: any) => {
-      if (movingLink) {
+      if (movingLink.current) {
 
         const newPosition = paper.clientToLocalPoint(evt.clientX, evt.clientY); // pega as coordenadas absolutas do clique e retorna as coordenadas relativas ao paper
     
@@ -277,27 +252,27 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
           targetNode.attr('body/stroke', '#00A8FF');
         }
 
-        movingLink.set('target', newPosition);
+        movingLink.current.set('target', newPosition);
 
       }
     }
     
     // Finaliza o movimento quando solta o clique do mouse
     function handleMouseUp(evt : any) {
-      if (movingLink) {
+      if (movingLink.current) {
     
         if (targetNode) {
           // Havendo um nodo alvo, define ele como target
-          movingLink.set('target', { id: targetNode.id });
+          movingLink.current.set('target', { id: targetNode.id });
           targetNode.attr('body/stroke', 'black');
           
         } else {
           // Se não, volta à posição inicial
-          movingLink.set('source', initialPosition.source);
-          movingLink.set('target', initialPosition.target);
+          movingLink.current.set('source', initialPosition.source);
+          movingLink.current.set('target', initialPosition.target);
         }
     
-        movingLink = null; 
+        movingLink.current = null; 
         targetNode = null;
       }
     
@@ -306,8 +281,6 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
     }
 
     */
-
-
 
 
   // ------------------------------------------------------------------------------------
@@ -324,199 +297,16 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
   }
 
-
-
-
   // ------------------------------------------------------------------------------------
   // SELEÇÃO
   // ------------------------------------------------------------------------------------
 
   if(currentTool.selection){
 
-    // Todas as células selecionadas
     let selectedCells:joint.dia.Cell[] = [];
 
-    
-    const deleteSelectedCells = (selectedCells: joint.dia.Cell[]) => {
-      let newTransitions = {...transitions};
-      let newStates = [...states];
-      let newFinalStates = [...tokenizedInputs.finalStates];
-      let newInitState = [...tokenizedInputs.initState];
-
-      // Para cada célula selecionada
-      selectedCells.forEach((cell) => {
-
-        // Se ela for um nodo (estado)
-        if(cell.isElement()){
-          const deletedState = getElementText(cell); // pega o nome dele
-          newStates = newStates.filter((state) => state != deletedState); // tira ele dos estados
-          newFinalStates = newFinalStates.filter((state) => state != deletedState); // tira dos estados finais
-          newInitState = newInitState.filter((state) => state != deletedState); // tira do estado inicial
-
-          delete newTransitions[deletedState]; // deleta todas as transições com ele como origem
-        }
-
-        // Se ela for um link
-        else if(cell.isLink()){
-
-          // Pega o texto da transição
-          const deletedTransition = tokenize(getLinkText(cell));
-
-          // Se tiver algo no texto da transição
-          if(deletedTransition.length > 0){
-            const readSymbol = deletedTransition[0];
-            const originNode = graph.getCell(cell.attributes.source.id);
-
-            // Isso não deveria acontecer, pois se há um link desenhado deve haver um estado de origem para esse link
-            if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
-                return;
-
-            const originState = getElementText(originNode as joint.dia.Element);
-
-            // Isso também não deveria acontecer, pois se há um estado desenhado ele deveria ter um nome (um texto)
-            if(!originState)
-              return;
-            
-            // Como estamos apagando os estados também e junto deles todas as suas transições, essa situação pode ocorrer (apaguei o estado e todos os links nele e agora estou tentando apagar o link de novo)
-            if(!newTransitions[originState])
-              return;
-
-            // Por fim, se o símbolo de leitura for válido para o alfabeto, aí sim apaga a transição
-            if(alphabet.includes(readSymbol))
-              newTransitions[originState] = {...newTransitions[originState], [readSymbol]: { next: "", error: 0 } };
-          }
-          
-          else{ // Não ter nada no texto da transição não deveria acontecer, pois nesse caso a transição já deveria ter sido excluída
-            alert("Transição sem texto");
-          }
-          
-        }
-      });
-
-      handleInputsChange({...inputs, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
-                         {...tokenizedInputs, states: newStates, finalStates: newFinalStates, initState: newInitState},
-                         newTransitions);
-    }
-
-    // Quando clica com o mouse, reseta todas as seleções e cria uma nova caixa de seleção, permitindo que ela cresça/diminua conforme o movimento do mouse
-    const handleMouseDown = (event: MouseEvent) => {
-      if (!containerRef.current) return;
-    
-      selectedCells.forEach((cell) => {
-        if(cell.isLink()){
-          cell.attr('line/stroke', 'black');
-        }
-        else if(cell.isElement()){
-          cell.attr('body/stroke', 'black'); 
-
-        }
-      });
-
-      selectedCells = [];
-
-      // todas as posições devem ser relativas ao container do grafo
-      const container = containerRef.current;
-      const containerRect = container.getBoundingClientRect();
-
-      // Pega a posição inicial absoluta do clique
-      const startX = event.clientX;
-      const startY = event.clientY;
-    
-      // Cria um retângulo de seleção iniciando na posição do clique
-      const selectionBox = document.createElement("div");
-      selectionBox.style.position = "absolute";
-      selectionBox.style.border = "1px dashed blue";
-      selectionBox.style.background = "rgba(0, 0, 255, 0.2)";
-      selectionBox.style.left = `${startX - containerRect.x}px`;
-      selectionBox.style.top = `${startY - containerRect.y}px`;
-      selectionBox.style.zIndex = "10";
-      selectionBox.style.pointerEvents = "none"; // Para não bloquear outros eventos
-      container.appendChild(selectionBox);
-    
-      // Atualiza o retângulo conforme o mouse se mexe
-      const handleMouseMoveSelection = (moveEvent: MouseEvent) => {
-        const currentX = moveEvent.clientX;
-        const currentY = moveEvent.clientY;
-    
-
-        // Calcula a largura e altura da seleção 
-        const width = Math.abs(currentX - startX);
-        const height = Math.abs(currentY - startY);
-    
-
-        // Ajusta a posição caso o usuário arraste para cima/esquerda - left e top sempre serão, respectivamente, o menor x e o menor y entre a posição do primeiro clique ou a posição atual do mouse (relativas ao container) 
-        selectionBox.style.left = `${Math.min(startX - containerRect.x, currentX - containerRect.x)}px`;
-        selectionBox.style.top = `${Math.min(startY - containerRect.y, currentY - containerRect.y)}px`;
-        selectionBox.style.width = `${width}px`;
-        selectionBox.style.height = `${height}px`;
-
-
-        // Verifica quais elementos foram selecionados
-
-        const selectionRect = new joint.g.Rect((Math.min(startX, moveEvent.clientX) - containerRect.left - translation.x) / currentScale, 
-                                               (Math.min(startY, moveEvent.clientY) - containerRect.top - translation.y) / currentScale, 
-                                               (Math.abs(startX - moveEvent.clientX)) / currentScale, 
-                                               (Math.abs(startY - moveEvent.clientY)) / currentScale);
-
-
-        const allCells = graph.getCells();
-
-
-        // As células selecionadas são aquelas dentre todas as células no grafo que intersectam o retângulo de seleção
-        selectedCells = allCells.filter((cell) => {
-        const bbox = cell.getBBox(); 
-
-        if(selectionRect.intersect(bbox)){
-          if(cell.isLink())
-            cell.attr('line/stroke', 'blue');
-          else if(cell.isElement())
-            cell.attr('body/stroke', 'green'); 
-
-          return true;
-        }
-        else{
-          if(cell.isLink())
-            cell.attr('line/stroke', 'black');
-          else if(cell.isElement())
-            cell.attr('body/stroke', 'black'); 
-  
-          return false;
-          
-        }});
-
-      };
-    
-      // Quando solta o clique do mouse, permite a deleção de todas as células selecionadas
-      const handleMouseUp = (event:any) => {
-        document.removeEventListener("mousemove", handleMouseMoveSelection);
-        document.removeEventListener("mouseup", handleMouseUp);
-  
-        const handleDeleteSelectedCells = (evt:any) => {
-          if(evt.key != 'Delete')
-            return;
-
-          deleteSelectedCells(selectedCells);
-          document.removeEventListener("keydown", handleDeleteSelectedCells);
-        }
-
-        document.addEventListener("keydown", handleDeleteSelectedCells);
-        eventHandlers.push({element: document, event: "keydown", handler: handleDeleteSelectedCells});
-    
-        selectionBox.remove();
-      };
-    
-      // Finalmente, adiciona os listeners de movimento do mouse e de solte
-      document.addEventListener("mousemove", handleMouseMoveSelection);
-      document.addEventListener("mouseup", handleMouseUp);
-      eventHandlers.push({element: document, event: "mousemove", handler: handleMouseMoveSelection});
-      eventHandlers.push({element: document, event: "mouseup", handler: handleMouseUp});
-    };
-    
-    // Adiciona o evento de clique ao container
-    if (containerRef.current) {
-      containerRef.current.addEventListener("mousedown", handleMouseDown);
-      eventHandlers.push({element: containerRef.current, event: "mousedown", handler: handleMouseDown});
-    }
+    // Permite selecionar várias células ao mesmo tempo para deletá-las juntas
+    initCellsSelection(paper, selectedCells, currentScale, translation, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
   }
 
   // ------------------------------------------------------------------------------------
@@ -525,524 +315,27 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
     if(currentTool.standard){
 
+      // Coloca os eventos de edição de vértices nos links
+      attachLinkEvents(paper);
 
-    // FUNÇÕES AUXILIARES
+      // Permite a seleção de células e libera as opções que vem com células selecionadas
+      initCellSelection(paper, nodes, currentCellView, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
 
+      // Permite editar textos de nodos e links
+      initEditNode(paper, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
+      initEditLink(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
 
-    // Dada uma célula (um nodo), checa se o estado representado por aquela célula é um estado final. Se for, torna ele um estado não final. Se não for, torna ele um estado final
-    const changeFinalStatus = (cell:joint.dia.Element) => {
-      const state = getElementText(cell);
-      let newFinalStates : string[];
-
-      if(tokenizedInputs.finalStates.includes(state)){
-        newFinalStates = tokenizedInputs.finalStates.filter((s) => s != state);
-      }
-      else{
-        if(tokenizedInputs.finalStates.length == 1 && tokenizedInputs.finalStates[0] == "") 
-          newFinalStates = [state];
-        else
-          newFinalStates = [...tokenizedInputs.finalStates, state];
-      }
-  
-      handleInputsChange({...inputs, finalStates: newFinalStates.join(", ")}, {...tokenizedInputs, finalStates: newFinalStates}, transitions);
     }
-
-
-    // Dada uma célula (um nodo), checa se o estado representado por aquela célula é um estado inicial. Se for, torna ele um estado não inicial. Se não for, torna ele um estado inicial
-    const changeInitStatus = (cell:joint.dia.Element) => {
-      const state = getElementText(cell)
-
-      let newInitState : string[]; 
-
-      if(tokenizedInputs.initState.includes(state))
-        newInitState = tokenizedInputs.initState.filter((s) => s != state);
-      else
-        newInitState = [state];
-  
-      handleInputsChange({...inputs, initState: newInitState.join(", ")}, {...tokenizedInputs, initState: newInitState}, transitions);
-    }
-
-
-    // Função auxiliar usada para criar os botões que permitem tornar o estado de um nodo selecionado um estado inicial/final. Ela é usada para criar os botões ao lado dos nodos
-    // Dado um texto, um deslocamento no eixo y e as informações de uma caixa, cria um botão no lado direito da caixa deslocado em y pelo valor passado e com o texto passado
-    const createButton = (text:string, topOffset:number, paperRect:any, bbox:any) => {
-      const button = document.createElement('button');
-      button.textContent = text;
-      button.className = 'node-button';
-      button.style.position = 'absolute';
-      button.style.left = `${bbox.x + bbox.width + 10}px`; // Ao lado do nó
-      button.style.top = `${bbox.y + topOffset}px`; // Ajuste vertical
-      button.style.zIndex = "4"; // Garantir que fique acima do SVG
-      if(containerRef.current)
-        containerRef.current.appendChild(button);
-      return button;
-      };
-      
-      // Função usada para atualizar as posições dos botões que alteram o status inicial/final do nodo selecionado conforme ele se mexe
-      // Dados dois botões, atualiza a posição deles para eles ficarem ao lado do nodo selecionado no momento. 
-      const updateButtonPositions = (button1:HTMLButtonElement, button2:HTMLButtonElement) => {
-      const bbox = currentCellView.current.getBBox();
-      const paperRect = paper.el.getBoundingClientRect();
-
-
-      button1.style.left = `${bbox.x + bbox.width + 10}px`;
-      button1.style.top = `${bbox.y}px`;
-            
-      button2.style.left = `${bbox.x + bbox.width + 10}px`;
-      button2.style.top = `${bbox.y + 20}px`;
-      };
-
-
-    // Deleta o nodo selecionado quando a tecla Delete é apertada
-    const deleteNode = (e:any) => {
-
-      if(e.key != 'Delete' || !(currentCellView.current))
-        return;
-
-      document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-
-      const deletedState = getElementText(currentCellView.current.model);
-
-
-      const newStates = tokenizedInputs.states.filter((state) => state != deletedState);
-      const newFinalStates = tokenizedInputs.finalStates.filter((state) => state != deletedState);
-      const newInitState = tokenizedInputs.initState.filter((state) => state != deletedState);
-
-      const newTransitions = {...transitions};
-      delete newTransitions[deletedState];
-
-
-      currentCellView.current = null;
-      
-      document.removeEventListener("keydown", deleteNode);
-
-
-      handleInputsChange({...inputs, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
-        {...tokenizedInputs, states: newStates, finalStates: newFinalStates, initState: newInitState},
-        newTransitions
-      )
-    }
-
-
-
-
-
-
-// ------------------------------------------------------------------------------------
-
-    // INICIALIZAÇÃO
-  
-    // Elimina resquícios de listeners e botões de outras renderizações (poderia colocar no cleanup, mas aí teria que tirar a função auxiliar deleteNode do condicional)
-    document.removeEventListener("keydown", deleteNode);
-    document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-
-
-    // Se existir uma célula selecionada
-    if(currentCellView.current){
-      // Mas a célula não representa nenhum estado (o que não deveria acontecer), desceleciona a célula 
-      if(!nodes.get(getElementText(currentCellView.current.model)))
-        currentCellView.current = null
-      
-      // Se a célula representa algum estado, é preciso atualizá-la para a nova renderização, pois currentCellView guarda as informações do nodo da renderização passada
-      else{
-        // Atribui à célula selecionada o novo nodo
-        currentCellView.current =  nodes.get(getElementText(currentCellView.current.model)).findView(paper);
-
-        currentCellView.current.model.attr('body/stroke', 'green'); 
-
-        // e cria novamente os botões de edição de estado final/inicial
-        const bbox = currentCellView.current.getBBox();
-        const paperRect = paper.el.getBoundingClientRect();
-
-        const button1 = createButton('Final', 0, paperRect, bbox);
-        button1.onclick = () => changeFinalStatus(currentCellView.current.model);
-  
-        const button2 = createButton('Inicial', 20, paperRect, bbox);
-        button2.onclick = () => changeInitStatus(currentCellView.current.model);
-      }
-    }
-
-// ------------------------------------------------------------------------------------
-
-    // Seleção/Desceleção de nodo/link
-
-      // Desceleciona ao clicar no vazio
-      paper.on("blank:pointerdown", (evt, x, y) => { 
-        document.removeEventListener("keydown", deleteNode);
-
-        if(evt.target.tagName != "svg")
-          return;
-
-        if(currentCellView.current !== null){
-          currentCellView.current.model.attr('body/stroke', 'black');
-          document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-          currentCellView.current = null;
-        }
-
-        if(movingLink !== null){
-          movingLink.model.attr('line/stroke', 'black');
-          document.removeEventListener('keydown', deleteLink);
-          movingLink = null;
-        }
-      });
-
-
-      // Ao clicar em um link, seleciona ele e desceleciona qualquer outra coisa selecionada 
-      paper.on("link:pointerdown", (linkView, evt, x, y) => {
-        if(currentCellView.current !== null){
-          currentCellView.current.model.attr('body/stroke', 'black');
-          document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-          document.removeEventListener("keydown", deleteNode);
-          currentCellView.current = null;
-        }
-
-        if(movingLink != linkView){
-          if(movingLink !== null)
-            movingLink.model.attr('line/stroke', 'black');
-
-          document.removeEventListener('keydown', deleteLink);
-
-          movingLink = linkView;
-          movingLink.model.attr('line/stroke', 'blue');
-        }
-
-        document.addEventListener('keydown', deleteLink);
-        eventHandlers.push({element: document, event: "keydown", handler: deleteLink});
-
-      })
-
-      
-        // Ao clicar em um nodo, seleciona ele e cria os botões que permitem tornar o nodo estado inicial e estado final, além de descelecionar qualquer outra coisa
-        paper.on('cell:pointerdown', (cellView, evt, x, y) => {    
-          
-          document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-          document.removeEventListener("keydown", deleteNode);
-
-          if(cellView != currentCellView.current){
-            if(currentCellView.current !== null)
-              currentCellView.current.model.attr('body/stroke', 'black');
-          
-            currentCellView.current = cellView;
-          }
-
-          document.addEventListener('keydown', deleteNode);
-          eventHandlers.push({element: document, event: "keydown", handler: deleteNode});
-          currentCellView.current.model.attr('body/stroke', 'green');
-
-          if(movingLink !== null){
-            movingLink.model.attr('line/stroke', 'black');
-            document.removeEventListener('keydown', deleteLink);
-            movingLink = null;
-          }
-
-          const bbox = currentCellView.current.getBBox();
-          const paperRect = paper.el.getBoundingClientRect();
-
-          // Cria os botões e define suas ações. Deu algum problema de sincronização ao usar a função updateButtonPositions para definir a posição dos botões logo na inicialização
-          // Por isso, as posições estão sendo definidas diretamente na createButtons, e então ao mover as posições são atualizadas
-          const button1 = createButton('Final', 0, paperRect, bbox);
-          button1.onclick = () => changeFinalStatus(currentCellView.current.model);
-
-          const button2 = createButton('Inicial', 20, paperRect, bbox);
-          button2.onclick = () => changeInitStatus(currentCellView.current.model);
-
-          cellView.model.on('change:position', () => updateButtonPositions(button1, button2));
-
-        })
-
-
-// ------------------------------------------------------------------------------------
-
-    // Edição de nodos/links
-
-        // Edição de link ao clicar 2 vezes sobre ele
-        paper.on('link:pointerdblclick', (linkView, event) => {
-
-          if (containerRef.current === null) return;
-
-          // Se clicou sobre um círculo é porque clicou em um vértice (para editar, é preciso clicar direto na caixa de texto)
-          if(event.target.tagName === "circle") 
-            return;
-
-          const link = linkView.model;
-
-          // Obtém o texto antes da edição
-          const currentText = getLinkText(link);
-          const originalText = currentText;
-        
-          // tokeniza o texto e obtém o símbolo de leitura da transição
-          const readSymbol = tokenize(originalText)[0];
-
-          // Obtém o alvo e a fonte
-          const originNode = graph.getCell(movingLink.model.attributes.source.id);
-          const originState = getElementText(originNode as joint.dia.Element);
-
-          const targetNode = graph.getCell(movingLink.model.attributes.target.id);
-          const targetState = getElementText(targetNode as joint.dia.Element);
-        
-          
-
-          // Cria um elemento input para edição e o adiciona ao documento
-
-          const textBox = event.target.getBoundingClientRect();
-
-          const input = document.createElement('input');
-          input.value = currentText;
-          input.style.position = 'absolute';
-          input.style.left = `${textBox.x}px`; 
-          input.style.top = `${textBox.y}px`;
-          input.style.fontSize = '12px';
-          input.style.padding = '2px';
-          input.style.zIndex = '4';
-          input.style.background = '#fff';
-          input.style.border = '1px solid #ccc';
-          input.style.borderRadius = '4px';
-          input.style.width = `${textBox.width}px`;
-          input.style.height = `${textBox.height}px`;
-        
-          document.body.appendChild(input);
-        
-          input.focus();
-        
-          // Salva o texto e fecha o input ao teclar enter ou esc
-          input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === 'Escape') saveText();
-          });
-
-          // salva o texto e fecha o input ao cliar fora dele
-          const handleClick = (event: any) => {
-            if (event.target === input) return;
-          
-            saveText();
-            document.removeEventListener('mousedown', handleClick);
-          };
-        
-          document.addEventListener('mousedown', handleClick);
-          eventHandlers.push({element: document, event: "mousedown", handler: handleClick});
-        
-          const saveText = () => {
-            // tokeniza o texto editado
-            let transitionInfo = tokenize(input.value);
-            const newTransitions = { ...transitions };
-            
-            // A configuração atual inclui, quando algo não pe definido na transição, a palavra "undefined" na hora do desenho
-            // Se o alfabeto não incluir essa palavra, elimina ela. Não tem perigo de ela ser o símbolo de leitura (índice 0), porque a transição nem existiria se fosse assim, vide abaixo
-            if(!alphabet.includes("undefined"))
-              transitionInfo = transitionInfo.filter((token:string) => token != "undefined");
-
-            console.log(transitionInfo);
-
-            // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO, retorna. Ou seja, não salva a edição e deixa como estava
-            if(transitionInfo.length == 0 || !alphabet.includes(transitionInfo[0])){
-              newTransitions[originState][readSymbol].next = "";
-              input.remove();
-              document.removeEventListener('mousedown', handleClick);
-              handleInputsChange(inputs, tokenizedInputs, newTransitions);
-              return;
-            }
-
-
-
-
-            // Se tiver algo, tem que tomar cuidado com o não determinismo:
-
-            // Pega a transição antiga do estado de origem lendo o símbolo definido na edição 
-            const prevTransition = newTransitions[originState][transitionInfo[0]];
-
-
-              // Se o símbolo de leitura foi trocado na edição e a transição antiga não é vazia, temos 2 transições diferentes partindo do mesmo estado e lendo o mesmo símbolo: não determinismo
-              // Aqui a edição está apenas sendo ignorada
-            if(readSymbol != transitionInfo[0] && prevTransition.next != ""){
-              alert(`Não determinismo detectado: [${originState}, ${transitionInfo[0]}]`); 
-              input.remove();
-              document.removeEventListener('mousedown', handleClick);
-              return;
-            }
-
-            // Apaga a transição antiga
-            newTransitions[originState][readSymbol].next = "";
-
-            // Passando do teste do não determinismo, pode salvar a transição, colocar o valor nela na nova label do link e atualizar as transições
-              let next;
-              if(transitionInfo.length > 1)
-                next = `${targetState}, ${transitionInfo.slice(1).join(", ")}`;
-              else
-                next = targetState;
-
-
-              newTransitions[originState][transitionInfo[0]] = { ...newTransitions[originState][transitionInfo[0]], next: next };
-
-            
-            
-            if (input) {
-              link.label(0, {
-                position: { distance: 0.5, offset: -15 },
-                attrs: {
-                  text: { text: input.value, fontSize: 12, fontWeight: "bold" },
-                },
-              });
-        
-              document.removeEventListener('mousedown', handleClick);
-        
-              handleInputsChange(inputs, tokenizedInputs, newTransitions);
-              input.remove();
-            }
-          };
-        });
-        
-
-
-    // Habilita a edição de texto ao clicar duas vezes sobre nodo
-    paper.on('element:pointerdblclick', (cellView, event, x, y) => {
-
-      document.removeEventListener("keydown", deleteNode);
-
-      if(containerRef.current === null)
-        return;
-
-      document.querySelectorAll('.node-button').forEach(btn => btn.remove());
-
-      const cell = cellView.model;
-
-      const currentText = cell.attr('label/text');
-      const originalText = currentText;
-
-      const bbox = cellView.getBBox();
-      const paperRect = containerRef.current.getBoundingClientRect();
-
-      // Cria um elemento input para edição
-      const input = document.createElement('input');
-      input.value = currentText;
-      input.style.position = 'absolute';
-      input.style.left = `${paperRect.x + bbox.x}px`;
-      input.style.top = `${paperRect.y + bbox.y}px`;
-      input.style.fontSize = '12px';
-      input.style.padding = '2px';
-      input.style.zIndex = '1000';
-      input.style.background = '#fff';
-      input.style.border = '1px solid #ccc';
-      input.style.borderRadius = '4px';
-      input.style.width = `${bbox.width}px`;
-      input.style.height = `${bbox.height}px`;
-
-
-      document.body.appendChild(input);
-
-      
-      input.focus(); // Permite edição imediata
-
-
-      const handleClick = (event: any) => {
-        if (event.target === input) return;
-        saveText();
-        document.removeEventListener('mousedown', handleClick);
-      };
-
-
-      document.addEventListener("mousedown", handleClick);
-      eventHandlers.push({element: document, event: "mousedown", handler: handleClick});
-
-
-      // Lida com teclas pressionadas enquanto o texto está sendo editado
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key == 'Escape') saveText();
-      });
-    
-
-      const saveText = () => {
-        if (input) {
-
-          if(input.value == originalText){
-            input.remove();
-            return;
-          }
-
-          cell.attr('label/text', input.value); 
-
-          if(currentCellView.current)
-            currentCellView.current = null;
-          
-
-          let newStatesTokenized;
-          let newFinalStatesTokenized = tokenizedInputs.finalStates;
-          let newInitState = tokenizedInputs.initState;
-
-          if(input.value == ''){
-            newStatesTokenized = states.filter((s) => (s != originalText));
-            newFinalStatesTokenized = newFinalStatesTokenized.filter((s) => (s != originalText));
-            newInitState = newInitState.filter((s) => (s != originalText));
-          }
-          else{
-            if(tokenizedInputs.finalStates.includes(originalText))
-              newFinalStatesTokenized = newFinalStatesTokenized.map((s) => (s === originalText ? input.value : s));
-
-            if(tokenizedInputs.initState.includes(originalText))
-              newInitState = newInitState.map((s) => (s === originalText ? input.value : s));
-
-            newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
-          }
-            
-            
-          handleInputsChange({...inputs, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
-            {...tokenizedInputs, states: newStatesTokenized, finalStates:newFinalStatesTokenized, initState:newInitState}, 
-            transitions); 
-
-          input.remove();
-        }
-      };
-    
-    });
-
-    // Deleção de um nodo selecionado
-    const deleteLink = (e:any) => {
-
-          if(e.key != 'Delete' || !movingLink)
-            return;
-    
-          const deletedTransition = tokenize(getLinkText(movingLink.model));
-
-          
-          if(deletedTransition.length > 0){
-            const readSymbol = deletedTransition[0];
-            const originNode = graph.getCell(movingLink.model.attributes.source.id);
-
-            // Isso não deveria acontecer...
-            if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
-                return;
-
-            const originState = getElementText(originNode as joint.dia.Element);
-
-            // Nem isso...
-            if(!originState)
-              return;
-            
-
-
-            if(alphabet.includes(readSymbol)){ 
-              handleInputsChange(inputs, tokenizedInputs, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
-            }
-            else{ // Muito menos isso, mas por enquanto deixa aí
-              alert("Erro: Símbolo lido não existe no alfabeto");
-              handleInputsChange(inputs, tokenizedInputs, transitions);
-            }
-          
-          }
-        }
-
-    } 
-
-
 
     console.log("Terminou o desenho");
-    console.log(transitions);
     return () => {
 
       eventHandlers.forEach((listener) => listener.element?.removeEventListener(listener.event, listener.handler as EventListener));
             
       
-      if(movingLink){
-        movingLink.model.attr('line/stroke', 'black');
-        movingLink = null;
+      if(movingLink.current){
+        movingLink.current.model.attr('line/stroke', 'black');
+        movingLink.current = null;
       }
     };
     }, [tokenizedInputs, transitions, currentTool, currentScale]); 

@@ -2,7 +2,9 @@
 
 export function initZoomHandler(
     currentScale: number,
-    setCurrentScale: (scale: number) => void
+    setCurrentScale: (scale: number) => void,
+    eventHandlers: any[]
+
   ) {
     const scaleIncrement = 0.1; // Incremento/decremento da escala
     const minScale = 0.2; // Escala mínima
@@ -25,6 +27,6 @@ export function initZoomHandler(
     if(paperContainer)
         paperContainer.addEventListener("wheel", handleWheel)
   
-    return { element: paperContainer, event: "wheel", handler: handleWheel };
+    eventHandlers.push({ element: paperContainer, event: "wheel", handler: handleWheel });
   }
   

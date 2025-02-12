@@ -1,11 +1,13 @@
-import { InputErrors, InputValues, TokenizedInputValues, Transitions, State } from "../../../../types/types";
+import { InputErrors, InputValues, TokenizedInputValues, Transitions, State } from "../../../../../types/types";
 
 
 export function initUndoRedo(
   history: Array<State>,
   historyIndex: number,
   setHistoryIndex: (index: number) => void,
-  onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void
+  onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void,
+  eventHandlers: any[]
+
 ) {
   const undo = () => {
     if (historyIndex > 0) {
@@ -35,5 +37,5 @@ export function initUndoRedo(
 
   document.addEventListener("keydown", handleKeyDown);
 
-  return { element: document, event: "keydown", handler: handleKeyDown };
+  eventHandlers.push({ element: document, event: "keydown", handler: handleKeyDown });
 }

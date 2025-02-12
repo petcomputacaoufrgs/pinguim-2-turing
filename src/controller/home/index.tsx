@@ -51,7 +51,11 @@ export function Home() {
 
     const saveStateToHistory = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) => {
       const newHistory = history.slice(0, historyIndex + 1); 
+      console.log("--------");
+      console.log({inputs: new_values, tokenizedInputs: new_tokenized_values, transitions: new_transitions, errors: newErrors});
+      
       newHistory.push({inputs: new_values, tokenizedInputs: new_tokenized_values, transitions: new_transitions, errors: newErrors});
+      console.log(newHistory);
       setHistory(newHistory);
       setHistoryIndex(historyIndex + 1);
     }
