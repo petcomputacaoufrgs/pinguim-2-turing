@@ -10,11 +10,6 @@ import { StateProvider } from "./ContextProvider";
 
 export default function Routess(){
 
-
-
-
-
-
     return(
         <BrowserRouter>
 
