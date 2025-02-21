@@ -41,8 +41,8 @@ deleção de estados isso pode bugar
 
 
 interface i_simple_diagram {
-  onChangeInputs: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
-  saveStateToHistory: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
+  onChangeInputs?: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
+  saveStateToHistory?: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   currentTool: CurrentTool;
 }
 
@@ -81,7 +81,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
   
 
-  // Referências ao container que contém o grado e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
+  // Referências ao container que contém o grafo e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
   const containerRef = useRef<HTMLDivElement | null>(null);
   const currentCellView = useRef<any>(null);
   const movingLink = useRef<any>(null); // Referência ao link sendo movido
@@ -98,8 +98,13 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   const states = tokenizedInputs.states;
 
 
+
   // Dados novos valores aos inputs, faz a validação deles, salva o estado no histórico de edições e então atualiza os valores
   const handleInputsChange = (newInputs: InputValues, newTokenizedInputs: TokenizedInputValues, newTransitions: Transitions) => {
+
+    if(!saveStateToHistory || !onChangeInputs) 
+      return;
+
     const newErrors = validateInputs(newTokenizedInputs, errors);
     const revalidatedTransitions = revalidateTransitions(newTransitions, tokenizedInputs, newTokenizedInputs);
 
@@ -107,6 +112,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
     onChangeInputs(newInputs, newTokenizedInputs, revalidatedTransitions, newErrors);
       
   };
+
 
 // RENDERIZAÇÃO
 
@@ -167,7 +173,8 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 // ------------------------------------------------------------------------------------
 
 // Lógica de control + Z (undo) e control + Y (redo)
-  initUndoRedo(history, historyIndex, setHistoryIndex, onChangeInputs, eventHandlers);
+  if(!currentTool.noEdit && onChangeInputs)
+    initUndoRedo(history, historyIndex, setHistoryIndex, onChangeInputs, eventHandlers);
 
 // Permite movimento do paper através do arraste
   if(!currentTool.selection)
@@ -297,6 +304,16 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
 
   }
 
+
+
+  // ------------------------------------------------------------------------------------
+  // APENAS VISUALIZAÇÃO
+  // ------------------------------------------------------------------------------------
+
+  if(currentTool.noEdit){
+      // Coloca os eventos de edição de vértices nos links
+      attachLinkEvents(paper);
+  }
   // ------------------------------------------------------------------------------------
   // SELEÇÃO
   // ------------------------------------------------------------------------------------
@@ -338,7 +355,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
         movingLink.current = null;
       }
     };
-    }, [tokenizedInputs, transitions, currentTool, currentScale]); 
+    }, [tokenizedInputs, transitions, currentScale, currentTool]); 
   
 
 

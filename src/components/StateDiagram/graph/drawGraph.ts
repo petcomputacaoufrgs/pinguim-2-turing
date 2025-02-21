@@ -148,10 +148,10 @@ import { tokenize } from '../../../utils/tokenize';
       for (const symbol of alphabet) {
         if (!transitions[state]) continue;
         const transition = transitions[state][symbol];
-        if (!transition || transition.next === "") continue;
+        if (!transition || transition.transitionText === "") continue;
 
         // E tomando as informações da transição
-        const transitionInfo = tokenize(transition.next);
+        const transitionInfo = tokenize(transition.transitionText);
 
 
         // Se o estado alvo da transição não existe, pula para a próxima
@@ -172,7 +172,7 @@ import { tokenize } from '../../../utils/tokenize';
         if (existingLink) {
           const text = getLinkText(existingLink);
 
-          if (text && transitionInfo[1] === tokenize(transition.next)[1]) {
+          if (text && transitionInfo[1] === tokenize(transition.transitionText)[1]) {
             // Clona o link existente preservando vértices e propriedades, o adiciona ao grafo e pula para a próxima transição
             const newLink = new joint.shapes.standard.Link({
               source: { id: sourceNode.id },

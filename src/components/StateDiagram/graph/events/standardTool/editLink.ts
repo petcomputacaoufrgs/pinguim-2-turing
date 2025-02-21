@@ -105,7 +105,10 @@ export function initEditLink(
 
             // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO, retorna. Ou seja, não salva a edição e deixa como estava
             if(transitionInfo.length == 0 || !alphabet.includes(transitionInfo[0])){
-              newTransitions[originState][readSymbol].next = "";
+              newTransitions[originState][readSymbol].transitionText = "";
+              newTransitions[originState][readSymbol].direction = "";
+              newTransitions[originState][readSymbol].nextState = "";
+              newTransitions[originState][readSymbol].newSymbol = "";
               input.remove();
               document.removeEventListener('mousedown', handleClick);
               handleInputsChange(inputs, tokenizedInputs, newTransitions);
@@ -123,7 +126,7 @@ export function initEditLink(
 
               // Se o símbolo de leitura foi trocado na edição e a transição antiga não é vazia, temos 2 transições diferentes partindo do mesmo estado e lendo o mesmo símbolo: não determinismo
               // Aqui a edição está apenas sendo ignorada
-            if(readSymbol != transitionInfo[0] && prevTransition.next != ""){
+            if(readSymbol != transitionInfo[0] && prevTransition.transitionText != ""){
               alert(`Não determinismo detectado: [${originState}, ${transitionInfo[0]}]`); 
               input.remove();
               document.removeEventListener('mousedown', handleClick);
@@ -131,7 +134,10 @@ export function initEditLink(
             }
 
             // Apaga a transição antiga
-            newTransitions[originState][readSymbol].next = "";
+            newTransitions[originState][readSymbol].transitionText = "";
+            newTransitions[originState][readSymbol].direction = "";
+            newTransitions[originState][readSymbol].nextState = "";
+            newTransitions[originState][readSymbol].newSymbol = "";
 
             // Passando do teste do não determinismo, pode salvar a transição, colocar o valor nela na nova label do link e atualizar as transições
               let next;
@@ -140,7 +146,7 @@ export function initEditLink(
               else
                 next = targetState;
 
-              newTransitions[originState][transitionInfo[0]] = { ...newTransitions[originState][transitionInfo[0]], next: next };
+              newTransitions[originState][transitionInfo[0]] = { ...newTransitions[originState][transitionInfo[0]], transitionText: next, direction: transitionInfo[2], nextState: targetState, newSymbol: transitionInfo[1] };
               
             if (input) {
               link.label(0, {

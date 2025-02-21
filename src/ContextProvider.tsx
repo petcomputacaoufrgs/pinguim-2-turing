@@ -38,7 +38,7 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     documentation : "",
 
-    transitions : {q0:{"@":{next:"", error:0}, "-":{next:"", error:0}}},
+    transitions : {q0:{"@":{transitionText:"", direction: "", nextState: "", newSymbol: "", error:0}, "-":{transitionText:"", direction: "", nextState: "", newSymbol: "", error:0}}},
 
     inputs: {
       states: "q0",

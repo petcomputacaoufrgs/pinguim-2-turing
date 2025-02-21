@@ -10,7 +10,11 @@ export const errorCodes = Object.freeze({
 export interface Transitions {
     [state: string]: {
       [symbol: string] : {
-        next: string;
+        transitionText: string;
+        nextState: string;
+        newSymbol: string;
+        direction: string;
+
         error: number;
       };
     };
@@ -55,6 +59,7 @@ export interface CurrentTool {
   addNodes: boolean;
   selection: boolean;
   standard: boolean;
+  noEdit: boolean;
 }
 
 export type State = {inputs : InputValues, tokenizedInputs : TokenizedInputValues, transitions : Transitions, errors: InputErrors};

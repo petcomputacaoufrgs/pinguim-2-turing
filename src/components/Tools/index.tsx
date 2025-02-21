@@ -15,7 +15,8 @@ const setEditLinks = () => {
       editLinks: true,
       addNodes: false,
       selection: false,
-      standard: false
+      standard: false,
+      noEdit: false
     });
   }
 
@@ -24,7 +25,8 @@ const setEditLinks = () => {
       editLinks: false,
       addNodes: false,
       selection: true,
-      standard: false
+      standard: false,
+      noEdit: false
     });
   }
 
@@ -33,7 +35,8 @@ const setEditLinks = () => {
       editLinks: false,
       addNodes: true,
       selection: false,
-      standard: false
+      standard: false,
+      noEdit: false
     });
   }
 
@@ -42,7 +45,8 @@ const setEditLinks = () => {
       editLinks: false,
       addNodes: false,
       selection: false,
-      standard: true
+      standard: true,
+      noEdit: false
     });
   }
 

@@ -19,7 +19,7 @@ export const Logo = styled.img`
     padding-left: 3vw;
 `;
 
-export const Title = styled.text`
+export const Title = styled.p`
     color: #FBF9FB;
     font-size: 3vw;
     font-weight:bold;

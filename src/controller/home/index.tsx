@@ -28,7 +28,7 @@ export function Home() {
     const {history, setHistory} = changesHistory;
     const {historyIndex, setHistoryIndex} = changesIndex;
 
-    const [currentTools, setCurrentTool] = useState<CurrentTool>({editLinks: false, addNodes: false, selection: false, standard: true});
+    const [currentTools, setCurrentTool] = useState<CurrentTool>({editLinks: false, addNodes: false, selection: false, standard: true, noEdit: false});
 
 
     const setErros = (new_errors : InputErrors) => {
@@ -72,6 +72,7 @@ export function Home() {
       }))
     }
 
+   
     const setDocumentationValue = (docValue : string) => {
       setInputStates(prevStates => ({
         ...prevStates,
@@ -97,7 +98,7 @@ export function Home() {
         <div id="div2">
           <p>Tabela de Transição:</p>
           <div>
-          <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={(newTransitions) => handleInputsChange(inputs, tokenizedInputs, newTransitions, errors)} transitions={transitions} />
+          <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={(newTransitions) => handleInputsChange(inputs, tokenizedInputs, newTransitions, errors)} transitions={transitions} editable={true} />
           </div>
 
           <Buttons height="4.5vh" width="14vw" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>

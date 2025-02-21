@@ -1,15 +1,19 @@
 use wasm_bindgen::prelude::*;
 
+mod state;
+mod tape;
+mod direction;
+mod transition;
 mod turing;
 
 
-#[wasm_bindgen]
-pub fn add(mut a: i32, b: i32) -> i32 {
-    a = turing::multiply_2(a);
-    a + b
-}
+// call to create new turing machine with translate
+    // call to run tm.run()
+    // call to step  tm.step()
+    // call to reset tm.reset()
 
-#[test]
-fn add_test() {
-    assert_eq!(1 + 1, add(1, 1));
-}
+    // if run : tm.run()
+    // if step : tm.step() 
+        // how to know if it is the first step?
+        // how to know which step to take?
+    // if reset : tm.reset()

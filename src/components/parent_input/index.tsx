@@ -65,10 +65,14 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
             transitions[state] = {};
           }
       
+          const [newState, newSymbol, direction, error] = validateTransition(next, newInputsTokenized.states, alphabet);
 
           transitions[state][symbol] = {
-            next: next,
-            error: validateTransition(next, newInputsTokenized.states, alphabet)
+            transitionText: next,
+            nextState: newState,
+            newSymbol: newSymbol,
+            direction: direction,
+            error: error
           };
         }
 

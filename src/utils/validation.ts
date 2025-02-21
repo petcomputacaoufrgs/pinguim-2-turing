@@ -42,27 +42,25 @@ const hasDisjointAlphabets = (alphabet: string[], auxAlphabet: string[]) => {
 }
 
 
-export const validateTransition = (value:string, states:string[], alphabet:string[]) => {
-      
-    const value_tokenized =  value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
+export const validateTransition = (value: string, states: string[], alphabet: string[]): [string, string, string, number] => {
+    const value_tokenized = value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
           
-    if(value_tokenized === null || value_tokenized.length == 0)
-        return errorCodes.NoError;
+    if (value_tokenized === null || value_tokenized.length == 0)
+        return ["", "", "", errorCodes.NoError];
   
-    if(value_tokenized.length !== 3)
-        return errorCodes.InvalidNumberOfParameters;
+    if (value_tokenized.length !== 3)
+        return ["", "", "", errorCodes.InvalidNumberOfParameters];
   
-    if(!states.includes(value_tokenized[0]))
-        return errorCodes.InvalidState; 
-      
-    if(!alphabet.includes(value_tokenized[2]))
-        return errorCodes.InvalidSymbol;
+    if (!states.includes(value_tokenized[0]))
+        return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.InvalidState]; 
+    
+    if (!alphabet.includes(value_tokenized[1]))
+        return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.InvalidSymbol];
   
-    if(value_tokenized[1].toUpperCase() !== "L" && value_tokenized[1].toUpperCase() !== "R")
-        return errorCodes.InvalidDirection;
+    if (value_tokenized[2].toUpperCase() !== "L" && value_tokenized[2].toUpperCase() !== "R")
+        return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.InvalidDirection];
   
-    return errorCodes.NoError;
-
+    return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.NoError];
 }
 
 
@@ -73,20 +71,22 @@ const updateTransition = (previous_transitions : Transitions, previous_inputs : 
     if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
       
         if(previous_transitions[state] === undefined) 
-            return {next: "", error: errorCodes.NoError};
+            return {transitionText: "", direction: "", nextState: "", newSymbol: "", error: errorCodes.NoError};
                 
         const transition = previous_transitions[state][symbol];
       
         if(transition === undefined)
-            return {next: "", error: errorCodes.NoError};
+            return {transitionText: "", direction: "", nextState: "", newSymbol: "", error: errorCodes.NoError};
       
+        const [newState, newSymbol, direction, error] = validateTransition(transition.transitionText, states, alphabet);
+
         // Então apenas toma a transicao anterior validada para os novos estados e novo alfabeto
-        return {next : transition.next, error: validateTransition(transition.next, states, alphabet)};
+        return {transitionText : transition.transitionText, direction: direction, nextState: newState, newSymbol: newSymbol, error: error};
     }
             
     // Se o estado novo não existia ou o símbolo novo não existia
     // Então cria uma nova transição vazia a partir do novo estado para esse símbolo
-    return { next: "", error: errorCodes.NoError };
+    return { transitionText: "", direction: "", nextState: "", newSymbol: "", error: errorCodes.NoError };
             
 };
     

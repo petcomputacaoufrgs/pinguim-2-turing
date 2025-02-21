@@ -62,7 +62,7 @@ export const deleteSelectedCells = (
 
             // Por fim, se o símbolo de leitura for válido para o alfabeto, aí sim apaga a transição
             if(alphabet.includes(readSymbol))
-              newTransitions[originState] = {...newTransitions[originState], [readSymbol]: { next: "", error: 0 } };
+              newTransitions[originState] = {...newTransitions[originState], [readSymbol]: { transitionText: "", direction: "", nextState: "", newSymbol: "", error: 0 } };
           }
           
           else{ // Não ter nada no texto da transição não deveria acontecer, pois nesse caso a transição já deveria ter sido excluída
