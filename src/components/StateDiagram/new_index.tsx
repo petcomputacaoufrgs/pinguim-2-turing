@@ -80,12 +80,16 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
   // Salva a referência para a visão (câmera, se quiser chamar assim) atual do paper, ou seja, o quanto ele foi transladado
   const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
 
+
   
 
   // Referências ao container que contém o grafo e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
   const containerRef = useRef<HTMLDivElement | null>(null);
   const currentCellView = useRef<any>(null);
   const movingLink = useRef<any>(null); // Referência ao link sendo movido
+
+  const paperRef = useRef<joint.dia.Paper>();
+
 
   // Constantes para facilitar o acesso
   const alphabet = Array.from(
@@ -148,6 +152,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
           
     });
 
+    paperRef.current = paper;
 
     let eventHandlers:{element: any, event: string, handler: any}[] = [];
 
@@ -363,6 +368,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
     }
 
     console.log("Terminou o desenho");
+    
     return () => {
 
       eventHandlers.forEach((listener) => listener.element?.removeEventListener(listener.event, listener.handler as EventListener));
@@ -378,8 +384,72 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
 
 
 
+    const goToInitState = () => {
+      if(currentCellView.current){
+        document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+        currentCellView.current.model.attr('body/stroke', 'black');
+        currentCellView.current = null;
+      }
+
+
+      if(paperRef){
+        let initialPosition;
+
+        if(tokenizedInputs.initState.length > 0)
+          initialPosition = nodePositions.get(tokenizedInputs.initState[0])
+        else{
+          if(nodePositions.size > 0)
+            initialPosition = nodePositions.values().next().value;
+          else
+            return;
+        }
+          
+        const x = (initialPosition?.x || 0) * currentScale - (containerRef.current?.clientWidth || 0)/2 + 60;
+        const y = (initialPosition?.y || 0) * currentScale - (containerRef.current?.clientHeight || 0)/2 + 20; 
+
+        paperRef.current?.translate(-x, -y);
+
+        setTranslation({x : -x, y: -y});
+      }
+    }
+
+
+    const centralizeGraph = () => {
+      if(currentCellView.current){
+        document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+        currentCellView.current.model.attr('body/stroke', 'black');
+        currentCellView.current = null;
+      }
+
+
+      if(paperRef){
+        let nodesArray = Array.from(nodePositions.values());
+
+        if (nodesArray.length === 0) return; 
+      
+        // Calcula a média das posições x e y
+        const sumX = nodesArray.reduce((acc, node) => acc + node.x, 0);
+        const sumY = nodesArray.reduce((acc, node) => acc + node.y, 0);
+        
+        const centerX = sumX / nodesArray.length;
+        const centerY = sumY / nodesArray.length;
+      
+        const x = centerX * currentScale - (containerRef.current?.clientWidth || 0) / 2 + 60;
+        const y = centerY * currentScale - (containerRef.current?.clientHeight || 0) / 2 + 20;
+      
+        paperRef.current?.translate(-x, -y);
+      
+        setTranslation({ x: -x, y: -y });
+      }
+    }
+
+
     return (
+      <>
+        <button onClick={goToInitState}>Ir ao estado inicial</button>
+        <button onClick={centralizeGraph}>Centralizar</button>
         <GraphConteiner ref={containerRef}></GraphConteiner>
+      </>
     );
   }
   

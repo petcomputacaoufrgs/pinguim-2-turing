@@ -106,7 +106,7 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
-        <div style={{width: "80%", height: "75%"}}> <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} /> </div>
+        <div style={{width: "80%", height: "75%", overflow: "hidden"}}> <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} /> </div>
         <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
 
         </div>
