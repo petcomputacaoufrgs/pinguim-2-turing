@@ -181,11 +181,6 @@ import { tokenize } from '../../../utils/tokenize';
               attrs: existingLink.get("attrs"),
             });
 
-            console.log(transitionInfo);
-
-            console.log(symbol);
-
-
           const firstPart =
             transitionInfo[1] || transitionInfo[2]
               ? "," +
@@ -198,10 +193,6 @@ import { tokenize } from '../../../utils/tokenize';
           
           const newText = symbol + firstPart + secondPart;
           
-
-
-            console.log(`Novo texto: ${newText}, ${firstPart}, ${secondPart}`);
-
             newLink.appendLabel({
               position: { distance: 0.5, offset: -15 },
               attrs: {
@@ -251,7 +242,6 @@ import { tokenize } from '../../../utils/tokenize';
               : [{ x: center.x, y: center.y }],
         });
 
-        console.log(transitionInfo);
 
         const firstPart =
         transitionInfo[1] || transitionInfo[2]
@@ -265,11 +255,6 @@ import { tokenize } from '../../../utils/tokenize';
       
       const newText = symbol + firstPart + secondPart;
       
-
-        console.log(symbol);
-
-        console.log(`Novo texto: ${newText}, ${firstPart}, ${secondPart}`);
-
         // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
         linkData.appendLabel({
           position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
@@ -297,9 +282,6 @@ import { tokenize } from '../../../utils/tokenize';
           
       }
     }
-
-    //if(currentTool.standard)
-       // attachLinkEvents(paper);
 
     return links;
   }

@@ -44,10 +44,11 @@ interface i_simple_diagram {
   onChangeInputs?: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   saveStateToHistory?: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   currentTool: CurrentTool;
+  currState?: string;
 }
 
 
-export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}: i_simple_diagram) {
+export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, currState}: i_simple_diagram) {
 
 
 // ====================================================================================
@@ -323,6 +324,13 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   if(currentTool.noEdit){
       // Coloca os eventos de edição de vértices nos links
       attachLinkEvents(paper);
+
+      if(currState){
+        const node = nodes.get(currState);
+        node.attr('body/stroke', 'green');
+      }
+
+
   }
   // ------------------------------------------------------------------------------------
   // SELEÇÃO

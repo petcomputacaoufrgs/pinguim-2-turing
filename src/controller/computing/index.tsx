@@ -18,7 +18,7 @@ export function Home() {
     const [tape, setTape] = useState<String>("");
 
     // currState representa o estado atual da máquina. É simplesmente uma array com o nome do estado atual e o index atual na fita
-    const [currState, setCurrState] = useState([inputStates.tokenizedInputs.initState[0], 0]);
+    const [currState, setCurrState] = useState<[string, number]>([inputStates.tokenizedInputs.initState[0], 0]);
 
 
     /*
@@ -78,7 +78,7 @@ export function Home() {
 
       <ContainerBody>
         <div id="div2">
-          <Buttons to={"../"} title="Editar Máquina de Turing" width={''} height={''}/>
+          <Buttons to={"../"} title="Editar Máquina de Turing" width={''} height={'4.5vh'}/>
           <p>Tabela de Transição:</p>
 
           <div style={{"overflow": "auto", "display": "flex", "alignItems": "flex-start"}}>
@@ -111,8 +111,10 @@ export function Home() {
         </div>
 
         <div id="div3">
-            <p>Grafo:</p>
-            <SimpleDiagram currentTool={noEditTool.current} />
+          <p>Grafo:</p>
+          <div>
+            <SimpleDiagram currentTool={noEditTool.current} currState={currState[0]} />
+          </div>  
         </div>
 
 
