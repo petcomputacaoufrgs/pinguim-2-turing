@@ -299,7 +299,17 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
     // Adiciona um novo nodo ao clicar duas vezes sobre espaço vazio
     paper.on('blank:pointerdblclick', (evt, x, y) => {
       setNodePositions((prev) => new Map(prev.set(`q${states.length}`, { x: x - 50, y: y - 20})));
-      handleInputsChange({...inputs, states: (states.length > 0)? `${inputs.states}, q${states.length}` : `q${states.length}`}, {...tokenizedInputs, states: (states.length > 0)? [...states, `q${states.length}`] : [`q${states.length}`]}, transitions);
+
+      let newStateName = "";
+      let cont = 0;
+
+      while(newStateName === ""){
+        if(!states.includes(`q${cont}`))
+          newStateName = `q${cont}`;
+        cont++;
+      }
+
+      handleInputsChange({...inputs, states: (states.length > 0)? `${inputs.states}, ${newStateName}` : `${newStateName}`}, {...tokenizedInputs, states: (states.length > 0)? [...states, newStateName] : [newStateName]}, transitions);
     })
 
   }
