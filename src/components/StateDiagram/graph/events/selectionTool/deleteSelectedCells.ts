@@ -46,17 +46,20 @@ export const deleteSelectedCells = (
             const readSymbol = deletedTransition[0];
             const originNode = paper.model.getCell(cell.attributes.source.id);
 
-            // Isso não deveria acontecer, pois se há um link desenhado deve haver um estado de origem para esse link
+            // Checa se o nodo de origem não tem label. Se ele não tiver, apenas retorna
+            // Isso não deveria acontecer, pois se há um link desenhado deve haver um estado de origem com nome para esse link
             if(originNode === null || originNode.attributes === undefined || originNode.attributes.attrs === undefined || originNode.attributes.attrs.label === undefined)
                 return;
 
+            // Pega o nome do estado de origem
             const originState = getElementText(originNode as joint.dia.Element);
 
             // Isso também não deveria acontecer, pois se há um estado desenhado ele deveria ter um nome (um texto)
             if(!originState)
               return;
             
-            // Como estamos apagando os estados também e junto deles todas as suas transições, essa situação pode ocorrer (apaguei o estado e todos os links nele e agora estou tentando apagar o link de novo)
+            // Checa se esse estado está na tabela. Como estamos apagando os estados e junto deles todas as suas transições, essa situação pode ocorrer 
+            // (quando apaguei o estado apaguei todas as transições dele junto, e agora estou tentnado apagar uma transição dele de novo). Nesse caso só retorna
             if(!newTransitions[originState])
               return;
 

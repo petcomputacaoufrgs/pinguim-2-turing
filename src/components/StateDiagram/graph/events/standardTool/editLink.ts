@@ -97,12 +97,6 @@ export function initEditLink(
             let transitionInfo = tokenize(input.value);
             const newTransitions = structuredClone(transitions); 
             
-            // A configuração atual inclui, quando algo não pe definido na transição, a palavra "undefined" na hora do desenho
-            // Se o alfabeto não incluir essa palavra, elimina ela. Não tem perigo de ela ser o símbolo de leitura (índice 0), porque a transição nem existiria se fosse assim, vide abaixo
-            if(!alphabet.includes("undefined"))
-              transitionInfo = transitionInfo.filter((token:string) => token != "undefined");
-
-
             // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO, retorna. Ou seja, não salva a edição e deixa como estava
             if(transitionInfo.length == 0 || !alphabet.includes(transitionInfo[0])){
               newTransitions[originState][readSymbol].transitionText = "";

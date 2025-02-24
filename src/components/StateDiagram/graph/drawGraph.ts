@@ -181,17 +181,38 @@ import { tokenize } from '../../../utils/tokenize';
               attrs: existingLink.get("attrs"),
             });
 
+            console.log(transitionInfo);
+
+            console.log(symbol);
+
+
+          const firstPart =
+            transitionInfo[1] || transitionInfo[2]
+              ? "," +
+                (transitionInfo[1] ? ` ${transitionInfo[1]}` : "") +
+                (transitionInfo[2] ? `, ${transitionInfo[2]}` : "")
+              : "";
+          
+          const secondPart =
+            transitionInfo.length > 3 ? `,${transitionInfo.slice(3).join(",")}` : "";
+          
+          const newText = symbol + firstPart + secondPart;
+          
+
+
+            console.log(`Novo texto: ${newText}, ${firstPart}, ${secondPart}`);
+
             newLink.appendLabel({
               position: { distance: 0.5, offset: -15 },
               attrs: {
                 text: { 
-                  text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
+                  text: newText, 
                   fontSize: 12, 
                   fontWeight: "bold" 
                 },
                 rect: {
-                  fill: '#fff', // Cor de fundo da caixa de texto
-                  stroke: '#000', // Cor da borda
+                  fill: transition.error == 0 ? '#fff' : "#ffe6e6", // Cor de fundo da caixa de texto
+                  stroke: transition.error == 0 ? '#000' : "red", // Cor da borda
                   strokeWidth: 1,
                   refWidth: '120%',
                   refHeight: '120%',
@@ -230,18 +251,37 @@ import { tokenize } from '../../../utils/tokenize';
               : [{ x: center.x, y: center.y }],
         });
 
+        console.log(transitionInfo);
+
+        const firstPart =
+        transitionInfo[1] || transitionInfo[2]
+          ? "," +
+            (transitionInfo[1] ? transitionInfo[1] : "") +
+            (transitionInfo[2] ? `,${transitionInfo[2]}` : "")
+          : "";
+      
+      const secondPart =
+        transitionInfo.length > 3 ? `,${transitionInfo.slice(3).join(",")}` : "";
+      
+      const newText = symbol + firstPart + secondPart;
+      
+
+        console.log(symbol);
+
+        console.log(`Novo texto: ${newText}, ${firstPart}, ${secondPart}`);
+
         // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
         linkData.appendLabel({
           position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
           attrs: {
             text: { 
-              text: `${symbol}, ${transitionInfo[1]}, ${transitionInfo[2]}`, 
+              text: newText, 
               fontSize: 12, 
               fontWeight: "bold" 
             },
             rect: {
-              fill: '#fff', 
-              stroke: '#000', 
+              fill: transition.error == 0 ? '#fff' : "#ffe6e6", 
+              stroke: transition.error == 0 ? '#000' : "red", 
               strokeWidth: 1,
               refWidth: '120%',
               refHeight: '120%',
