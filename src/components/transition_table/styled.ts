@@ -1,5 +1,10 @@
 import styled from "styled-components"
 
+// transient props (prefixo $)
+
+// props com o prefixo $ são filtradas e não chegam no DOM. Assim o React não "vê" a prop, do contrário ele veria a prop e daria um warning dizendo que ela não é conhecida
+// porque ela não é uma propriedade padrão de um elemento input
+
 export const StyledInput = styled("input")<{$hasError: boolean}>`
     border: 1px solid ${({ $hasError }) => ($hasError ? 'red' : 'black')};
     background-color: ${({ $hasError }) => ($hasError ? '#ffe6e6' : 'white')};

@@ -64,6 +64,7 @@ export function Home() {
     //setCurrState(maquinaTuring.step());
   }
 
+  // Quando a fita é alterada pelo usuário, atualiza ela e reseta o estado atual
   const handleTapeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newTape = e.target.value;
     setTape(newTape);

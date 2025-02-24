@@ -15,7 +15,7 @@ const TransitionsErrorMessages = ({ transitions }: ErrorMessageProps) => {
         const transition = transitions[state][symbol];
 
         if (transition.error == errorCodes.InvalidDirection) 
-          errors.push(`[${state}, ${symbol}] Movimento deve ser L ou R apenas`);
+          errors.push(`[${state}, ${symbol}] Movimento deve ser D ou E apenas`);
 
         else if (transition.error == errorCodes.InvalidNumberOfParameters) 
           errors.push(`[${state}, ${symbol}] Escreva: estado, movimento (R/L), símbolo`);

@@ -57,7 +57,7 @@ export const validateTransition = (value: string, states: string[], alphabet: st
     if (!alphabet.includes(value_tokenized[1]))
         return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.InvalidSymbol];
   
-    if (value_tokenized[2].toUpperCase() !== "L" && value_tokenized[2].toUpperCase() !== "R")
+    if (value_tokenized[2].toUpperCase() !== "D" && value_tokenized[2].toUpperCase() !== "E")
         return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.InvalidDirection];
   
     return [value_tokenized[0], value_tokenized[1], value_tokenized[2], errorCodes.NoError];

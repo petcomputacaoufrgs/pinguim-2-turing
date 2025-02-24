@@ -51,38 +51,55 @@ const ParentInput = ({ onFileInputDoc, inputValues, inputTokenizedValues, onChan
         const newInputsTokenized = tokenizeInputs(newInputs);
 
         const transitions: Transitions = {};
-        const table = tokenize(lines[i]);
+        const table = lines[i].split(",");
+
         const alphabet = Array.from(new Set([newInputsTokenized.initSymbol[0], ...(newInputsTokenized.inAlphabet.filter((symbol) => symbol != "").concat(newInputsTokenized.auxAlphabet.filter((symbol) => symbol != ""))), newInputsTokenized.blankSymbol[0]]));
     
+        let j = 0;
 
-        for (let j = 0; j < table.length; j += 5) {
+        while(j < table.length){
           const state = table[j];
           const symbol = table[j + 1];
 
-          const next = `${table[j + 2]},${table[j + 3]},${table[j + 4]}`; // Desperdício, já que uma hora ou outra vamos ter que tokenizar isso. Mas parta garantir que a tabela esteja igual a como estava na versão anterior, deixa assim por enquanto
+          const remainingTable = table.slice(j + 3);
+          const nextTransitionPosition = remainingTable.findIndex((value) => value === "");
+
+          let transitionTextTokenized;
+
+          if(nextTransitionPosition === -1){
+            transitionTextTokenized = remainingTable; 
+          }
+          else{
+            transitionTextTokenized = remainingTable.slice(0, nextTransitionPosition);
+          }
+
+          const transitionText = transitionTextTokenized.join(", ");
 
           if (!transitions[state]) {
             transitions[state] = {};
           }
-      
-          const [newState, newSymbol, direction, error] = validateTransition(next, newInputsTokenized.states, alphabet);
+
+          const [newState, newSymbol, direction, error] = validateTransition(transitionText, newInputsTokenized.states, alphabet);
 
           transitions[state][symbol] = {
-            transitionText: next,
+            transitionText: transitionText,
             nextState: newState,
             newSymbol: newSymbol,
             direction: direction,
             error: error
           };
+
+          j = j + transitionTextTokenized.length + 5;
+
         }
 
         i = i + 1;
 
         onFileInputDoc(lines[i]);
         onChangeInputs(newInputs, newInputsTokenized, transitions, validateInputs(newInputsTokenized, old_errors));
-        
 
-    };
+      }
+
 
     return (
         <>
