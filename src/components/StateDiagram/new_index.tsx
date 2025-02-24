@@ -368,7 +368,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
     }
 
     console.log("Terminou o desenho");
-    
+
     return () => {
 
       eventHandlers.forEach((listener) => listener.element?.removeEventListener(listener.event, listener.handler as EventListener));
@@ -379,7 +379,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
         movingLink.current = null;
       }
     };
-    }, [tokenizedInputs, transitions, currentScale, currentTool]); 
+    }, [tokenizedInputs, transitions, currentScale, currentTool, currState]); 
   
 
 
