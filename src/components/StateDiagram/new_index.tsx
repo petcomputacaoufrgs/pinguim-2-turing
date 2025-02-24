@@ -298,7 +298,6 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
   
     // Adiciona um novo nodo ao clicar duas vezes sobre espaço vazio
     paper.on('blank:pointerdblclick', (evt, x, y) => {
-      setNodePositions((prev) => new Map(prev.set(`q${states.length}`, { x: x - 50, y: y - 20})));
 
       let newStateName = "";
       let cont = 0;
@@ -309,6 +308,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
         cont++;
       }
 
+      setNodePositions((prev) => new Map(prev.set(newStateName, { x: x - 50, y: y - 20})));
       handleInputsChange({...inputs, states: (states.length > 0)? `${inputs.states}, ${newStateName}` : `${newStateName}`}, {...tokenizedInputs, states: (states.length > 0)? [...states, newStateName] : [newStateName]}, transitions);
     })
 
@@ -346,7 +346,7 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool}:
       attachLinkEvents(paper);
 
       // Permite a seleção de células e libera as opções que vem com células selecionadas
-      initCellSelection(paper, nodes, currentCellView, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
+      initCellSelection(paper, nodePositions, setNodePositions, nodes, currentCellView, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
 
       // Permite editar textos de nodos e links
       initEditNode(paper, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);

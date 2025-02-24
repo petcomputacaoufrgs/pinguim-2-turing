@@ -5,6 +5,8 @@ import { createButton, handleChangeFinalStatus, handleChangeInitStatus, handleUp
 
 export function initCellSelection(
     paper: joint.dia.Paper,
+    nodePositions: Map<string, any>, 
+    setNodePositions: any,
     nodes: Map<string, any>,
     currentCellView: any,
     movingLink: any,
@@ -13,7 +15,7 @@ export function initCellSelection(
 
 ){  
   
-    const deleteNode = nodeDeleteHandler(paper, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange);
+    const deleteNode = nodeDeleteHandler(paper, nodePositions, setNodePositions, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange);
     const deleteLink = linkDeleteHandler(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange)
 
     document.removeEventListener("keydown", deleteNode);

@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { InputValues, TokenizedInputValues, Transitions } from "../../../../../types/types";
 import { getElementText, getLinkText } from "../../utils";
 import { tokenize } from "../../../../../utils/tokenize";
+import { useStateContext } from "../../../../../ContextProvider";
 
 
-export const nodeDeleteHandler = (paper:joint.dia.Paper, selectedNode : any, inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {
-    // Deleta o nodo selecionado quando a tecla Delete é apertada
+export const nodeDeleteHandler = (paper:joint.dia.Paper, nodePositions: any, setNodePositions : any, selectedNode : any,  inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {
+  // Deleta o nodo selecionado quando a tecla Delete é apertada
     const deleteNode = (e:any) => {
 
       if(e.key != 'Delete' || !(selectedNode.current))
@@ -23,9 +24,11 @@ export const nodeDeleteHandler = (paper:joint.dia.Paper, selectedNode : any, inp
       const newTransitions = {...transitions};
       delete newTransitions[deletedState];
 
-
       selectedNode.current = null;
       
+      nodePositions.delete(deletedState);
+      setNodePositions(new Map(nodePositions));
+
       handleInputsChange({...inputs, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
         {...tokenizedInputs, states: newStates, finalStates: newFinalStates, initState: newInitState},
         newTransitions
@@ -71,7 +74,7 @@ export const linkDeleteHandler = (paper:joint.dia.Paper, selectedLink: any, inpu
     
     
                 if(alphabet.includes(readSymbol)){ 
-                  handleInputsChange(inputs, tokenizedInputs, {...transitions, [originState]: {...transitions[originState], [readSymbol]: { next: "", error: 0 } } });
+                  handleInputsChange(inputs, tokenizedInputs, {...transitions, [originState]: {...transitions[originState], [readSymbol]: {transitionText: "", direction: "", nextState: "", newSymbol: "", error: 0} } });
                 }
                 else{ // Muito menos isso, mas por enquanto deixa aí
                   alert("Erro: Símbolo lido não existe no alfabeto");
