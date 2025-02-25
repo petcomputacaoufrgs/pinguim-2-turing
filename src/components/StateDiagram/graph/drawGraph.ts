@@ -2,6 +2,7 @@ import * as joint from 'jointjs';
 import { CurrentTool, TokenizedInputValues, Transitions } from '../../../types/types';
 import { getElementText, getLinkText } from './getNodeData';
 import { tokenize } from '../../../utils/tokenize';
+import { createLink } from './styleNode';
  
 
  /**
@@ -170,123 +171,15 @@ import { tokenize } from '../../../utils/tokenize';
 
         
         if (existingLink) {
-          const text = getLinkText(existingLink);
-
-          if (text && transitionInfo[1] === tokenize(transition.transitionText)[1]) {
-            // Clona o link existente preservando vértices e propriedades, o adiciona ao grafo e pula para a próxima transição
-            const newLink = new joint.shapes.standard.Link({
-              source: { id: sourceNode.id },
-              target: { id: targetNode.id },
-              vertices: existingLink.get("vertices"),
-              attrs: existingLink.get("attrs"),
-            });
-
-          const firstPart =
-            transitionInfo[1] || transitionInfo[2]
-              ? "," +
-                (transitionInfo[1] ? ` ${transitionInfo[1]}` : "") +
-                (transitionInfo[2] ? `, ${transitionInfo[2]}` : "")
-              : "";
-          
-          const secondPart =
-            transitionInfo.length > 3 ? `,${transitionInfo.slice(3).join(",")}` : "";
-          
-          const newText = symbol + firstPart + secondPart;
-          
-          //newLink.appendLabel(createLinkLabel(transition, newText));
-
-
-            newLink.appendLabel({
-              position: { distance: 0.5, offset: -15 },
-              attrs: {
-                text: { 
-                  text: newText, 
-                  fontSize: 12, 
-                  fontWeight: "bold" 
-                },
-                rect: {
-                  fill: transition.error == 0 ? '#fff' : "#ffe6e6", // Cor de fundo da caixa de texto
-                  stroke: transition.error == 0 ? '#000' : "red", // Cor da borda
-                  strokeWidth: 1,
-                  refWidth: '120%',
-                  refHeight: '120%',
-                  refX: '-10%',
-                  refY: '-10%',
-                }
-              }
-            });
-            newLink.addTo(paper.model);
-            addLink(links, transitionInfo[0], state, symbol, newLink);
-
-            continue;
-          }
+          const newLink = createLink(transitionInfo, transition.error, symbol, sourceNode, targetNode, paper, existingLink);
+          newLink.addTo(paper.model);
+          addLink(links, transitionInfo[0], state, symbol, newLink);
+          continue;
         }
-
-        // Se já não existir um link, é preciso criar um novo
-
-        // Definiremos um único vértice inicial para esse novo link: o ponto central entre source e target
-        const targetNodePosition = paper.model.getCell(targetNode).position();
-        const sourceNodePosition = paper.model.getCell(sourceNode).position();
-        const center = {
-          x: (targetNodePosition.x + sourceNodePosition.x) / 2,
-          y: (targetNodePosition.y + sourceNodePosition.y) / 2,
-        };
-        
-        // Criação de um novo link e adição ao grafo
-        const linkData = new joint.shapes.standard.Link({
-          source: { id: sourceNode.id },
-          target: { id: targetNode.id },
-          vertices:
-            sourceNode === targetNode // Se o link é na verdade um loop, vamos definir dois vértices para que o loop seja visível (pois o ponto central é o próprio centro do nodo)
-              ? [
-                  { x: center.x + 10, y: center.y - 20 },
-                  { x: center.x + 80, y: center.y - 20 },
-                ]
-              : [{ x: center.x, y: center.y }],
-        });
-
-
-        const firstPart =
-        transitionInfo[1] || transitionInfo[2]
-          ? "," +
-            (transitionInfo[1] ? transitionInfo[1] : "") +
-            (transitionInfo[2] ? `,${transitionInfo[2]}` : "")
-          : "";
       
-      const secondPart =
-        transitionInfo.length > 3 ? `,${transitionInfo.slice(3).join(",")}` : "";
-      
-      const newText = symbol + firstPart + secondPart;
-      
-        // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
-
-        // const newLink = createLink(sourceNode, targetNode, center);
-        // newLink.appendLabel(createLinkLabel(transitionInfo, transition.error));
-
-
-        linkData.appendLabel({
-          position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
-          attrs: {
-            text: { 
-              text: newText, 
-              fontSize: 12, 
-              fontWeight: "bold" 
-            },
-            rect: {
-              fill: transition.error == 0 ? '#fff' : "#ffe6e6", 
-              stroke: transition.error == 0 ? '#000' : "red", 
-              strokeWidth: 1,
-              refWidth: '120%',
-              refHeight: '120%',
-              refX: '-10%',
-              refY: '-10%',
-            }
-          }
-        });
-
-        
-        linkData.addTo(paper.model);
-        addLink(links, transitionInfo[0], state, symbol, linkData);
+        const newLink = createLink(transitionInfo, transition.error, symbol, sourceNode, targetNode, paper);
+        newLink.addTo(paper.model);
+        addLink(links, transitionInfo[0], state, symbol, newLink);
           
       }
     }

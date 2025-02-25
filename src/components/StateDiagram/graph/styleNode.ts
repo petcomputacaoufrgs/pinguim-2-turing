@@ -1,36 +1,50 @@
-/*import * as joint from 'jointjs';
+import * as joint from 'jointjs';
 
-const createLink = (    
-    transitionInfo,                 
-    transitionError,
-    symbol,  
-    sourceNode, 
-    targetNode,
-    paper  
+
+
+export const createLink = (  
+    transitionInfo: string[],                 
+    transitionError: number,
+    symbol : string,  
+    sourceNode : joint.dia.Element, 
+    targetNode : joint.dia.Element,
+    paper: joint.dia.Paper,
+    existingLink?: joint.shapes.standard.Link
 ) => {
 
+  let vertices;
 
+  if(existingLink){
+    vertices = existingLink?.get("vertices");
+  }
+  else{
     const targetNodePosition = paper.model.getCell(targetNode).position();
     const sourceNodePosition = paper.model.getCell(sourceNode).position();
     const center = {
       x: (targetNodePosition.x + sourceNodePosition.x) / 2,
       y: (targetNodePosition.y + sourceNodePosition.y) / 2,
     };
+
+    if(sourceNode == targetNode){ // Se o link é na verdade um loop, vamos definir dois vértices para que o loop seja visível (pois o ponto central é o próprio centro do nodo)
+      vertices = 
+      [
+        { x: center.x + 10, y: center.y - 20 },
+        { x: center.x + 80, y: center.y - 20 },
+      ]
+    } 
+
+    else
+      vertices = [{ x: center.x, y: center.y }];
+  }
+
+
     
 
 const linkData = new joint.shapes.standard.Link({
     source: { id: sourceNode.id },
     target: { id: targetNode.id },
-    vertices:
-      sourceNode === targetNode // Se o link é na verdade um loop, vamos definir dois vértices para que o loop seja visível (pois o ponto central é o próprio centro do nodo)
-        ? [
-            { x: center.x + 10, y: center.y - 20 },
-            { x: center.x + 80, y: center.y - 20 },
-          ]
-        : [{ x: center.x, y: center.y }],
+    vertices: vertices
   });
-
-
 
 
   const firstPart =
@@ -60,8 +74,8 @@ const newText = symbol + firstPart + secondPart;
         fontWeight: "bold" 
       },
       rect: {
-        fill: transition.error == 0 ? '#fff' : "#ffe6e6", 
-        stroke: transition.error == 0 ? '#000' : "red", 
+        fill: transitionError == 0 ? '#fff' : "#ffe6e6", 
+        stroke: transitionError == 0 ? '#000' : "red", 
         strokeWidth: 1,
         refWidth: '120%',
         refHeight: '120%',
@@ -75,4 +89,3 @@ const newText = symbol + firstPart + secondPart;
   
 }
 
-export default createLink;*/

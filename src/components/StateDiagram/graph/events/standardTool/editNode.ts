@@ -63,15 +63,25 @@ export function initEditNode(
           saveText();
           document.removeEventListener('mousedown', handleClick);
         };
+
+        const handleWheel = (event: WheelEvent) => {
+          event.preventDefault(); // Evita o scroll padrão da página
+          saveText();
+          paper.el.removeEventListener('wheel', handleWheel);
+        };
   
   
         document.addEventListener("mousedown", handleClick);
         eventHandlers.push({element: document, event: "mousedown", handler: handleClick});
   
+        paper.el.addEventListener('wheel', handleWheel);
+        eventHandlers.push({element: paper.el, event: "wheel", handler: handleWheel});
+
   
         // Lida com teclas pressionadas enquanto o texto está sendo editado
         input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key == 'Escape') saveText();
+          if (e.key === 'Enter' || e.key == 'Escape') 
+            saveText();
         });
       
   
@@ -114,6 +124,9 @@ export function initEditNode(
               transitions); 
   
             input.remove();
+            document.removeEventListener('mousedown', handleClick);
+            paper.el.removeEventListener('wheel', handleWheel);
+            
           }
         };
       

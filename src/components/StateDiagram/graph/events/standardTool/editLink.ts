@@ -70,7 +70,9 @@ export function initEditLink(
           input.style.border = '1px solid #ccc';
           input.style.borderRadius = '4px';
           input.style.width = `${textBox.width}px`;
+          input.style.minWidth = "60px";
           input.style.height = `${textBox.height}px`;
+          input.style.minHeight = "20px";
         
           document.body.appendChild(input);
         
@@ -78,34 +80,55 @@ export function initEditLink(
         
           // Salva o texto e fecha o input ao teclar enter ou esc
           input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === 'Escape') saveText();
+            if (e.key === 'Enter' || e.key === 'Escape') 
+              saveText();
           });
 
           // salva o texto e fecha o input ao cliar fora dele
           const handleClick = (event: any) => {
-            if (event.target === input) return;
-          
+            if (event.target === input) 
+              return;
             saveText();
             document.removeEventListener('mousedown', handleClick);
           };
+
+          const handleWheel = (event: WheelEvent) => {
+            event.preventDefault(); // Evita o scroll padrão da página
+            saveText();
+            paper.el.removeEventListener('wheel', handleWheel);
+          };
+
+
         
           document.addEventListener('mousedown', handleClick);
           eventHandlers.push({element: document, event: "mousedown", handler: handleClick});
         
+          paper.el.addEventListener('wheel', handleWheel);
+          eventHandlers.push({element: paper.el, event: "wheel", handler: handleWheel});
+
+
           const saveText = () => {
             // tokeniza o texto editado
             let transitionInfo = tokenize(input.value);
             const newTransitions = structuredClone(transitions); 
             
-            // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO, retorna. Ou seja, não salva a edição e deixa como estava
+            // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO
             if(transitionInfo.length == 0 || !alphabet.includes(transitionInfo[0])){
-              newTransitions[originState][readSymbol].transitionText = "";
-              newTransitions[originState][readSymbol].direction = "";
-              newTransitions[originState][readSymbol].nextState = "";
-              newTransitions[originState][readSymbol].newSymbol = "";
+
+              // Se o texto editado estiver vazio, só apaga a transição
+              if(transitionInfo[0] == ""){
+                newTransitions[originState][readSymbol].transitionText = "";
+                newTransitions[originState][readSymbol].direction = "";
+                newTransitions[originState][readSymbol].nextState = "";
+                newTransitions[originState][readSymbol].newSymbol = "";
+                handleInputsChange(inputs, tokenizedInputs, newTransitions);
+              }
+          
+              // Do contrário, só remove o input e deixa a transição como estava
               input.remove();
               document.removeEventListener('mousedown', handleClick);
-              handleInputsChange(inputs, tokenizedInputs, newTransitions);
+              paper.el.removeEventListener('wheel', handleWheel);
+
               return;
             }
 
