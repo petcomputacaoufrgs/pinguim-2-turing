@@ -11,7 +11,7 @@ interface i_button{
     height: string;
 }
 
-const Buttons:React.FC<i_button>=({title, to, disabled = false, width, height})=>{
+const GeneralButtons:React.FC<i_button>=({title, to, disabled = false, width, height})=>{
     return(
         
         to ?
@@ -23,4 +23,4 @@ const Buttons:React.FC<i_button>=({title, to, disabled = false, width, height})=
     )
 }
 
-export default Buttons;
+export default GeneralButtons;

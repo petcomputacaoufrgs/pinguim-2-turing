@@ -4,24 +4,50 @@ import * as joint from 'jointjs';
 
 
 const InputStatesContext = createContext<{
-  inputStates: {inputs : InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions};
-  setInputStates: React.Dispatch<React.SetStateAction<{inputs: InputValues, tokenizedInputs: TokenizedInputValues, errors: InputErrors; documentation: string, transitions : Transitions}>>;
-  graphNodes: {nodePositions: Map<string, { x: number; y: number }>, setNodePositions: React.Dispatch<React.SetStateAction<Map<string, { x: number; y: number }>>>};
-  graphLinks: {currentLinks: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>, setLinks: React.Dispatch<React.SetStateAction<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>>};
-  changesHistory: {history: Array<State>, setHistory: React.Dispatch<React.SetStateAction<Array<State>>>};
-  changesIndex: {historyIndex: number, setHistoryIndex: React.Dispatch<React.SetStateAction<number>>};
+
+  inputStates: {inputs : InputValues, 
+                tokenizedInputs : TokenizedInputValues, 
+                errors : InputErrors, 
+                documentation : string, 
+                transitions : Transitions};
+
+  setInputStates: React.Dispatch<React.SetStateAction<{inputs: InputValues, 
+                                                       tokenizedInputs: TokenizedInputValues, 
+                                                       errors: InputErrors; 
+                                                       documentation: string, 
+                                                       transitions : Transitions}>>;
+
+  graphNodes: {nodePositions: Map<string, { x: number; y: number }>, 
+               setNodePositions: React.Dispatch<React.SetStateAction<Map<string, { x: number; y: number }>>>};
+  
+  graphLinks: {currentLinks:  Map<string,Map<string,Map<string,joint.shapes.standard.Link>>>, 
+              setLinks: React.Dispatch<React.SetStateAction<Map<string,Map<string, Map<string,joint.shapes.standard.Link>>>>>};
+  
+  changesHistory: {history: Array<State>, 
+                  setHistory: React.Dispatch<React.SetStateAction<Array<State>>>};
+                   
+  changesIndex: {historyIndex: number, 
+                 setHistoryIndex: React.Dispatch<React.SetStateAction<number>>};
+   
 } | null>(null);
+
 
 export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-  const [inputStates, setInputStates] = useState<{inputs: InputValues, tokenizedInputs : TokenizedInputValues, errors : InputErrors, documentation : string, transitions : Transitions}>({ 
-    tokenizedInputs : {states: ["q0"],
-    initState: ["q0"],
-    finalStates: [""],
-    inAlphabet: [""],
-    auxAlphabet: [""],
-    initSymbol: ["@"],
-    blankSymbol: ["-"]
+  // Estado inicial do simulador do Rodrigo
+  const [inputStates, setInputStates] = useState<{inputs: InputValues, 
+                                                  tokenizedInputs : TokenizedInputValues, 
+                                                  errors : InputErrors, 
+                                                  documentation : string, 
+                                                  transitions : Transitions}>({ 
+    tokenizedInputs : {
+      states: ["q0"],
+      initState: ["q0"],
+      finalStates: [""],
+      inAlphabet: [""],
+      auxAlphabet: [""],
+      initSymbol: ["@"],
+      blankSymbol: ["-"]
   },
 
    errors : {    
@@ -35,10 +61,26 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     auxiliaryAlphabetHasStart: true,
     auxiliaryAlphabetHasBlank: true},
 
-
     documentation : "",
 
-    transitions : {q0:{"@":{transitionText:"", direction: "", nextState: "", newSymbol: "", error:0}, "-":{transitionText:"", direction: "", nextState: "", newSymbol: "", error:0}}},
+    transitions : {
+      q0:{
+        
+       "@": {
+        transitionText:"",
+        direction: "", 
+        nextState: "", 
+        newSymbol: "", 
+        error:0}, 
+        
+        "-":{
+          transitionText:"", 
+          direction: "", 
+          nextState: "", 
+          newSymbol: "", 
+          error:0}
+      }
+    },
 
     inputs: {
       states: "q0",
@@ -50,17 +92,13 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       blankSymbol: "-"   
     }
 
-
-
-
-}); // Estado inicial do simulador do Rodrigo
-
+}); 
 
   const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map());
   const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
-
   const [history, setHistory] = useState<Array<State>>([{inputs: inputStates.inputs, tokenizedInputs: inputStates.tokenizedInputs, transitions: inputStates.transitions, errors: inputStates.errors}])
   const [historyIndex, setHistoryIndex] = useState<number>(0); 
+
   return (
     <InputStatesContext.Provider value={{ inputStates, setInputStates, graphNodes: {nodePositions, setNodePositions}, graphLinks: {currentLinks, setLinks}, changesHistory: {history, setHistory}, changesIndex: {historyIndex, setHistoryIndex} }}>
       {children}

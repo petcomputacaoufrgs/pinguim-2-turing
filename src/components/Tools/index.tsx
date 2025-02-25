@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Button } from "../general_button/styled";
+import { Button } from "../GeneralButtons/styled";
 import { CurrentTool } from "../../types/types";
 
 interface ToolsInterface {

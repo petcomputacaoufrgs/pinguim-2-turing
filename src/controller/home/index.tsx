@@ -1,20 +1,19 @@
 import React, { ChangeEvent, useState } from 'react';
 import {Container, ContainerBody} from "./styled.ts";
-import Header from '../../components/header/index.tsx';
-import Documentation from '../../components/documentation/index.tsx';
-import Buttons from '../../components/general_button/index.tsx';
-import ParentInput from '../../components/parent_input/index.tsx';
-import ValidationMessage from '../../components/validation_message/index.tsx';
-import TransitionTable from '../../components/transition_table/index.tsx';
-import { useStateContext } from '../../ContextProvider.tsx';
-import TransitionsErrorMessages from '../../components/transition_error_messages/index.tsx';
-
-import SimpleDiagram from '../../components/StateDiagram/new_index.tsx';
-import Tools from '../../components/Tools/index.tsx';
-
 
 import { Transitions, InputValues, TokenizedInputValues, InputErrors, CurrentTool } from '../../types/types';
 
+import { useStateContext } from '../../ContextProvider.tsx';
+
+import Header from '../../components/Header/index.tsx';
+import Documentation from '../../components/Documentation/index.tsx';
+import Buttons from '../../components/GeneralButtons/index.tsx';
+import ParentInput from '../../components/ParentInput/index.tsx';
+import ValidationMessage from '../../components/ValidationMessage/index.tsx';
+import TransitionTable from '../../components/TransitionTable/index.tsx';
+import TransitionsErrorMessages from '../../components/TransitionsErrorMessages/index.tsx';
+import SimpleDiagram from '../../components/StateDiagram/index.tsx';
+import Tools from '../../components/Tools/index.tsx';
 
 export function Home() { 
 
@@ -22,56 +21,49 @@ export function Home() {
 
     const {errors} = inputStates;
     const {tokenizedInputs} = inputStates;
-    const {documentation} = inputStates;
     const {inputs} = inputStates;
-    const {transitions} = inputStates;
     const {history, setHistory} = changesHistory;
     const {historyIndex, setHistoryIndex} = changesIndex;
 
-    const [currentTools, setCurrentTool] = useState<CurrentTool>({editLinks: false, addNodes: false, selection: false, standard: true, noEdit: false});
+    const [currentTools, setCurrentTool] = useState<CurrentTool>({
+      editLinks: false, 
+      addNodes: false, 
+      selection: false, 
+      standard: true, 
+      noEdit: false
+    });
 
-
-    const setErros = (new_errors : InputErrors) => {
+    const setInputValues = (newValues : InputValues, 
+                            newTokenizedValues : TokenizedInputValues, 
+                            newTransitions : Transitions, 
+                            newErrors: InputErrors) => {
       setInputStates(prevState => ({
         ...prevState,
-        errors: new_errors
-      }));
-    }
-
-
-    const setInputValues = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) => {
-      setInputStates(prevState => ({
-        ...prevState,
-        inputs: new_values,
-        tokenizedInputs: new_tokenized_values,
-        transitions: new_transitions,
+        inputs: newValues,
+        tokenizedInputs: newTokenizedValues,
+        transitions: newTransitions,
         errors: newErrors
       }));
     }
 
-    const saveStateToHistory = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) => {
-      const newHistory = history.slice(0, historyIndex + 1); 
-      console.log("--------");
-      console.log({inputs: new_values, tokenizedInputs: new_tokenized_values, transitions: new_transitions, errors: newErrors});
-      
-      newHistory.push({inputs: new_values, tokenizedInputs: new_tokenized_values, transitions: new_transitions, errors: newErrors});
-      console.log(newHistory);
+    const saveStateToHistory = (newValues : InputValues, newTokenizedValues : TokenizedInputValues, newTransitions : Transitions, newErrors: InputErrors) => {
+      const newHistory = history.slice(0, historyIndex + 1);       
+      newHistory.push({inputs: newValues, tokenizedInputs: newTokenizedValues, transitions: newTransitions, errors: newErrors});
       setHistory(newHistory);
       setHistoryIndex(historyIndex + 1);
     }
 
-    const handleInputsChange = (new_values : InputValues, new_tokenized_values : TokenizedInputValues, new_transitions : Transitions, newErrors: InputErrors) =>{
-      saveStateToHistory(new_values, new_tokenized_values, new_transitions, newErrors);
-      setInputValues(new_values, new_tokenized_values, new_transitions, newErrors);
+    const handleInputsChange = (newValues : InputValues, newTokenizedValues : TokenizedInputValues, newTransitions : Transitions, newErrors: InputErrors) =>{
+      saveStateToHistory(newValues, newTokenizedValues, newTransitions, newErrors);
+      setInputValues(newValues, newTokenizedValues, newTransitions, newErrors);
     }
 
-    const OnChangeDocumentationValue = (e : ChangeEvent<HTMLTextAreaElement>) => {
+    const onChangeDocumentationValue = (event : ChangeEvent<HTMLTextAreaElement>) => {
       setInputStates(prevState => ({
         ...prevState,
-        documentation : e.target.value
+        documentation : event.target.value
       }))
     }
-
    
     const setDocumentationValue = (docValue : string) => {
       setInputStates(prevStates => ({
@@ -81,24 +73,32 @@ export function Home() {
     }
 
 
+    const handleTransitionsChange = (newTransitions : Transitions) => {
+      handleInputsChange(inputs, tokenizedInputs, newTransitions, errors);
+    }
+
+
   return (
     <Container>
+
       <Header/>
 
       <ContainerBody>
+        
         <div id="div1">
           <div>    
-            <ParentInput onFileInputDoc={setDocumentationValue} inputValues={inputs} inputTokenizedValues={tokenizedInputs} old_errors={errors} transitions={transitions} onChangeInputs={handleInputsChange} onChangeErrors={setErros} />
+            <ParentInput onFileInputDoc={setDocumentationValue} onChangeInputs={handleInputsChange} />
           </div>
+
           <div id="div1_doc">
-            <Documentation value={documentation} onChange={OnChangeDocumentationValue}></Documentation>
+            <Documentation onChange={onChangeDocumentationValue}/>
           </div>
         </div>
 
         <div id="div2">
           <p>Tabela de Transição:</p>
           <div>
-          <TransitionTable tokenizedInputs={tokenizedInputs} OnChangeTransitionTable={(newTransitions) => handleInputsChange(inputs, tokenizedInputs, newTransitions, errors)} transitions={transitions} editable={true} />
+          <TransitionTable OnChangeTransitionTable={handleTransitionsChange} editable={true} />
           </div>
 
           <Buttons height="4.5vh" width="14vw" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
@@ -106,23 +106,23 @@ export function Home() {
 
         <div id="div3">
           <p>Grafo:</p>
-        <div style={{width: "80%", height: "75%", overflow: "hidden"}}> <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} /> </div>
-        <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
+          <div style={{width: "80%", height: "75%", overflow: "hidden"}}> 
+            <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} /> 
+          </div>
 
+          <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
         </div>
 
-
         <div id="div4">
-          <ValidationMessage {...errors}/>
+          <ValidationMessage />
         </div>
 
         <div id="div5">
-          <TransitionsErrorMessages transitions={transitions} />
+          <TransitionsErrorMessages />
         </div>
 
       </ContainerBody>
 
-      
     </Container>
   );
 }

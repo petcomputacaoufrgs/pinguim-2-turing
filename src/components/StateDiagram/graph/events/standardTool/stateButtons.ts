@@ -1,5 +1,5 @@
 import { InputValues, TokenizedInputValues, Transitions } from "../../../../../types/types";
-import { getElementText } from "../../utils";
+import { getElementText } from "../../getNodeData";
 
 
 export const handleChangeFinalStatus = (cell: joint.dia.Element, inputs: InputValues, tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as joint from 'jointjs';
-import { Transitions, InputValues, TokenizedInputValues, InputErrors, errorCodes } from '../../types/types';
+import { Transitions, InputValues, TokenizedInputValues, InputErrors } from '../../types/types';
 import { GraphConteiner } from "./styled";
 import { CurrentTool } from "../../types/types";
 import { useStateContext } from "../../ContextProvider";
@@ -48,7 +48,7 @@ interface i_simple_diagram {
 }
 
 
-export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, currState}: i_simple_diagram) {
+export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, currState}: i_simple_diagram) {
 
 
 // ====================================================================================
@@ -454,4 +454,4 @@ export function SimpleDiagram({onChangeInputs, saveStateToHistory, currentTool, 
   }
   
 
-export default SimpleDiagram;
+export default StateDiagram;

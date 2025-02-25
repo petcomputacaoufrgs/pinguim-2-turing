@@ -22,7 +22,7 @@ const isInitialStateValid = (initial_state: string[], states: string[]) => {
 
 const areFinalStatesValid = (states: string[], finalStates: string[]) => {
     for (const state of finalStates){
-        if(!states.includes(state) && state != "")
+        if(!states.includes(state) && state !== "")
             return false;
     }
 
@@ -33,7 +33,7 @@ const hasDisjointAlphabets = (alphabet: string[], auxAlphabet: string[]) => {
     const set = new Set(alphabet);
 
     for (const item of auxAlphabet) {
-        if (set.has(item) && item != "") {
+        if (set.has(item) && item !== "") {
             return false; 
         }
     }
@@ -45,7 +45,7 @@ const hasDisjointAlphabets = (alphabet: string[], auxAlphabet: string[]) => {
 export const validateTransition = (value: string, states: string[], alphabet: string[]): [string, string, string, number] => {
     const value_tokenized = value.split(',').map(token => token.trim()).filter(token => token.length > 0); 
           
-    if (value_tokenized === null || value_tokenized.length == 0)
+    if (value_tokenized === null || value_tokenized.length === 0)
         return ["", "", "", errorCodes.NoError];
   
     if (value_tokenized.length !== 3)

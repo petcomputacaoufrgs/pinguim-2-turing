@@ -6,53 +6,49 @@ export const errorCodes = Object.freeze({
     InvalidSymbol: 4
 })
 
-
 export interface Transitions {
-    [state: string]: {
-      [symbol: string] : {
-        transitionText: string;
-        nextState: string;
-        newSymbol: string;
-        direction: string;
-
-        error: number;
-      };
+  [state: string]: {
+    [symbol: string] : {
+      transitionText: string;
+      nextState: string;
+      newSymbol: string;
+      direction: string;
+      error: number;
     };
-  }
-  
+  };
+}
   
 export interface InputValues {
-      states: string;
-      initState: string;
-      finalStates: string;
-      inAlphabet: string;
-      auxAlphabet: string;
-      initSymbol: string;
-      blankSymbol: string;
-    }
+  states: string;
+  initState: string;
+  finalStates: string;
+  inAlphabet: string;
+  auxAlphabet: string;
+  initSymbol: string;
+  blankSymbol: string;
+}
   
 export interface TokenizedInputValues {
-      states: string[];
-      initState: string[];
-      finalStates: string[];
-      inAlphabet: string[];
-      auxAlphabet: string[];
-      initSymbol: string[];
-      blankSymbol: string[];
-    }
+  states: string[];
+  initState: string[];
+  finalStates: string[];
+  inAlphabet: string[];
+  auxAlphabet: string[];
+  initSymbol: string[];
+  blankSymbol: string[];
+}
   
 export interface InputErrors {
-      uniqueStates: boolean;
-      validInitialState: boolean;
-      validFinalStates: boolean;
-      uniqueAlphabetSymbols: boolean;
-      disjointAlphabets: boolean;
-      alphabetHasStart: boolean;
-      alphabetHasBlank: boolean;
-      auxiliaryAlphabetHasStart: boolean;
-      auxiliaryAlphabetHasBlank: boolean;
-  }
-
+  uniqueStates: boolean;
+  validInitialState: boolean;
+  validFinalStates: boolean;
+  uniqueAlphabetSymbols: boolean;
+  disjointAlphabets: boolean;
+  alphabetHasStart: boolean;
+  alphabetHasBlank: boolean;
+  auxiliaryAlphabetHasStart: boolean;
+  auxiliaryAlphabetHasBlank: boolean;
+}
 
 export interface CurrentTool {
   editLinks: boolean;
@@ -62,4 +58,8 @@ export interface CurrentTool {
   noEdit: boolean;
 }
 
-export type State = {inputs : InputValues, tokenizedInputs : TokenizedInputValues, transitions : Transitions, errors: InputErrors};
+export type State = {
+  inputs : InputValues, 
+  tokenizedInputs : TokenizedInputValues, 
+  transitions : Transitions, 
+  errors: InputErrors};

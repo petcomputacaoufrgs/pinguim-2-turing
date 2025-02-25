@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { InputValues, TokenizedInputValues, Transitions } from "../../../../../types/types";
-import { getElementText, getLinkText } from "../../utils";
+import { getElementText, getLinkText } from "../../getNodeData";
 import { tokenize } from "../../../../../utils/tokenize";
 import { useStateContext } from "../../../../../ContextProvider";
 

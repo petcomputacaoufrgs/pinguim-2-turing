@@ -1,20 +1,24 @@
-import React, { ChangeEventHandler, useEffect, useState } from 'react';
+import React, { ChangeEventHandler } from 'react';
 import {Container} from "./styled.ts"
+import { useStateContext } from '../../ContextProvider.tsx';
 
 
 interface DocumentationProps{
-    value:string;
     onChange: ChangeEventHandler<HTMLTextAreaElement>;
 }
 
-export default function Documentation({value, onChange} : DocumentationProps){
-
+const Documentation = ({onChange} : DocumentationProps ) => {
+    const {inputStates} = useStateContext();
+    const {documentation} = inputStates;
     
-
     return(
         <Container>
             <p>Documentação: </p>
-            <textarea value={value} onChange={onChange}/>
+            <textarea value={documentation} onChange={onChange}/>
         </Container>
     )
 }
+
+export default Documentation;
+
+

@@ -1,5 +1,5 @@
 import { InputValues, TokenizedInputValues, Transitions } from "../../../../../types/types";
-import { getElementText } from "../../utils";
+import { getElementText } from "../../getNodeData";
 import { linkDeleteHandler, nodeDeleteHandler } from "./deleteHandler";
 import { createButton, handleChangeFinalStatus, handleChangeInitStatus, handleUpdateButtonsPositions } from "./stateButtons";
 

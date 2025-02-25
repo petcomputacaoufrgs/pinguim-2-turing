@@ -1,6 +1,6 @@
 import * as joint from 'jointjs';
 import { CurrentTool, TokenizedInputValues, Transitions } from '../../../types/types';
-import { getElementText, getLinkText } from './utils';
+import { getElementText, getLinkText } from './getNodeData';
 import { tokenize } from '../../../utils/tokenize';
  
 
@@ -193,6 +193,9 @@ import { tokenize } from '../../../utils/tokenize';
           
           const newText = symbol + firstPart + secondPart;
           
+          //newLink.appendLabel(createLinkLabel(transition, newText));
+
+
             newLink.appendLabel({
               position: { distance: 0.5, offset: -15 },
               attrs: {
@@ -256,6 +259,11 @@ import { tokenize } from '../../../utils/tokenize';
       const newText = symbol + firstPart + secondPart;
       
         // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
+
+        // const newLink = createLink(sourceNode, targetNode, center);
+        // newLink.appendLabel(createLinkLabel(transitionInfo, transition.error));
+
+
         linkData.appendLabel({
           position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
           attrs: {

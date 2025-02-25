@@ -1,6 +1,6 @@
 import { InputValues, TokenizedInputValues, Transitions } from "../../../../../types/types";
 import { tokenize } from "../../../../../utils/tokenize";
-import { getElementText, getLinkText } from "../../utils";
+import { getElementText, getLinkText } from "../../getNodeData";
 
 export function initEditLink(
     paper: joint.dia.Paper,

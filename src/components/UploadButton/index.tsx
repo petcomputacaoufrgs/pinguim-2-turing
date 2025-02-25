@@ -8,7 +8,7 @@ interface FileUploaderProps {
 
 
 
-export default function Upload_button({ onFileUpload } : FileUploaderProps){
+export default function UploadButton({ onFileUpload } : FileUploaderProps){
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
