@@ -3,7 +3,7 @@ import {Container, ContainerBody, Div11, Div12, Div13, Div14, Div2p} from "./sty
 import Header from '../../components/Header/index.tsx';
 import Buttons from '../../components/GeneralButtons/index.tsx';
 import { useStateContext } from '../../ContextProvider.tsx';
-import { CurrentTool } from '../../types/types.ts';
+import { CurrentTool, errorCodes } from '../../types/types.ts';
 import SimpleDiagram from '../../components/StateDiagram/index.tsx';
 import TransitionTable from '../../components/TransitionTable/index.tsx';
 
@@ -20,6 +20,7 @@ export function Home() {
     // currState representa o estado atual da máquina. É simplesmente uma array com o nome do estado atual e o index atual na fita
     const [currState, setCurrState] = useState<[string, number]>([inputStates.tokenizedInputs.initState[0], 0]);
 
+    const ended = useRef<boolean>(false);
 
     /*
 
@@ -53,11 +54,62 @@ export function Home() {
   const handleRun = () => {
     //const maquinaTuring = new TuringMachine(tokenizedInputs, transitions, tape, currState);
     //setCurrState(maquinaTuring.run()); 
-  }
+}
 
   const handleStep = () => {
     //const maquinaTuring = new TuringMachine(tokenizedInputs, transitions, tape, currState);
     //setCurrState(maquinaTuring.step());
+
+
+    if(ended.current)
+      return;
+
+    if(tape.length == 0){
+      console.log("REJEITA");
+      ended.current = true;
+      return;
+    }
+
+
+    const currSymbol = tape[currState[1]];
+
+    const transition = inputStates.transitions[currState[0]][currSymbol];
+
+    if(transition.error != errorCodes.NoError){
+      console.log("Erro");
+      ended.current = true;
+      return;
+    }
+
+    if(transition.transitionText == ""){
+      console.log("REJEITA");
+      ended.current = true;
+
+      return;
+    }
+
+    else{
+      const nextState = transition.nextState;
+      const newIndex = currState[1] + 1;
+
+      if(newIndex >= tape.length)
+        setTape(tape.substring(0, currState[1]) + transition.newSymbol + inputStates.tokenizedInputs.blankSymbol[0]);
+      else
+        setTape(tape.substring(0, currState[1]) + transition.newSymbol +  tape.substring(currState[1] + 1, tape.length));
+
+
+      const newMachineState = [nextState, newIndex];
+
+      setCurrState(newMachineState as [string, number]);
+
+      if(inputStates.tokenizedInputs.finalStates.includes(nextState)){
+        console.log("ACEITA");
+        ended.current = true;
+
+        return;
+      }
+      
+    }
   }
 
   // Quando a fita é alterada pelo usuário, atualiza ela e reseta o estado atual
@@ -65,6 +117,7 @@ export function Home() {
     const newTape = e.target.value;
     setTape(newTape);
     setCurrState([inputStates.tokenizedInputs.initState[0], 0]);
+    ended.current = false;
   }
 
 
@@ -100,7 +153,7 @@ export function Home() {
             </Div13>
 
             <Div14>
-              CCCCCCCC
+              <p style={{"fontSize": "15px"}}>Estado Atual: {currState[0]} Index na fita: {currState[1]}</p>
             </Div14>
           </Div2p>
             

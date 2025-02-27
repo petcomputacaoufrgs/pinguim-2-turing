@@ -197,10 +197,13 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   
   
 // Se a ferramenta não é a de seleção, permite movimento do paper através do arraste e remove qualquer seleção de células existente
-  if(!currentTool.selection && selectedCells && selectionBoxRef){
+  if(!currentTool.selection){
     initDragHandler(paper, containerRef.current, setTranslation, eventHandlers);
-    selectedCells.current = [];
-    selectionBoxRef.current = null;
+
+    if(selectedCells && selectionBoxRef){
+      selectedCells.current = [];
+      selectionBoxRef.current = null;
+    }
   }
 
 // Controle da escala (zoom)
