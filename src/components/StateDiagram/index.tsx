@@ -20,11 +20,11 @@ import { initCellsSelection } from "./graph/events/selectionTool/selectCells";
 TO DO: 
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
-1) Permitir que links sejam adicionados
+1) Permitir que links sejam adicionados - Kami
 2) Tratar não determinismo (para adição de links)!
-3) Arrumar atribuição de nome para os estados ao serem criados com o clique duplo: no momento não funciona porque o nome é sempre q{qtd de estados}, mas como há
-deleção de estados isso pode bugar 
-4) Arrumar situação em que quando o link é redirecionado para o próprio nodo fonte formando um loop ou quando o loop tem seus vértices retirados ele fica estranho (adicionar vértices nessa condição)
+4) Arrumar situação em que quando o link é redirecionado para o próprio nodo 
+   fonte formando um loop ou quando o loop tem seus vértices retirados ele fica estranho (adicionar vértices nessa condição) - Kami
+5) Mover várias células ao mesmo tempo - Edu
 
 - Acessórios (estilos e funcionalidades extras)
 5) Modo de tela cheia para grafo e tabela
@@ -45,11 +45,12 @@ interface i_simple_diagram {
   saveStateToHistory?: (inputs: InputValues, inputs_tokenized: TokenizedInputValues, new_transitions: Transitions, newErrors: InputErrors) => void;
   currentTool: CurrentTool;
   currState?: string;
+  selectedCells?: any;
+  selectionBoxRef?: any; 
 }
 
 
-export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, currState}: i_simple_diagram) {
-
+export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, currState, selectedCells, selectionBoxRef}: i_simple_diagram) {
 
 // ====================================================================================
 // DEFINIÇÃO DE STATES E CONSTANTES
@@ -89,6 +90,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   const movingLink = useRef<any>(null); // Referência ao link sendo movido
 
   const paperRef = useRef<joint.dia.Paper>();
+  const nodesRef = useRef<Map<string, any>>(new Map());
 
 
   // Constantes para facilitar o acesso
@@ -109,6 +111,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 
     if(!saveStateToHistory || !onChangeInputs) 
       return;
+
 
     const newErrors = validateInputs(newTokenizedInputs, errors);
     const revalidatedTransitions = revalidateTransitions(newTransitions, tokenizedInputs, newTokenizedInputs);
@@ -163,12 +166,22 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 // ====================================================================================
 // CRIAÇÃO DOS LINKS E NODOS
 // ====================================================================================
+  
+  let newSelectedCells = null;
+  let prevSelectedCells = null;
 
-  const nodes = getNodes(states, tokenizedInputs, nodePositions, setNodePositions);
+  if(selectedCells && prevSelectedCells){
+    newSelectedCells = [];
+    prevSelectedCells = selectedCells.current;
+  }
+
+  const nodes = getNodes(states, tokenizedInputs, nodePositions, setNodePositions, nodesRef.current, prevSelectedCells, newSelectedCells);
   graph.addCells(Array.from(nodes.values()));
   
-  const links = getAndDrawTransitions(states, alphabet, transitions, nodes, paper, currentTool, currentLinks);
+  const links = getAndDrawTransitions(states, alphabet, transitions, nodes, paper, currentLinks, prevSelectedCells, newSelectedCells);
   setLinks(links);
+
+  nodesRef.current = nodes;
 
 // ====================================================================================
 // EVENTOS E LISTENERS 
@@ -181,10 +194,14 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 // Lógica de control + Z (undo) e control + Y (redo)
   if(!currentTool.noEdit && onChangeInputs)
     initUndoRedo(history, historyIndex, setHistoryIndex, onChangeInputs, eventHandlers);
-
-// Permite movimento do paper através do arraste
-  if(!currentTool.selection)
-    initDragHandler(paper, containerRef.current, setTranslation, eventHandlers)
+  
+  
+// Se a ferramenta não é a de seleção, permite movimento do paper através do arraste e remove qualquer seleção de células existente
+  if(!currentTool.selection && selectedCells && selectionBoxRef){
+    initDragHandler(paper, containerRef.current, setTranslation, eventHandlers);
+    selectedCells.current = [];
+    selectionBoxRef.current = null;
+  }
 
 // Controle da escala (zoom)
   paper.scale(currentScale);
@@ -342,11 +359,9 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   // ------------------------------------------------------------------------------------
 
   if(currentTool.selection){
-
-    let selectedCells:joint.dia.Cell[] = [];
-
+    if(selectedCells && selectionBoxRef)
     // Permite selecionar várias células ao mesmo tempo para deletá-las juntas
-    initCellsSelection(paper, selectedCells, currentScale, translation, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
+    initCellsSelection(paper, selectedCells, selectionBoxRef, currentScale, translation, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
   }
 
   // ------------------------------------------------------------------------------------
@@ -443,6 +458,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
       }
     }
 
+    
 
     return (
       <>

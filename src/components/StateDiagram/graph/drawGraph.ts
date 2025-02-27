@@ -14,7 +14,10 @@ import { createLink } from './styleNode';
   export const getNodes = (states:string[], 
                        tokenizedInputs: TokenizedInputValues, 
                        nodePositions: Map<string, {x: number, y: number;}>, 
-                       setNodePositions: React.Dispatch<React.SetStateAction<Map<string, {x: number, y: number;}>>> ) => 
+                       setNodePositions: React.Dispatch<React.SetStateAction<Map<string, {x: number, y: number;}>>>,
+                       prevNodesMap: Map<string, any>,
+                       prevSelectedCells: any,
+                       newSelectedCells: any ) => 
   {
 
     const nodesMap = new Map();
@@ -92,6 +95,10 @@ import { createLink } from './styleNode';
         });
 
         nodesMap.set(state, node);
+
+        if(prevSelectedCells && prevSelectedCells.includes(prevNodesMap.get(state)))
+          newSelectedCells.push(node);
+        
     });
 
     return nodesMap;
@@ -136,8 +143,9 @@ import { createLink } from './styleNode';
     transitions: Transitions,
     nodes: Map<string, any>,
     paper: joint.dia.Paper,
-    currentTool: CurrentTool,
-    currentLinks: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>
+    currentLinks: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>,
+    prevSelectedCells: any,
+    newSelectedCells: any
   ) => {
 
     // Atualiza o state que contém os links
@@ -172,6 +180,11 @@ import { createLink } from './styleNode';
         
         if (existingLink) {
           const newLink = createLink(transitionInfo, transition.error, symbol, sourceNode, targetNode, paper, existingLink);
+
+          if(prevSelectedCells && prevSelectedCells.includes(existingLink)){
+            newSelectedCells.push(newLink);
+          }
+
           newLink.addTo(paper.model);
           addLink(links, transitionInfo[0], state, symbol, newLink);
           continue;

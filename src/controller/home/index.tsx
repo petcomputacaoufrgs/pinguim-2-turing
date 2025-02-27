@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useRef, useState } from 'react';
 import {Container, ContainerBody} from "./styled.ts";
 
 import { Transitions, InputValues, TokenizedInputValues, InputErrors, CurrentTool } from '../../types/types';
@@ -33,10 +33,19 @@ export function Home() {
       noEdit: false
     });
 
+    const selectionBoxRef = useRef<any>(null);
+    const selectedCells = useRef<joint.dia.Cell[]>([]);
+
+ 
+
     const setInputValues = (newValues : InputValues, 
                             newTokenizedValues : TokenizedInputValues, 
                             newTransitions : Transitions, 
                             newErrors: InputErrors) => {
+
+      selectionBoxRef.current = null;
+      selectedCells.current = [];
+      
       setInputStates(prevState => ({
         ...prevState,
         inputs: newValues,
@@ -107,7 +116,7 @@ export function Home() {
         <div id="div3">
           <p>Grafo:</p>
           <div style={{width: "80%", height: "75%", overflow: "hidden"}}> 
-            <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} /> 
+            <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} selectedCells={selectedCells} selectionBoxRef={selectionBoxRef}/> 
           </div>
 
           <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
