@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import {Container, ContainerBody, Div11, Div12, Div13, Div14, Div2p} from "./styled.ts";
 import Header from '../../components/Header/index.tsx';
 import Buttons from '../../components/GeneralButtons/index.tsx';
@@ -18,10 +18,14 @@ export function Home() {
     const [tape, setTape] = useState<String>("");
 
     // currState representa o estado atual da máquina. É simplesmente uma array com o nome do estado atual e o index atual na fita
-    const [currState, setCurrState] = useState<[string, number]>([inputStates.tokenizedInputs.initState[0], 0]);
+    const [currState, setState] = useState<[string, number]>([inputStates.tokenizedInputs.initState[0], 0]);
+
+    const [value, setValue] = useState(50); // Valor inicial
 
     const ended = useRef<boolean>(false);
 
+    const [run, setRun] = useState(false);
+    const [machineClock, setMachineClock] = useState(false);
     /*
 
     Quanto às entradas, acho que a que vale a pena mudar a estrutura no back para ser "equivalente" à estrutura do front é as transições
@@ -51,10 +55,40 @@ export function Home() {
   (ou outra, se uma estrutura mais inteligente for pensada)
   */
 
-  const handleRun = () => {
-    //const maquinaTuring = new TuringMachine(tokenizedInputs, transitions, tape, currState);
-    //setCurrState(maquinaTuring.run()); 
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+
+const asyncSleep = async (ms : number) => {
+  return sleep(ms);
 }
+
+// RUN
+  useEffect(() => {
+
+    const runMachine = async () => {
+      if (!run || ended.current) return;
+  
+      handleStep();
+  
+      await asyncSleep(value * 10);
+  
+      setMachineClock(!machineClock);
+    };
+
+
+    if(!run) return;
+
+    if(ended.current){
+      setRun(false);
+      return;
+    }
+
+    runMachine();
+
+  }, [machineClock, run])
+
+
 
   const handleStep = () => {
     //const maquinaTuring = new TuringMachine(tokenizedInputs, transitions, tape, currState);
@@ -74,6 +108,9 @@ export function Home() {
     const currSymbol = tape[currState[1]];
 
     const transition = inputStates.transitions[currState[0]][currSymbol];
+
+    console.log(currSymbol, transition);
+    console.log(currState);
 
     if(transition.error != errorCodes.NoError){
       console.log("Erro");
@@ -100,7 +137,7 @@ export function Home() {
 
       const newMachineState = [nextState, newIndex];
 
-      setCurrState(newMachineState as [string, number]);
+      setState(newMachineState as [string, number]);
 
       if(inputStates.tokenizedInputs.finalStates.includes(nextState)){
         console.log("ACEITA");
@@ -112,12 +149,20 @@ export function Home() {
     }
   }
 
+
+
   // Quando a fita é alterada pelo usuário, atualiza ela e reseta o estado atual
   const handleTapeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newTape = e.target.value;
     setTape(newTape);
-    setCurrState([inputStates.tokenizedInputs.initState[0], 0]);
+    setState([inputStates.tokenizedInputs.initState[0], 0]);
     ended.current = false;
+  }
+
+
+  const handleReset = () => {
+    setState([inputStates.tokenizedInputs.initState[0], 0]);
+    setRun(false);
   }
 
 
@@ -148,8 +193,10 @@ export function Home() {
             </Div12>
 
             <Div13>
-              <button onClick={handleRun}>run</button>
-              <button onClick={handleStep}>step</button>
+              <button onClick={handleReset}>Reset</button>
+              <button onClick={() => setRun(true)}>Run</button>
+              <button onClick={() => setRun(false)}>Stop</button>
+              <button onClick={handleStep}>Step</button>
             </Div13>
 
             <Div14>
@@ -166,6 +213,17 @@ export function Home() {
           </div>  
         </div>
 
+        <div style={{height: "5vh"}}>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={value}
+            onChange={(e) => setValue(Number(e.target.value))}
+          />
+      
+          <p>Valor: {value}</p>
+        </div>
 
       </ContainerBody>
 
