@@ -8,6 +8,16 @@ import SimpleDiagram from '../../components/StateDiagram/index.tsx';
 import TransitionTable from '../../components/TransitionTable/index.tsx';
 
 
+enum MachineOutput {
+  ACCEPT = "ACEITA",
+  REJECT = "REJEITA",
+  InvalidDirection = "ERRO! Movimento deve ser D ou E apenas",
+  InvalidNumberOfParameters = "ERRO! Escreva: estado, movimento (R/L), símbolo",
+  InvalidState = "ERRO! Novo estado deve pertencer ao conjunto de estados",
+  InvalidSymbol = "ERRO! Símbolo escrito deve pertencer ao alfabeto da fita",
+  NONE = ""
+}
+
 
 export function Home() {  
 
@@ -15,14 +25,14 @@ export function Home() {
     const  { inputStates } = useStateContext();
 
     // A fita é uma simples string
-    const [tape, setTape] = useState<String>("");
+    const [tape, setTape] = useState<String>(inputStates.tokenizedInputs.initSymbol[0]);
 
     // currState representa o estado atual da máquina. É simplesmente uma array com o nome do estado atual e o index atual na fita
     const [currState, setState] = useState<[string, number]>([inputStates.tokenizedInputs.initState[0], 0]);
 
     const [value, setValue] = useState(50); // Valor inicial
 
-    const ended = useRef<boolean>(false);
+    const [output, setOutput] = useState<MachineOutput>(MachineOutput.NONE);
 
     const [run, setRun] = useState(false);
     const [machineClock, setMachineClock] = useState(false);
@@ -59,19 +69,15 @@ export function Home() {
 
 
 
-const asyncSleep = async (ms : number) => {
-  return sleep(ms);
-}
 
 // RUN
   useEffect(() => {
 
     const runMachine = async () => {
-      if (!run || ended.current) return;
+      if (!run || output != MachineOutput.NONE) return;
   
-      handleStep();
-  
-      await asyncSleep(value * 10);
+      if(handleStep())
+        await sleep(value * 10);
   
       setMachineClock(!machineClock);
     };
@@ -79,7 +85,7 @@ const asyncSleep = async (ms : number) => {
 
     if(!run) return;
 
-    if(ended.current){
+    if(output != MachineOutput.NONE){
       setRun(false);
       return;
     }
@@ -95,13 +101,13 @@ const asyncSleep = async (ms : number) => {
     //setCurrState(maquinaTuring.step());
 
 
-    if(ended.current)
-      return;
+    if(output != MachineOutput.NONE)
+      return false;
 
     if(tape.length == 0){
       console.log("REJEITA");
-      ended.current = true;
-      return;
+      setOutput(MachineOutput.REJECT);
+      return false;
     }
 
 
@@ -114,15 +120,15 @@ const asyncSleep = async (ms : number) => {
 
     if(transition.error != errorCodes.NoError){
       console.log("Erro");
-      ended.current = true;
-      return;
+      setOutput(getOutputError(transition.error));
+      return false;
     }
 
     if(transition.transitionText == ""){
       console.log("REJEITA");
-      ended.current = true;
+      setOutput(MachineOutput.REJECT);
 
-      return;
+      return false;
     }
 
     else{
@@ -141,30 +147,71 @@ const asyncSleep = async (ms : number) => {
 
       if(inputStates.tokenizedInputs.finalStates.includes(nextState)){
         console.log("ACEITA");
-        ended.current = true;
+        setOutput(MachineOutput.ACCEPT);
 
-        return;
+        return false;
       }
       
     }
+
+    return true;
   }
 
 
 
   // Quando a fita é alterada pelo usuário, atualiza ela e reseta o estado atual
   const handleTapeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const tokenizedInputs = inputStates.tokenizedInputs;
+
     const newTape = e.target.value;
-    setTape(newTape);
-    setState([inputStates.tokenizedInputs.initState[0], 0]);
-    ended.current = false;
+    setTape(tokenizedInputs.initSymbol[0] + newTape);
+    setState([tokenizedInputs.initState[0], 0]);
+    setOutput(MachineOutput.NONE);
   }
 
 
   const handleReset = () => {
     setState([inputStates.tokenizedInputs.initState[0], 0]);
     setRun(false);
+
+    const tapeValue = document.getElementById("tapeValue") as HTMLInputElement;
+    setTape(inputStates.tokenizedInputs.initSymbol[0] + tapeValue.value)
+
+    setOutput(MachineOutput.NONE);
   }
 
+
+  const getOutputColor = (output: MachineOutput) => {
+    switch (output) {
+      case MachineOutput.ACCEPT:
+        return "green";
+      case MachineOutput.REJECT:
+        return "red";
+      case MachineOutput.NONE:
+        return "black";
+      default:
+        return "darkred";
+    }
+  }
+
+  const getOutputError = (error: number) => {
+    switch (error) {
+      case (errorCodes.InvalidDirection): 
+        return MachineOutput.InvalidDirection;
+
+      case errorCodes.InvalidNumberOfParameters:
+        return MachineOutput.InvalidNumberOfParameters;
+
+      case errorCodes.InvalidState:
+        return MachineOutput.InvalidState;
+
+      case errorCodes.InvalidSymbol: 
+        return MachineOutput.InvalidSymbol;
+      
+      default:
+        return MachineOutput.NONE;
+    }
+  }
 
   return (
     <Container>
@@ -184,12 +231,13 @@ const asyncSleep = async (ms : number) => {
         <div id="div1">
           <Div11>
             <p>Entrada:</p>
-            <input type="text" onChange={handleTapeChange}/>
+            <input id="tapeValue" type="text" onChange={handleTapeChange}/>
           </Div11>
              
           <Div2p>
             <Div12>
-              {tape}
+              <p style={{whiteSpace: "pre"}}>{" ".repeat(currState[1])}↓{currState[0]}</p>
+              <p>{tape}</p>
             </Div12>
 
             <Div13>
@@ -200,7 +248,7 @@ const asyncSleep = async (ms : number) => {
             </Div13>
 
             <Div14>
-              <p style={{"fontSize": "15px"}}>Estado Atual: {currState[0]} Index na fita: {currState[1]}</p>
+              <p style={{fontSize: "15px", color: getOutputColor(output)}}>{output}</p>
             </Div14>
           </Div2p>
             
@@ -222,7 +270,7 @@ const asyncSleep = async (ms : number) => {
             onChange={(e) => setValue(Number(e.target.value))}
           />
       
-          <p>Valor: {value}</p>
+          <p>Valor: {value * 10} ms</p>
         </div>
 
       </ContainerBody>

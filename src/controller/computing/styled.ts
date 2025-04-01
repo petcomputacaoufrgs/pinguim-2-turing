@@ -112,8 +112,10 @@ export const Div12 = styled.div`
   height: 60%;
   margin-top: 1vh;
 
+
   p{
-    font-size: 10px;
+    font-size: 12px;
+    font-family: monospace;
   }
 `;
 
@@ -126,7 +128,7 @@ export const Div13 = styled.div`
 `;
 
 export const Div14 = styled.div`
-  background-color: red;
+  background-color: transparent;
   width: 100%;
   height: 15%;
   display: flex;
