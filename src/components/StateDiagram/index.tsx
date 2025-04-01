@@ -364,7 +364,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   if(currentTool.selection){
     if(selectedCells && selectionBoxRef)
     // Permite selecionar várias células ao mesmo tempo para deletá-las juntas
-    initCellsSelection(paper, selectedCells, selectionBoxRef, currentScale, translation, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
+    initCellsSelection(paper, selectedCells, nodes, selectionBoxRef, currentScale, translation, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
   }
 
   // ------------------------------------------------------------------------------------
@@ -467,6 +467,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
       <>
         <button onClick={goToInitState}>Ir ao estado inicial</button>
         <button onClick={centralizeGraph}>Centralizar</button>
+        <button>{currentScale}</button>
         <GraphConteiner ref={containerRef}></GraphConteiner>
       </>
     );

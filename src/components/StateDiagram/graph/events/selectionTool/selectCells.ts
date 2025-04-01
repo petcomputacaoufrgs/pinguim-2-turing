@@ -8,6 +8,7 @@ import { tokenize } from "../../../../../utils/tokenize";
 export function initCellsSelection(
     paper: joint.dia.Paper,
     selectedCells: any,
+    nodes: Map<string, joint.dia.Cell>,
     selectionBoxRef: any,
     currentScale: number,
     translation: {x: number, y: number},
@@ -72,8 +73,14 @@ export function initCellsSelection(
     container.appendChild(selectionBox);
 
     // Marca todas as células selecionadas. Isso é necessário porque a re-renderização cria novas células, ou seja, as células marcadas antes são perdidas
-    selectedCells.current.forEach((cell: joint.dia.Cell) => {
-      selectCell(cell);
+    selectedCells.current.forEach((cell: joint.dia.Cell, index: number) => {
+
+      const newCell = nodes.get(getElementText(cell as joint.dia.Element));
+      selectedCells.current[index] = newCell;
+
+      if(newCell)
+        selectCell(newCell);
+
     });
 
   }
@@ -210,6 +217,7 @@ const handleDeleteSelectedCells = (evt: any) => {
 const handleMouseDown = (event: MouseEvent) => {
   if (!container) return;
 
+  // Limpa a seleção anterior
   selectedCells.current.forEach((cell: joint.dia.Cell) => {
     deselectCell(cell);
   });
@@ -228,6 +236,9 @@ const handleMouseDown = (event: MouseEvent) => {
   selectionBox.style.top = `${startY - containerRect.y}px`;
   selectionBox.style.zIndex = "10";
   selectionBox.style.pointerEvents = "none";
+
+  // SELECTIONBOXREF DEVERIA SER A REFERÊNCIA PARA UMA SELECTIONBOX EM ZOOM 1:1, MAS NÃO ESTÁ SEGUINDO ISSO
+  // JÁ SELECTIONBOX É A PRÓPRIA CAIXA DE SELEÇÃO DESENHADA NA TELA, QUE É A QUE TEM A ESCALA ATUAL
   selectionBoxRef.current = selectionBox.cloneNode();
 
   container.appendChild(selectionBox);
@@ -274,8 +285,11 @@ const handleMouseDown = (event: MouseEvent) => {
    * Finaliza a seleção ao soltar o botão do mouse.
    */
   const handleMouseUp = (event: any) => {
-    selectionBoxRef.current.style.left = `${parseFloat(selectionBox.style.left) / currentScale}px`;
-    selectionBoxRef.current.style.top = `${parseFloat(selectionBox.style.top) / currentScale}px`;
+
+    // Posiciona de acordo com a translação e a escala. A translação é uma media absoluta, independente da escala, então é preciso retirá-la para multiplicar o valor sem considerar a translação
+    // pela escala, e então colocá-la de novo (porque em selectionBox a translação já está sendo contada)
+    selectionBoxRef.current.style.left = `${(parseFloat(selectionBox.style.left) - translation.x) / currentScale + translation.x}px`;
+    selectionBoxRef.current.style.top = `${(parseFloat(selectionBox.style.top) - translation.y) / currentScale + translation.y}px`;
     selectionBoxRef.current.style.width = `${parseFloat(selectionBox.style.width) / currentScale}px`;
     selectionBoxRef.current.style.height = `${parseFloat(selectionBox.style.height) / currentScale}px`;
 
