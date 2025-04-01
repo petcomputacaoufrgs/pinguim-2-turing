@@ -467,7 +467,6 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
       <>
         <button onClick={goToInitState}>Ir ao estado inicial</button>
         <button onClick={centralizeGraph}>Centralizar</button>
-        <button>{currentScale}</button>
         <GraphConteiner ref={containerRef}></GraphConteiner>
       </>
     );

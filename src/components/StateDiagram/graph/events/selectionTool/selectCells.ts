@@ -190,6 +190,7 @@ const handleClickWithSelectionBox = (event: any) => {
 
     selectedCells.current = [];
     selectionBox.remove();
+    selectionBoxRef.current = null;
     container.addEventListener("mousedown", handleMouseDown);
     document.removeEventListener("mousedown", handleClickWithSelectionBox);
     return;
