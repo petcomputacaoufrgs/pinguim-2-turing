@@ -20,23 +20,21 @@ import { initCellsSelection } from "./graph/events/selectionTool/selectCells";
 TO DO: 
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
-1) Permitir que links sejam adicionados - Kami
+1) Permitir que links sejam adicionados
 2) Tratar não determinismo (para adição de links)!
-4) Arrumar situação em que quando o link é redirecionado para o próprio nodo 
-   fonte formando um loop ou quando o loop tem seus vértices retirados ele fica estranho (adicionar vértices nessa condição) - Kami
-5) Mover várias células ao mesmo tempo - Edu
 
 - Acessórios (estilos e funcionalidades extras)
 5) Modo de tela cheia para grafo e tabela
 6) Deixar botões de edição de estado final/inicial mais bonitinhos
 7) Deixar caixa de ferramentas mais bonitinha
-8) Salvar movimento dos nodos e links no histórioco de ações para permitir que o control + Z e o control + Y capturem ações que sejam apaenas movimento
-9) Possibilitar movimento de todas as células selecionadas na opção "seleção"
-
+8) Salvar movimento dos nodos e links num histórico de ações para permitir que o control + Z e o control + Y capturem ações que sejam apaenas movimento
+9) Deixar botões de centralização e ir ao estaod inicial mais bonitinhos
+10) Repensar forma automática como inicialmente estão sendo atribuídos vértices para os links. Do jeito que está, se 2 links saem de um mesmo estado para um mesmo outro estado, eles ficam sobrepostos.
+   Poderia resolver isso facilmente colocando os vértices em posições diferentes, mas isso exigiria uma checagem dos links que saem de um mesmo estado 
+   
 - REFATORAÇÃO:
-1) Arrumar uma forma de diminuir o número de argumentos passados para cada evento (de novo usar o contexto?)
-2) Tentar separar esse único hook useEffect gigantesco em vários menores controlando aspectos diferentes: desenho do grafo, escala, seleção, deleção, etc - primeira tentativa falhou porque introduziu atraso na renderização
-
+1) Otimizar a forma como ctrl + Z e ctrl + Y estão sendo feitos. Eles estão registrando TODOS OS DADOS, completamente desnecessário. Deveriam apenas serem registrados os dados que mudaram
+   Isso poderia ser feito guardando um histórico de ações, e não de estados. Cada valor desse histórico teria uma chave indicando o que foi mudado e o valor correspondente da mudança.
 */
 
 
