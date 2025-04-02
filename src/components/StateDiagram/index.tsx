@@ -15,6 +15,8 @@ import { initEditLink } from "./graph/events/standardTool/editLink";
 import { initEditNode } from "./graph/events/standardTool/editNode";
 import { attachLinkEvents } from "./graph/events/standardTool/attachLinkEvents";
 import { initCellsSelection } from "./graph/events/selectionTool/selectCells";
+import { getElementText, getLinkText } from "./graph/getNodeData";
+import { tokenize } from "../../utils/tokenize";
 
 /*
 TO DO: 
@@ -31,6 +33,7 @@ TO DO:
 9) Deixar botões de centralização e ir ao estaod inicial mais bonitinhos
 10) Repensar forma automática como inicialmente estão sendo atribuídos vértices para os links. Do jeito que está, se 2 links saem de um mesmo estado para um mesmo outro estado, eles ficam sobrepostos.
    Poderia resolver isso facilmente colocando os vértices em posições diferentes, mas isso exigiria uma checagem dos links que saem de um mesmo estado 
+11) Dar o zoom baseado na posição do mouse
    
 - REFATORAÇÃO:
 1) Otimizar a forma como ctrl + Z e ctrl + Y estão sendo feitos. Eles estão registrando TODOS OS DADOS, completamente desnecessário. Deveriam apenas serem registrados os dados que mudaram
@@ -217,35 +220,45 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   // EDITAR LINKS
   // ------------------------------------------------------------------------------------
 
-
-  // Permite mover os links
+    if(currentTool.editLinks){
+  // Permite adicionar e mover os links
 
 
     let targetNode:any = null;  // Referência ao nodo que o link está em cima
     let mustMove = false; // Indica se de fato clicamos para mover o link
     let initialPosition:any = null; // Guarda a posição inicial caso precise desfazer
-    
+    let initialVertices: any = null; // Guarda os vértices iniciais, cao precise desfazer
+    let initialTargetID: any = null; // Guarda o taerget inicial do link caso precise desfazer
+
     // Início do movimento quando o mouse clica no link
-   /* paper.on('link:pointerdown', (linkView, evt, x, y) => {
+      paper.on('link:pointerdown', (linkView, evt, x, y) => {
       evt.preventDefault();
     
-      movingLink.current = linkView.model; 
-    
+      initialTargetID = linkView.model.get('target').id;
+
+      movingLink.current = linkView; 
+      const movingLinkModel = movingLink.current.model;
+
       initialPosition = {
-        source: movingLink.current.get('source'),
-        target: movingLink.current.get('target'),
+        source: movingLinkModel.get('source'),
+        target: movingLinkModel.get('target'),
       };
 
+      initialVertices = movingLinkModel.get('vertices');
+
+
       // Remove os vértices pra não ficar feio o movimento (teria que guardar eles pra caso não ocorra mudança, retorná-los)
-      movingLink.current.set('vertices', []);      
+      movingLink.current.model.set('vertices', []);      
 
 
-      // Identifica se de fato clicou para mover o link (logo no começo dele ou logo no fim)
-      const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect(); // findMagnet identifica um elemento de conexão do link (magnet), e getBoundingClientRect retorna as coordenadas e extensão desse elemento
+      // TO DO: Identifica se de fato clicou para mover o link (se não clicou na caixa de texto do link)
+      const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect(); // findMagnte identifica um elemento de conexão do link (magnet), e getBoundingClientRect retorna as coordenadas e extensão desse elemento
       mustMove = evt.clientX !== undefined && bbox !== undefined && (evt.clientX >= (bbox.left + bbox.width - 10) || (evt.clientX <= bbox.left + 10));
     
       if(!mustMove)
         return;
+
+      movingLink.current.model.attr('line/stroke', 'blue'); // Desta o link que está sendo movido
 
       document.addEventListener('mousemove', handleMouseMoveLink);
       document.addEventListener('mouseup', handleMouseUp);
@@ -283,36 +296,102 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
           targetNode.attr('body/stroke', '#00A8FF');
         }
 
-        movingLink.current.set('target', newPosition);
+        movingLink.current.model.set('target', newPosition);
 
       }
     }
     
     // Finaliza o movimento quando solta o clique do mouse
-    function handleMouseUp(evt : any) {
+    const handleMouseUp = (evt : any) => {
       if (movingLink.current) {
     
         if (targetNode) {
-          // Havendo um nodo alvo, define ele como target
-          movingLink.current.set('target', { id: targetNode.id });
+          // Havendo um nodo alvo, define ele como target e recalcula os vértices do link
+          movingLink.current.model.set('target', { id: targetNode.id });
           targetNode.attr('body/stroke', 'black');
+
+          if(initialTargetID == targetNode.id)
+            movingLink.current.model.set('vertices', initialVertices);
+          else{
+
+            const oldTargetState = getElementText(graph.getCell(initialTargetID) as joint.dia.Element);
+            const newTargetState = getElementText(targetNode as joint.dia.Element);
+            const sourceState = getElementText(graph.getCell(movingLink.current.model.attributes.source.id) as joint.dia.Element);
+
+
+            const transition = getLinkText(movingLink.current.model);
+
+            const readSymbol = tokenize(transition)[0]; // Sempre existirá pois se não existisse o link não estaria nem sendo desenhado
+
+            // setLinks é assíncrono. Ele vai executar depois do desmonte do componente. Nisso o movingLink já vai ter valor null. Aqui guardamos o valor para utilizá-lo depois
+            const linkModel = movingLink.current.model;
+
+             // (caso em que precisa de fato recalcular para não sobrepor nada)
+            setLinks((prevLinks) => {
+              const newLinks = new Map(prevLinks);
+
+              if (!newLinks.has(newTargetState)) {
+                newLinks.set(newTargetState, new Map());
+              }
+
+              const targetMap = newLinks.get(newTargetState)!;
+
+              if (!targetMap.has(sourceState)) {
+                targetMap.set(sourceState, new Map());
+              }
+
+              const sourceMap = targetMap.get(sourceState)!;
+
+              sourceMap.set(readSymbol, linkModel);
+
+              return newLinks;
+            })
+
+            const newTransitionTableText = `${newTargetState}, ${tokenize(transition).slice(1).join(", ")}`;
+
+
+            const newTransitions = {
+              ...transitions, 
+              [sourceState]: {
+                ...transitions[sourceState], 
+                [readSymbol]: {
+                  transitionText: newTransitionTableText, 
+                  nextState: newTargetState, 
+                  newSymbol: "", 
+                  direction: "", 
+                  error: 0
+                }
+              }
+            };
+
+            
+            handleInputsChange(inputs, tokenizedInputs, newTransitions);
+
+          } 
+          
+          
           
         } else {
-          // Se não, volta à posição inicial
-          movingLink.current.set('source', initialPosition.source);
-          movingLink.current.set('target', initialPosition.target);
+          // Se não, volta à posição inicial com os vértices iniciais
+          movingLink.current.model.set('source', initialPosition.source);
+          movingLink.current.model.set('target', initialPosition.target);
+          console.log(initialVertices);
+          movingLink.current.model.set('vertices', initialVertices);
         }
     
+        movingLink.current.model.attr('line/stroke', 'black'); // Retorna a cor do link que estava sendo movido
         movingLink.current = null; 
         targetNode = null;
       }
+
     
       document.removeEventListener('mousemove', handleMouseMoveLink);
       document.removeEventListener('mouseup', handleMouseUp);
     }
 
-    */
+    
 
+    }
 
   // ------------------------------------------------------------------------------------
   // ADICIONAR NODOS (talvez desnecessário?)
