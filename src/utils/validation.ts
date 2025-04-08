@@ -67,8 +67,8 @@ export const validateTransition = (value: string, states: string[], alphabet: st
 const updateTransition = (previous_transitions : Transitions, previous_inputs : TokenizedInputValues, states: string[], alphabet: string[], state: string, symbol: string) => {
     const previous_alphabet = [previous_inputs.initSymbol[0], ...(previous_inputs.inAlphabet.filter((x) => x != "").concat(previous_inputs.auxAlphabet.filter((x) => x != ""))), previous_inputs.blankSymbol[0]];
             
-    // Se anteriormente esse novo estado existia e se o símbolo novo também existia
-    if(previous_inputs.states.includes(state) && previous_alphabet.includes(symbol)) {
+    // Se anteriormente o símbolo novo existia
+    if(previous_alphabet.includes(symbol)) {
       
         if(previous_transitions[state] === undefined) 
             return {transitionText: "", direction: "", nextState: "", newSymbol: "", error: errorCodes.NoError};
@@ -84,7 +84,7 @@ const updateTransition = (previous_transitions : Transitions, previous_inputs : 
         return {transitionText : transition.transitionText, direction: direction, nextState: newState, newSymbol: newSymbol, error: error};
     }
             
-    // Se o estado novo não existia ou o símbolo novo não existia
+    // Se o símbolo novo não existia
     // Então cria uma nova transição vazia a partir do novo estado para esse símbolo
     return { transitionText: "", direction: "", nextState: "", newSymbol: "", error: errorCodes.NoError };
             

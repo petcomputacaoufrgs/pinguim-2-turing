@@ -8,6 +8,7 @@ export function initEditNode(
     paper: joint.dia.Paper,
     currentCellView: any,
     inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any,
+    nodePositions: React.MutableRefObject<Map<string, {x: number; y: number;}>>, 
     eventHandlers: any[]
 ){  
 
@@ -120,11 +121,42 @@ export function initEditNode(
   
               newStatesTokenized = states.map((s) => (s === originalText ? input.value : s));
             }
-              
-              
+
+            // Atualiza as transições que tinham o estado original como origem ou destino 
+            const newTransitions = {...transitions};
+
+            // Como origem: basta pegar as transições que partiam de originalText (estado antigo) e passar para a chave input.value (estado novo)
+            if(newTransitions[originalText]){
+              newTransitions[input.value] = {...newTransitions[originalText]};
+              delete newTransitions[originalText];
+
+            }
+
+            // Como destino: percorre todas as transições e troca o destino originalText pelo novo estado
+            for (const [key, value] of Object.entries(newTransitions)) {
+              for (const [symbol, transition] of Object.entries(value)) {
+                
+
+                transition.transitionText = transition.transitionText.replace(originalText, input.value);
+                
+                if (transition.nextState === originalText) {
+                  transition.nextState = input.value;
+                }
+              }
+            }
+
+            
+            const originalPosition = nodePositions.current.get(originalText);
+
+            if (originalPosition){ 
+              nodePositions.current.set(input.value, originalPosition);
+              nodePositions.current.delete(originalText);
+            }
+
             handleInputsChange({...inputs, states: newStatesTokenized.join(", "), finalStates:newFinalStatesTokenized.join(", "), initState: newInitState.join(", ")}, 
               {...tokenizedInputs, states: newStatesTokenized, finalStates:newFinalStatesTokenized, initState:newInitState}, 
-              transitions); 
+              newTransitions); 
+            
   
             input.remove();
             document.removeEventListener('mousedown', handleClick);

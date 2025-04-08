@@ -22,8 +22,7 @@ import { tokenize } from "../../utils/tokenize";
 TO DO: 
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
-1) Permitir que links sejam adicionados
-2) Tratar não determinismo (para adição de links)!
+1) Permitir que links sejam adicionados na ferramenta padrão (a partir do clique na borda do nodo) e adicionar validação nos símbolos para não permitir que o símbolo "undefined"
 
 - Acessórios (estilos e funcionalidades extras)
 5) Modo de tela cheia para grafo e tabela
@@ -57,7 +56,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 // DEFINIÇÃO DE STATES E CONSTANTES
 // ====================================================================================
   
-  const {inputStates, graphNodes, graphLinks, changesHistory, changesIndex} = useStateContext();
+  const {inputStates, nodePositions, graphLinks, changesHistory, changesIndex} = useStateContext();
 
   // Dados relacionados aos inputs
   const {errors} = inputStates;
@@ -72,10 +71,6 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   // Guarda todos os links que já foram desenhados. É um map cujas chaves são, respectivamente, um estado alvo, um estado origem e o símbolo de leitura, e o valor é o link
   const {currentLinks, setLinks} = graphLinks;
 
-  // Salva as posições dos nós. É um map dos nomes dos estados para suas posições
-  const {nodePositions, setNodePositions} = graphNodes;
-
-
   // Estado para controle da escala
   const [currentScale, setCurrentScale] = useState(1); 
   
@@ -83,7 +78,8 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   const [translation, setTranslation] = useState<{x: number, y: number}>({x: 0, y: 0});
 
 
-  
+  const notYetDefinedLinks = useRef<Map<string, joint.shapes.standard.Link>>(new Map()); // Links que foram puxados de nodos (ainda não contém label, só o estado de origem e o estado de destino). Não tem como representá-lo na tabela de transição pois não tem símbolo de leitura definido
+  // São um map do id do link para ele mesmo
 
   // Referências ao container que contém o grafo e ao nodo selecionado atualmente. Essas referências não podem se perder entre renderizações
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -176,10 +172,10 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
     prevSelectedCells = selectedCells.current;
   }
 
-  const nodes = getNodes(states, tokenizedInputs, nodePositions, setNodePositions, nodesRef.current, prevSelectedCells, newSelectedCells);
+  const nodes = getNodes(states, tokenizedInputs, nodePositions, nodesRef.current, prevSelectedCells, newSelectedCells);
   graph.addCells(Array.from(nodes.values()));
   
-  const links = getAndDrawTransitions(states, alphabet, transitions, nodes, paper, currentLinks, prevSelectedCells, newSelectedCells);
+  const links = getAndDrawTransitions(states, alphabet, transitions, nodes, paper, currentLinks, notYetDefinedLinks, prevSelectedCells, newSelectedCells);
   setLinks(links);
 
   nodesRef.current = nodes;
@@ -221,86 +217,59 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
   // ------------------------------------------------------------------------------------
 
     if(currentTool.editLinks){
-  // Permite adicionar e mover os links
 
 
-    let targetNode:any = null;  // Referência ao nodo que o link está em cima
-    let mustMove = false; // Indica se de fato clicamos para mover o link
-    let initialPosition:any = null; // Guarda a posição inicial caso precise desfazer
-    let initialVertices: any = null; // Guarda os vértices iniciais, cao precise desfazer
-    let initialTargetID: any = null; // Guarda o taerget inicial do link caso precise desfazer
-
-    // Início do movimento quando o mouse clica no link
-      paper.on('link:pointerdown', (linkView, evt, x, y) => {
-      evt.preventDefault();
-    
-      initialTargetID = linkView.model.get('target').id;
-
-      movingLink.current = linkView; 
-      const movingLinkModel = movingLink.current.model;
-
-      initialPosition = {
-        source: movingLinkModel.get('source'),
-        target: movingLinkModel.get('target'),
-      };
-
-      initialVertices = movingLinkModel.get('vertices');
 
 
-      // Remove os vértices pra não ficar feio o movimento (teria que guardar eles pra caso não ocorra mudança, retorná-los)
-      movingLink.current.model.set('vertices', []);      
+      let targetNode:any = null;  // Referência ao nodo que o link está em cima
+      let mustMove = false; // Indica se de fato clicamos para mover o link
+      let initialPosition:any = null; // Guarda a posição inicial caso precise desfazer
+      let initialVertices: any = null; // Guarda os vértices iniciais, cao precise desfazer
+      let initialTargetID: any = null; // Guarda o taerget inicial do link caso precise desfazer
+      let creatingLink: boolean = false;
 
+      
+      // Atualiza a posição do link enquanto o mouse se move
+      const handleMouseMoveLink = (evt: any) => {
 
-      // TO DO: Identifica se de fato clicou para mover o link (se não clicou na caixa de texto do link)
-      const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect(); // findMagnte identifica um elemento de conexão do link (magnet), e getBoundingClientRect retorna as coordenadas e extensão desse elemento
-      mustMove = evt.clientX !== undefined && bbox !== undefined && (evt.clientX >= (bbox.left + bbox.width - 10) || (evt.clientX <= bbox.left + 10));
-    
-      if(!mustMove)
-        return;
+        
 
-      movingLink.current.model.attr('line/stroke', 'blue'); // Desta o link que está sendo movido
-
-      document.addEventListener('mousemove', handleMouseMoveLink);
-      document.addEventListener('mouseup', handleMouseUp);
-    });
-    
-
-    // Atualiza a posição do link enquanto o mouse se move
-    const handleMouseMoveLink = (evt: any) => {
-      if (movingLink.current) {
-
-        const newPosition = paper.clientToLocalPoint(evt.clientX, evt.clientY); // pega as coordenadas absolutas do clique e retorna as coordenadas relativas ao paper
-    
-        // procura algum elemento por perto do link
-        const newTargetNode = graph.findModelsInArea({
-          x: newPosition.x - 10,
-          y: newPosition.y - 10,
-          width: 20,
-          height: 20,
-        })[0];
-
-        // Se encontrou, destaca esse elemento com uma borda diferente e guarda a referência para ele
-        if (targetNode && newTargetNode) {
-          if(targetNode.id != newTargetNode.id){
+        if (movingLink.current) {
+  
+          const newPosition = paper.clientToLocalPoint(evt.clientX, evt.clientY); // pega as coordenadas absolutas do clique e retorna as coordenadas relativas ao paper
+      
+          // procura algum elemento por perto do link
+          const newTargetNode = graph.findModelsInArea({
+            x: newPosition.x - 10,
+            y: newPosition.y - 10,
+            width: 20,
+            height: 20,
+          })[0];
+  
+          // Se encontrou, destaca esse elemento com uma borda diferente e guarda a referência para ele
+          if (targetNode && newTargetNode) {
+            if(targetNode.id != newTargetNode.id){
+              targetNode.attr('body/stroke', 'black');
+              targetNode = newTargetNode;
+              targetNode.attr('body/stroke', '#00A8FF');
+            }
+          }
+          else if(targetNode){
             targetNode.attr('body/stroke', 'black');
+            targetNode = null;
+          }
+          else if(newTargetNode){
             targetNode = newTargetNode;
             targetNode.attr('body/stroke', '#00A8FF');
           }
+  
+          movingLink.current.model.set('target', newPosition);
+  
         }
-        else if(targetNode){
-          targetNode.attr('body/stroke', 'black');
-          targetNode = null;
-        }
-        else if(newTargetNode){
-          targetNode = newTargetNode;
-          targetNode.attr('body/stroke', '#00A8FF');
-        }
-
-        movingLink.current.model.set('target', newPosition);
-
       }
-    }
-    
+
+
+
     // Finaliza o movimento quando solta o clique do mouse
     const handleMouseUp = (evt : any) => {
       if (movingLink.current) {
@@ -312,15 +281,11 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 
           if(initialTargetID == targetNode.id)
             movingLink.current.model.set('vertices', initialVertices);
-          else{
 
-            const oldTargetState = getElementText(graph.getCell(initialTargetID) as joint.dia.Element);
+          else{
             const newTargetState = getElementText(targetNode as joint.dia.Element);
             const sourceState = getElementText(graph.getCell(movingLink.current.model.attributes.source.id) as joint.dia.Element);
-
-
             const transition = getLinkText(movingLink.current.model);
-
             const readSymbol = tokenize(transition)[0]; // Sempre existirá pois se não existisse o link não estaria nem sendo desenhado
 
             // setLinks é assíncrono. Ele vai executar depois do desmonte do componente. Nisso o movingLink já vai ter valor null. Aqui guardamos o valor para utilizá-lo depois
@@ -373,9 +338,10 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
           
         } else {
           // Se não, volta à posição inicial com os vértices iniciais
+
+
           movingLink.current.model.set('source', initialPosition.source);
           movingLink.current.model.set('target', initialPosition.target);
-          console.log(initialVertices);
           movingLink.current.model.set('vertices', initialVertices);
         }
     
@@ -388,6 +354,137 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
       document.removeEventListener('mousemove', handleMouseMoveLink);
       document.removeEventListener('mouseup', handleMouseUp);
     }
+
+
+
+    const handleMouseUpNewLink = () => {
+      if (movingLink.current) {
+        // Havendo um nodo alvo, define ele como target e recalcula os vértices do link
+
+
+        if(targetNode){
+          movingLink.current.model.set('target', { id: targetNode.id });
+          targetNode.attr('body/stroke', 'black');
+          movingLink.current.model.attr('line/stroke', 'black'); // Retorna a cor do link que estava sendo movido
+  
+          if(notYetDefinedLinks.current){
+            notYetDefinedLinks.current.set(movingLink.current.model.id, movingLink.current.model as joint.shapes.standard.Link);
+          } 
+
+          targetNode = null;
+        }
+
+        else
+          movingLink.current.model.remove();
+        
+
+        movingLink.current = null; 
+
+      }
+
+      document.removeEventListener('mousemove', handleMouseMoveLink);
+      document.removeEventListener('mouseup', handleMouseUpNewLink);
+    }
+
+
+    const handleNodeClick = (nodeView: joint.dia.ElementView, evt: any) => {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      
+  // 🔹 Desativa apenas o movimento dos elementos sem recriar o paper
+  paper.setInteractivity((cellView: { model: any; }) => {
+    if (cellView.model === sourceNode) {
+      return { elementMove: false }; // Impede que esse nodo seja movido
+    }
+    return true; // Mantém o comportamento normal para os outros
+  });
+
+    
+      const sourceNode = nodeView.model;    
+      const initTarget = paper.clientToLocalPoint(evt.clientX, evt.clientY);
+
+      targetNode = sourceNode;
+      sourceNode.attr('body/stroke', '#00A8FF'); 
+
+      // Criar um link temporário
+      const tempLink = new joint.shapes.standard.Link({
+        source: { id: sourceNode.id },
+        target: { x: initTarget.x, y: initTarget.y }, // Começa na posição do clique
+        attrs: { line: { stroke: "blue", strokeWidth: 2 } }, // Estilização do link temporário~
+      });
+
+      tempLink.appendLabel({
+        position: { distance: 0.5, offset: -15 }, // distance 0.5 - metade do caminho, com um pequeno offset para não deixar o texto completamente em cima do link quando ele estiver na horizontal
+        attrs: {
+          text: { 
+            text: "undefined", 
+            fontSize: 12, 
+            fontWeight: "bold" 
+          },
+          rect: {
+            fill: "#ffe6e6", 
+            stroke: "red", 
+            strokeWidth: 1,
+            refWidth: '120%',
+            refHeight: '120%',
+            refX: '-10%',
+            refY: '-10%',
+          }
+        }
+      })
+    
+      graph.addCell(tempLink);
+      movingLink.current = { model: tempLink };
+    
+      // Iniciar movimentação do link
+      document.addEventListener("mousemove", handleMouseMoveLink);
+      document.addEventListener("mouseup", handleMouseUpNewLink);
+    };
+
+    paper.on('element:pointerdown', (nodeView, evt, x, y) => {
+      evt.preventDefault();
+      handleNodeClick(nodeView, evt);
+    })
+
+
+
+    // Início do movimento quando o mouse clica no link
+      paper.on('link:pointerdown', (linkView, evt, x, y) => {
+      evt.preventDefault();
+    
+      initialTargetID = linkView.model.get('target').id;
+
+      movingLink.current = linkView; 
+      const movingLinkModel = movingLink.current.model;
+
+      initialPosition = {
+        source: movingLinkModel.get('source'),
+        target: movingLinkModel.get('target'),
+      };
+
+      initialVertices = movingLinkModel.get('vertices');
+
+
+      // Remove os vértices pra não ficar feio o movimento (teria que guardar eles pra caso não ocorra mudança, retorná-los)
+      movingLink.current.model.set('vertices', []);      
+
+      const bbox = linkView.findMagnet(evt.target)?.getBoundingClientRect(); // findMagnte identifica um elemento de conexão do link (magnet), e getBoundingClientRect retorna as coordenadas e extensão desse elemento
+      mustMove = evt.clientX !== undefined && bbox !== undefined;
+    
+      if(!mustMove)
+        return;
+
+      movingLink.current.model.attr('line/stroke', 'blue'); // Desta o link que está sendo movido
+
+      document.addEventListener('mousemove', handleMouseMoveLink);
+      document.addEventListener('mouseup', handleMouseUp);
+    });
+    
+
+
+    
+
 
     
 
@@ -411,7 +508,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
         cont++;
       }
 
-      setNodePositions((prev) => new Map(prev.set(newStateName, { x: x - 50, y: y - 20})));
+      nodePositions.current.set(newStateName, {x: x - 50, y: y - 20});
       handleInputsChange({...inputs, states: (states.length > 0)? `${inputs.states}, ${newStateName}` : `${newStateName}`}, {...tokenizedInputs, states: (states.length > 0)? [...states, newStateName] : [newStateName]}, transitions);
     })
 
@@ -454,11 +551,11 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
       attachLinkEvents(paper);
 
       // Permite a seleção de células e libera as opções que vem com células selecionadas
-      initCellSelection(paper, nodePositions, setNodePositions, nodes, currentCellView, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
+      initCellSelection(paper, nodePositions, nodes, currentCellView, movingLink, notYetDefinedLinks, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
 
       // Permite editar textos de nodos e links
-      initEditNode(paper, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
-      initEditLink(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, eventHandlers);
+      initEditNode(paper, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange, nodePositions, eventHandlers);
+      initEditLink(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, notYetDefinedLinks, eventHandlers);
 
     }
 
@@ -491,10 +588,10 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
         let initialPosition;
 
         if(tokenizedInputs.initState.length > 0)
-          initialPosition = nodePositions.get(tokenizedInputs.initState[0])
+          initialPosition = nodePositions.current.get(tokenizedInputs.initState[0])
         else{
-          if(nodePositions.size > 0)
-            initialPosition = nodePositions.values().next().value;
+          if(nodePositions.current.size > 0)
+            initialPosition = nodePositions.current.values().next().value;
           else
             return;
         }
@@ -518,7 +615,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 
 
       if(paperRef){
-        let nodesArray = Array.from(nodePositions.values());
+        let nodesArray = Array.from(nodePositions.current.values());
 
         if (nodesArray.length === 0) return; 
       

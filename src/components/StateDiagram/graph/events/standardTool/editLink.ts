@@ -6,6 +6,7 @@ export function initEditLink(
     paper: joint.dia.Paper,
     movingLink: any,
     inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any,
+    notYetDefinedLinks: React.MutableRefObject<Map<string, joint.shapes.standard.Link>>,
     eventHandlers: any[]
 ){  
 
@@ -41,8 +42,8 @@ export function initEditLink(
           // Obtém o texto antes da edição
           const currentText = getLinkText(link);
           const originalText = currentText;
-        
-          // tokeniza o texto e obtém o símbolo de leitura da transição
+       
+          // tokeniza o texto e obtém o símbolo de leitura da transição. Se o texto for "undefinded", o símbolo de leitura também será "undefined"
           const readSymbol = tokenize(originalText)[0];
 
           // Obtém o alvo e a fonte
@@ -112,17 +113,24 @@ export function initEditLink(
             let transitionInfo = tokenize(input.value);
             const newTransitions = structuredClone(transitions); 
             
-            // Se o alfabeto não inclui o símbolo de leitura e tem alguma coisa escrita na trANSIÇÃO
+            // Se o alfabeto não inclui o símbolo de leitura -> não faz nada
+            // Se o texto editado estiver vazio, só apaga a transição
             if(transitionInfo.length == 0 || !alphabet.includes(transitionInfo[0])){
 
               // Se o texto editado estiver vazio, só apaga a transição
-              if(transitionInfo[0] == ""){
+              if(transitionInfo.length == 0){
+                if(readSymbol == "undefined"){
+                  notYetDefinedLinks.current.delete(link.id.toString());
+                  link.remove();
+                }
+                else{
                 newTransitions[originState][readSymbol].transitionText = "";
                 newTransitions[originState][readSymbol].direction = "";
                 newTransitions[originState][readSymbol].nextState = "";
                 newTransitions[originState][readSymbol].newSymbol = "";
                 handleInputsChange(inputs, tokenizedInputs, newTransitions);
               }
+            }
           
               // Do contrário, só remove o input e deixa a transição como estava
               input.remove();
@@ -138,6 +146,7 @@ export function initEditLink(
             // Se tiver algo, tem que tomar cuidado com o não determinismo:
 
             // Pega a transição antiga do estado de origem lendo o símbolo definido na edição 
+
             const prevTransition = newTransitions[originState][transitionInfo[0]];
 
 
@@ -150,11 +159,22 @@ export function initEditLink(
               return;
             }
 
+
             // Apaga a transição antiga
-            newTransitions[originState][readSymbol].transitionText = "";
-            newTransitions[originState][readSymbol].direction = "";
-            newTransitions[originState][readSymbol].nextState = "";
-            newTransitions[originState][readSymbol].newSymbol = "";
+            // Se o símbolo de leitura for "undefined" quer dizer que ela ainda não estava definida, mas agora ela estará. Então, tira ela do mapa de links não definidos
+            if(readSymbol == "undefined"){
+              notYetDefinedLinks.current.delete(link.id.toString());
+              link.remove();
+            }
+
+            // Do contrário, ela já estava definida e deve ser tirada da tabela de transições
+            else{
+              newTransitions[originState][readSymbol].transitionText = "";
+              newTransitions[originState][readSymbol].direction = "";
+              newTransitions[originState][readSymbol].nextState = "";
+              newTransitions[originState][readSymbol].newSymbol = "";
+            }
+
 
             // Passando do teste do não determinismo, pode salvar a transição, colocar o valor nela na nova label do link e atualizar as transições
               let next;

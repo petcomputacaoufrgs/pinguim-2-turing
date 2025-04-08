@@ -5,21 +5,24 @@ import { createButton, handleChangeFinalStatus, handleChangeInitStatus, handleUp
 
 export function initCellSelection(
     paper: joint.dia.Paper,
-    nodePositions: Map<string, any>, 
-    setNodePositions: any,
+    nodePositions: React.MutableRefObject<Map<string, {x: number; y: number;}>>,
     nodes: Map<string, any>,
     currentCellView: any,
     movingLink: any,
+    notYetDefinedLinks: React.MutableRefObject<Map<string, joint.shapes.standard.Link>>,
     inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any,
     eventHandlers: any[]
 
 ){  
   
-    const deleteNode = nodeDeleteHandler(paper, nodePositions, setNodePositions, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange);
-    const deleteLink = linkDeleteHandler(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange)
+    const deleteNode = nodeDeleteHandler(paper, nodePositions, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange);
+    const deleteLink = linkDeleteHandler(paper, movingLink, notYetDefinedLinks, inputs, tokenizedInputs, transitions, handleInputsChange)
 
     document.removeEventListener("keydown", deleteNode);
     document.querySelectorAll('.node-button').forEach(btn => btn.remove());
+
+    let createLink = false;
+
 
         // Se existir uma célula selecionada
         if(currentCellView.current){
@@ -93,6 +96,45 @@ export function initCellSelection(
 
       })
 
+
+      const handleMoveOnCell = (evt: any) => {
+
+        if(evt.target.tagName != "path")
+          return;
+
+        const cellRect = evt.target.getBoundingClientRect(); 
+        const x = evt.clientX;
+        const y = evt.clientY;
+        const borderWidth = 5;
+
+        if(x < cellRect.x + borderWidth || x > cellRect.x + cellRect.width - borderWidth || y < cellRect.y + borderWidth || y > cellRect.y + cellRect.height - borderWidth){
+          // Se o mouse estiver na borda do nodo, faz o pointer ficar em forma de clique
+          evt.target.style.cursor = 'pointer';
+          createLink = true;
+        }
+        else{
+          // Se o mouse não estiver na borda do nodo, faz o pointer ficar na forma padrão
+          evt.target.style.cursor = 'default';
+          createLink = false;
+        }
+
+        
+      }
+
+
+      paper.on('cell:mouseenter', (cellView, evt) => {
+        if(cellView.model.isLink())
+          return;
+          
+        document.addEventListener('mousemove', handleMoveOnCell);
+      })
+
+
+      paper.on('cell:mouseleave', (cellView, evt) => {
+        document.removeEventListener('mousemove', handleMoveOnCell);
+      })
+
+
       
         // Ao clicar em um nodo, seleciona ele e cria os botões que permitem tornar o nodo estado inicial e estado final, além de descelecionar qualquer outra coisa
         paper.on('cell:pointerdown', (cellView, evt, x, y) => {    
@@ -107,9 +149,16 @@ export function initCellSelection(
             currentCellView.current = cellView;
           }
 
+          // TO DO: Criar link
+          if(createLink){
+            console.log("Criar link");
+            return;
+          }
+
+          currentCellView.current.model.attr('body/stroke', 'green');
+
           document.addEventListener('keydown', deleteNode);
           eventHandlers.push({element: document, event: "keydown", handler: deleteNode});
-          currentCellView.current.model.attr('body/stroke', 'green');
 
           if(movingLink.current !== null){
             movingLink.current.model.attr('line/stroke', 'black');

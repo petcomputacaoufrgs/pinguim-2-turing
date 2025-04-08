@@ -5,7 +5,7 @@ import { tokenize } from "../../../../../utils/tokenize";
 import { useStateContext } from "../../../../../ContextProvider";
 
 
-export const nodeDeleteHandler = (paper:joint.dia.Paper, nodePositions: any, setNodePositions : any, selectedNode : any,  inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {
+export const nodeDeleteHandler = (paper:joint.dia.Paper, nodePositions: any, selectedNode : any,  inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {
   // Deleta o nodo selecionado quando a tecla Delete é apertada
     const deleteNode = (e:any) => {
 
@@ -26,8 +26,7 @@ export const nodeDeleteHandler = (paper:joint.dia.Paper, nodePositions: any, set
 
       selectedNode.current = null;
       
-      nodePositions.delete(deletedState);
-      setNodePositions(new Map(nodePositions));
+      nodePositions.current.delete(deletedState);
 
       handleInputsChange({...inputs, states: newStates.join(", "), finalStates: newFinalStates.join(", "), initState: newInitState.join(", ")},
         {...tokenizedInputs, states: newStates, finalStates: newFinalStates, initState: newInitState},
@@ -38,7 +37,7 @@ export const nodeDeleteHandler = (paper:joint.dia.Paper, nodePositions: any, set
     return deleteNode;
   }
 
-export const linkDeleteHandler = (paper:joint.dia.Paper, selectedLink: any, inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {
+export const linkDeleteHandler = (paper:joint.dia.Paper, selectedLink: any, notYetDefinedLinks: React.MutableRefObject<Map<string, joint.shapes.standard.Link>>, inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any) => {
 
     // Deleção de um link selecionado
     const deleteLink = (e:any) => {
@@ -56,9 +55,17 @@ export const linkDeleteHandler = (paper:joint.dia.Paper, selectedLink: any, inpu
         
               const deletedTransition = tokenize(getLinkText(selectedLink.current.model));
     
-              
+            
               if(deletedTransition.length > 0){
                 const readSymbol = deletedTransition[0];
+
+                if(readSymbol == "undefined"){
+                  notYetDefinedLinks.current.delete(selectedLink.current.model.id);
+                  selectedLink.current.model.remove();
+                  selectedLink.current = null;
+                  return;
+                }
+
                 const originNode = paper.model.getCell(selectedLink.current.model.attributes.source.id);
     
                 // Isso não deveria acontecer...

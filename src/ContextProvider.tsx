@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
 import { Transitions, InputValues, TokenizedInputValues, InputErrors, State } from './types/types';
 import * as joint from 'jointjs';
 
@@ -17,8 +17,11 @@ const InputStatesContext = createContext<{
                                                        documentation: string, 
                                                        transitions : Transitions}>>;
 
-  graphNodes: {nodePositions: Map<string, { x: number; y: number }>, 
-               setNodePositions: React.Dispatch<React.SetStateAction<Map<string, { x: number; y: number }>>>};
+  nodePositions: React.MutableRefObject<Map<string, {
+    x: number;
+    y: number;
+  }>>, 
+
   
   graphLinks: {currentLinks:  Map<string,Map<string,Map<string,joint.shapes.standard.Link>>>, 
               setLinks: React.Dispatch<React.SetStateAction<Map<string,Map<string, Map<string,joint.shapes.standard.Link>>>>>};
@@ -95,12 +98,13 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 }); 
 
   const [currentLinks, setLinks] = useState<Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>>(new Map());
-  const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
+  const nodePositions = useRef<Map<string, { x: number; y: number }>>(new Map([["q0", {x: 20, y: 100}]])); 
   const [history, setHistory] = useState<Array<State>>([{inputs: inputStates.inputs, tokenizedInputs: inputStates.tokenizedInputs, transitions: inputStates.transitions, errors: inputStates.errors}])
   const [historyIndex, setHistoryIndex] = useState<number>(0); 
 
+  
   return (
-    <InputStatesContext.Provider value={{ inputStates, setInputStates, graphNodes: {nodePositions, setNodePositions}, graphLinks: {currentLinks, setLinks}, changesHistory: {history, setHistory}, changesIndex: {historyIndex, setHistoryIndex} }}>
+    <InputStatesContext.Provider value={{ inputStates, setInputStates, nodePositions, graphLinks: {currentLinks, setLinks}, changesHistory: {history, setHistory}, changesIndex: {historyIndex, setHistoryIndex} }}>
       {children}
     </InputStatesContext.Provider>
   );

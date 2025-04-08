@@ -13,8 +13,7 @@ import { createLink } from './styleNode';
    */
   export const getNodes = (states:string[], 
                        tokenizedInputs: TokenizedInputValues, 
-                       nodePositions: Map<string, {x: number, y: number;}>, 
-                       setNodePositions: React.Dispatch<React.SetStateAction<Map<string, {x: number, y: number;}>>>,
+                       nodePositions: React.MutableRefObject<Map<string, {x: number; y: number;}>>, 
                        prevNodesMap: Map<string, any>,
                        prevSelectedCells: any,
                        newSelectedCells: any ) => 
@@ -39,8 +38,8 @@ import { createLink } from './styleNode';
         node.resize(nodeWidth, nodeHeight);
 
         // Define a posição do nó: se o nó já estava no grafo, sua posição já está guardada
-        if (nodePositions.has(state)) {
-            const position = nodePositions.get(state);
+        if (nodePositions.current.has(state)) {
+            const position = nodePositions.current.get(state);
             if(position)
               node.position(position.x, position.y);
 
@@ -48,7 +47,7 @@ import { createLink } from './styleNode';
         } else {
             const position = { x: spacing + index * (nodeWidth + spacing), y: 100 };
             node.position(position.x, position.y);
-            setNodePositions((prev) => new Map(prev.set(state, position)));
+            nodePositions.current.set(state, position);
         }
 
         // Define atributos visuais do nodo
@@ -91,7 +90,7 @@ import { createLink } from './styleNode';
         // Define um listener para o nó que atualiza a posição dele quando ele é movido
         node.on('change:position', (cell, newPosition) => {
             const nodeName = getElementText(cell);
-            setNodePositions((prev) => new Map(prev.set(nodeName, { x: newPosition.x, y: newPosition.y })));
+            nodePositions.current.set(nodeName, {x: newPosition.x, y: newPosition.y});
         });
 
         nodesMap.set(state, node);
@@ -144,6 +143,7 @@ import { createLink } from './styleNode';
     nodes: Map<string, any>,
     paper: joint.dia.Paper,
     currentLinks: Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>,
+    notYetDefinedLinks: React.MutableRefObject<Map<string, joint.shapes.standard.Link>>,
     prevSelectedCells: any,
     newSelectedCells: any
   ) => {
@@ -151,6 +151,8 @@ import { createLink } from './styleNode';
     // Atualiza o state que contém os links
     const links = new Map<string, Map<string, Map<string, joint.shapes.standard.Link>>>();
     const targetsMap = new Map<string, joint.shapes.standard.Link[]>();
+
+    const newNotYetDefinedLinks = new Map<string, joint.shapes.standard.Link>();
 
     // Vai passando por cada transição
     for (const state of states) {
@@ -196,6 +198,28 @@ import { createLink } from './styleNode';
           
       }
     }
+
+    // Desenha os links ainda não definidos
+    notYetDefinedLinks.current.forEach((link) => {
+      const source = getElementText(link.getSourceElement()!);
+      const target = getElementText(link.getTargetElement()!);
+
+      const sourceNode = nodes.get(source);
+      const targetNode = nodes.get(target);
+
+      if (sourceNode && targetNode) {
+        const newLink = createLink([], 1, "", sourceNode, targetNode, paper, link);
+
+        paper.model.addCell(newLink);
+
+        newNotYetDefinedLinks.delete(link.id.toString());
+        newNotYetDefinedLinks.set(newLink.id.toString(), newLink);
+
+      }
+    })
+
+    // Atualiza os links ainda não definidos
+    notYetDefinedLinks.current = newNotYetDefinedLinks;
 
     return links;
   }

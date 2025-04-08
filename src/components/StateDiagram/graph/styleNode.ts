@@ -46,18 +46,24 @@ const linkData = new joint.shapes.standard.Link({
     vertices: vertices
   });
 
+  let newText;
 
-  const firstPart =
-  transitionInfo[1] || transitionInfo[2]
-    ? "," +
-      (transitionInfo[1] ? transitionInfo[1] : "") +
-      (transitionInfo[2] ? `,${transitionInfo[2]}` : "")
-    : "";
+  if(transitionInfo.length == 0)
+    newText = "undefined";
 
-const secondPart =
-  transitionInfo.length > 3 ? `,${transitionInfo.slice(3).join(",")}` : "";
+  else{
+    const firstPart =
+      transitionInfo[1] || transitionInfo[2]
+        ? "," +
+          (transitionInfo[1] ? transitionInfo[1] : "") +
+          (transitionInfo[2] ? `,${transitionInfo[2]}` : "")
+        : "";
 
-const newText = symbol + firstPart + secondPart;
+    const secondPart =
+      transitionInfo.length > 3 ? `,${transitionInfo.slice(3).join(",")}` : "";
+
+    newText = symbol + firstPart + secondPart;
+  }
 
   // Adiciona uma caixa de texto ao link exatamente na metade do caminho dele
 
