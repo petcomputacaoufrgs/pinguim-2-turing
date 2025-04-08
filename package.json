@@ -1,6 +1,7 @@
 {
   "name": "pinguim-2-turing",
   "version": "0.1.0",
+  "homepage": "https://petcomputacaoufrgs.github.io/pinguim-2-turing",
   "private": true,
   "dependencies": {
     "@mui/system": "^6.4.3",
@@ -24,6 +25,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "build:wasm": "cd turing-wasm && wasm-pack build --target web --out-dir pkg",
@@ -49,6 +52,7 @@
     ]
   },
   "devDependencies": {
-    "@types/jointjs": "^1.0.5"
+    "@types/jointjs": "^1.0.5",
+    "gh-pages": "^6.3.0"
   }
 }
