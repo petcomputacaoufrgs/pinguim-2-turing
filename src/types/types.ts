@@ -3,7 +3,8 @@ export const errorCodes = Object.freeze({
     InvalidNumberOfParameters: 1,
     InvalidState: 2,
     InvalidDirection: 3,
-    InvalidSymbol: 4
+    InvalidSymbol: 4,
+    UndefinedIsSymbol: 5
 })
 
 export interface Transitions {
@@ -44,10 +45,11 @@ export interface InputErrors {
   validFinalStates: boolean;
   uniqueAlphabetSymbols: boolean;
   disjointAlphabets: boolean;
-  alphabetHasStart: boolean;
-  alphabetHasBlank: boolean;
-  auxiliaryAlphabetHasStart: boolean;
-  auxiliaryAlphabetHasBlank: boolean;
+  alphabetDoesNotHaveStart: boolean;
+  alphabetDoesNotHaveBlank: boolean;
+  auxiliaryAlphabetDoesNotHaveStart: boolean;
+  auxiliaryAlphabetDoesNotHaveBlank: boolean;
+  undefinedIsNotASymbol: boolean;
 }
 
 export interface CurrentTool {

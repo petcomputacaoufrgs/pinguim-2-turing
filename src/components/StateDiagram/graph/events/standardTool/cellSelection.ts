@@ -149,11 +149,24 @@ export function initCellSelection(
             currentCellView.current = cellView;
           }
 
-          // TO DO: Criar link
-          if(createLink){
-            console.log("Criar link");
+          
+          const cellRect = evt.target.getBoundingClientRect(); 
+          const borderWidth = 5;
+
+          
+          const clientX = evt.clientX;
+          const clientY = evt.clientY;
+
+          if(!clientX || !clientY)
             return;
+
+          if(evt.target.tagName == "path" && (clientX < cellRect.x + borderWidth || clientX > cellRect.x + cellRect.width - borderWidth || clientY < cellRect.y + borderWidth || clientY > cellRect.y + cellRect.height - borderWidth)){
+            currentCellView.current.model.attr('body/stroke', 'black');
+            currentCellView.current = null;
+            return;
+
           }
+          
 
           currentCellView.current.model.attr('body/stroke', 'green');
 

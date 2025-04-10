@@ -59,10 +59,11 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     validFinalStates: true,
     uniqueAlphabetSymbols: true,
     disjointAlphabets: true,
-    alphabetHasStart: true,
-    alphabetHasBlank: true,
-    auxiliaryAlphabetHasStart: true,
-    auxiliaryAlphabetHasBlank: true},
+    alphabetDoesNotHaveStart: true,
+    alphabetDoesNotHaveBlank: true,
+    auxiliaryAlphabetDoesNotHaveStart: true,
+    auxiliaryAlphabetDoesNotHaveBlank: true,
+    undefinedIsNotASymbol: true},
 
     documentation : "",
 

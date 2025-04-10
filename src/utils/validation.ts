@@ -20,6 +20,10 @@ const isInitialStateValid = (initial_state: string[], states: string[]) => {
     return states.includes(initial_state[0]);
 }
 
+const isUndefinedASymbol = (inputAlphabet: string[], auxAlphabet : string[], initialSymbol: string, blankSymbol: string) => {
+    return inputAlphabet.includes("undefined") || auxAlphabet.includes("undefined") || initialSymbol == "undefined" || blankSymbol == "undefined";
+}
+
 const areFinalStatesValid = (states: string[], finalStates: string[]) => {
     for (const state of finalStates){
         if(!states.includes(state) && state !== "")
@@ -99,12 +103,14 @@ export const validateInputs = (tokenized_inputs: TokenizedInputValues, oldErrors
     newErrors.uniqueAlphabetSymbols = hasUniqueTokens(tokenized_inputs.inAlphabet);
     newErrors.disjointAlphabets = hasDisjointAlphabets(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet);
 
-    newErrors.alphabetHasStart = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.initSymbol[0]);
-    newErrors.alphabetHasBlank = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.blankSymbol[0]);
+    newErrors.alphabetDoesNotHaveStart = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.initSymbol[0]);
+    newErrors.alphabetDoesNotHaveBlank = !tokenized_inputs.inAlphabet.includes(tokenized_inputs.blankSymbol[0]);
 
-    newErrors.auxiliaryAlphabetHasStart = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.initSymbol[0]);
-    newErrors.auxiliaryAlphabetHasBlank = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.blankSymbol[0]);
+    newErrors.auxiliaryAlphabetDoesNotHaveStart = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.initSymbol[0]);
+    newErrors.auxiliaryAlphabetDoesNotHaveBlank = !tokenized_inputs.auxAlphabet.includes(tokenized_inputs.blankSymbol[0]);
       
+    newErrors.undefinedIsNotASymbol = !isUndefinedASymbol(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet, tokenized_inputs.initSymbol[0], tokenized_inputs.blankSymbol[0]);
+
     return newErrors;
 }
 
