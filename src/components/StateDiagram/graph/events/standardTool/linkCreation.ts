@@ -41,6 +41,7 @@ export function initLinkCreation(paper : joint.dia.Paper, graph : any, movingLin
           }
   
           movingLink.current.model.set('target', newPosition);
+
   
         }
       }
@@ -51,6 +52,14 @@ export function initLinkCreation(paper : joint.dia.Paper, graph : any, movingLin
         movingLink.current.model.set('target', { id: targetNode.id });
         targetNode.attr('body/stroke', 'black');
         movingLink.current.model.attr('line/stroke', 'black');
+
+        console.log(targetNode.id);
+        console.log(movingLink.current.model.attributes.source.id);
+        
+        if(targetNode.id == movingLink.current.model.attributes.source.id){
+          const nodePosition = paper.model.getCell(targetNode).position();
+          movingLink.current.model.set('vertices', [{ x: nodePosition.x + 10, y: nodePosition.y - 20 }, { x: nodePosition.x + 80, y: nodePosition.y - 20 }]);
+        }
 
         if (notYetDefinedLinks.current) {
           notYetDefinedLinks.current.set(

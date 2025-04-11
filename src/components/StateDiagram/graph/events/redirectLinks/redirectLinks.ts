@@ -76,6 +76,10 @@ let createLink: boolean = false;
             const transition = getLinkText(movingLink.current.model);
             const readSymbol = tokenize(transition)[0]; // Sempre existirá pois se não existisse o link não estaria nem sendo desenhado
 
+            if(newTargetState == sourceState){
+              const nodePosition = paper.model.getCell(targetNode).position();
+              movingLink.current.model.set('vertices', [{ x: nodePosition.x + 10, y: nodePosition.y - 20 }, { x: nodePosition.x + 80, y: nodePosition.y - 20 }]);
+            }
             // setLinks é assíncrono. Ele vai executar depois do desmonte do componente. Nisso o movingLink já vai ter valor null. Aqui guardamos o valor para utilizá-lo depois
             const linkModel = movingLink.current.model;
 
@@ -142,13 +146,6 @@ let createLink: boolean = false;
       document.removeEventListener('mousemove', handleMouseMoveLink);
       document.removeEventListener('mouseup', handleMouseUp);
     }
-
-
-
-
-
-
-
 
 
 
