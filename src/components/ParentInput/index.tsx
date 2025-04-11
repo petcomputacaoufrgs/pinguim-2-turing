@@ -97,11 +97,54 @@ const ParentInput = ({ onFileInputDoc, onChangeInputs }: ParentInputProps) => {
     onChangeInputs(newInputs, newInputsTokenized, transitions, validateInputs(newInputsTokenized, errors));
   }
 
+
+  const handleDownload = () => {
+    let texto = ""
+    const ordem_leitura = ["inAlphabet", "auxAlphabet", "initSymbol", "blankSymbol", "states", "initState", "finalStates"];
+    
+    // O único motivo de estar fazendo com join em vez de só usar a string que já temos em inputs é que o simulador original não é indiferente a espaços em branco
+    texto += tokenizedInputs.inAlphabet.join(",") + "\n"; 
+    texto += tokenizedInputs.auxAlphabet.join(",") + "\n";
+    texto += tokenizedInputs.initSymbol[0] + "\n";
+    texto += tokenizedInputs.blankSymbol[0] + "\n";
+    texto += tokenizedInputs.states.join(",") + "\n";
+
+  for (const state in transitions) {
+    for (const symbol in transitions[state]) {
+      const transition = transitions[state][symbol];
+
+      if(transition.transitionText != "")
+        texto += `${state},${symbol},,${transition.nextState},${transition.newSymbol},${transition.direction},,,`;
+    }
+  }
+
+  texto += "\n";
+
+  texto += inputStates.documentation;
+
+
+
+  // Cria um blob com o conteúdo do texto
+  const blob = new Blob([texto], { type: "text/plain" });
+    
+  // Cria uma URL temporária para o blob
+  const url = URL.createObjectURL(blob);
+    
+  // Cria um elemento de link (a), simula o clique para baixar
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "maqturing.mt";  // Nome do arquivo
+  a.click();
+    
+  // Libera a memória usada pela URL temporária
+  URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       <DivButtons id="div1_buttons">
         <Upload_button onFileUpload={handleFileUpload}/>
-        <Buttons height="4.5vh" width="14vw" title="Salvar"/>
+        <Buttons onClick={handleDownload} height="4.5vh" width="14vw" title="Salvar"/>
       </DivButtons>
       
       <DivInputs id="div1_part2">

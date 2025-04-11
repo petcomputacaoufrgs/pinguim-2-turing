@@ -6,20 +6,21 @@ import styled from "styled-components";
 interface i_button{
     title:string;
     to?: string;
+    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
     disabled?: boolean;
     width: string;
     height: string;
 }
 
-const GeneralButtons:React.FC<i_button>=({title, to, disabled = false, width, height})=>{
+const GeneralButtons:React.FC<i_button>=({title, to, onClick, disabled = false, width, height})=>{
     return(
         
         to ?
         (<StyledLink to={to}>
-            <Button width={width} height={height} disabled={disabled}>{title}</Button>
+            <Button onClick={onClick} width={width} height={height} disabled={disabled}>{title}</Button>
         </StyledLink>)
 
-        : (<Button width={width} height={height} disabled={disabled}>{title}</Button>)
+        : (<Button onClick={onClick} width={width} height={height} disabled={disabled}>{title}</Button>)
     )
 }
 
