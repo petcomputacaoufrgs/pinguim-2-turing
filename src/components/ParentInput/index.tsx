@@ -108,13 +108,18 @@ const ParentInput = ({ onFileInputDoc, onChangeInputs }: ParentInputProps) => {
     texto += tokenizedInputs.initSymbol[0] + "\n";
     texto += tokenizedInputs.blankSymbol[0] + "\n";
     texto += tokenizedInputs.states.join(",") + "\n";
+    texto += tokenizedInputs.initState[0] + "\n";
+    texto += tokenizedInputs.finalStates.join(",") + "\n";
 
   for (const state in transitions) {
     for (const symbol in transitions[state]) {
       const transition = transitions[state][symbol];
 
-      if(transition.transitionText != "")
-        texto += `${state},${symbol},,${transition.nextState},${transition.newSymbol},${transition.direction},,,`;
+      if(transition.transitionText != ""){
+
+        texto += `${state},${symbol},,${transition.transitionText},,,`;
+      }
+        
     }
   }
 
