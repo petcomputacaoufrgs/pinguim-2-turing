@@ -37,6 +37,8 @@ export function Home() {
     const selectedCells = useRef<joint.dia.Cell[]>([]);
 
  
+    const [expandedComponent, setExpandedComponent] = useState<"none" | "diagram" | "table">("none");
+
 
     const setInputValues = (newValues : InputValues, 
                             newTokenizedValues : TokenizedInputValues, 
@@ -88,12 +90,13 @@ export function Home() {
 
 
   return (
-    <Container>
+    <Container $expand={expandedComponent}>
 
       <Header/>
 
-      <ContainerBody>
+      <ContainerBody $expand={expandedComponent} className={expandedComponent === "diagram" ? "expand-diagram" : expandedComponent === "table" ? "expand-table" : "standard"}>
         
+      <div style={{display: "flex", width: "100%", gap: "5vw"}}>
         <div id="div1">
           <div>    
             <ParentInput onFileInputDoc={setDocumentationValue} onChangeInputs={handleInputsChange} />
@@ -104,27 +107,72 @@ export function Home() {
           </div>
         </div>
 
-        <div id="div2">
-          <p>Tabela de Transição:</p>
-          <div>
-          <TransitionTable OnChangeTransitionTable={handleTransitionsChange} editable={true} />
-          </div>
-
-          <Buttons height="4.5vh" width="14vw" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
-        </div>
-
-        <div id="div3">
-          <p>Grafo:</p>
-          <div style={{width: "80%", height: "75%", overflow: "hidden"}}> 
-            <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} selectedCells={selectedCells} selectionBoxRef={selectionBoxRef}/> 
-          </div>
-
-          <Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>
-        </div>
-
+        
         <div id="div4">
           <ValidationMessage />
         </div>
+
+      </div>
+
+
+      <div style={{display: "flex", width: "100%", minHeight: (expandedComponent != "none")? "65%" : "52%", flexGrow: "1", gap: "4vw"}}>
+      {
+
+        (expandedComponent != "diagram") ?
+
+        <div id="div2">
+            <div style={{display: "flex", gap: "1vw", alignItems: "center"}}> 
+              <p>Tabela de Transição:</p>
+              <button style={{height: "70%"}} onClick={() => setExpandedComponent(expandedComponent === "table" ? "none" : "table")}>
+              {expandedComponent === "table" ? "Recolher" : "Expandir"}
+              </button>
+            </div>
+          <div id='div2_table'>
+          <TransitionTable OnChangeTransitionTable={handleTransitionsChange} editable={true} />
+          </div> 
+
+          <Buttons height="4.5vh" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/> 
+        </div> 
+        
+        :
+
+        null
+    
+    }
+
+    {
+      (expandedComponent != "table") ?
+
+        <div id="div3">
+
+         <div style={{display: "flex", gap: "1vw", alignItems: "center"}}> 
+            <p>Grafo:</p>
+            <button style={{height: "70%"}} onClick={() => setExpandedComponent(expandedComponent === "diagram" ? "none" : "diagram")}>
+            {expandedComponent === "diagram" ? "Recolher" : "Expandir"}
+            </button>
+            {expandedComponent === "diagram" && (<><Tools width='48vw' currentTool={currentTools} onChangeTool={setCurrentTool}/>
+                                                   <Buttons height="4.5vh" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
+                                                 </>)}
+
+          </div>
+          <div style={{width: "100%", flexGrow: "1", overflow: "hidden", marginBottom: "1vh", backgroundColor: "#FFF"}}> 
+            <SimpleDiagram currentTool={currentTools}  onChangeInputs={setInputValues} saveStateToHistory={saveStateToHistory} selectedCells={selectedCells} selectionBoxRef={selectionBoxRef}/> 
+          </div>
+
+          {expandedComponent !== "diagram" && (<Tools currentTool={currentTools} onChangeTool={setCurrentTool}/>)}
+          
+        </div>
+
+        :
+
+        null
+
+    }
+
+    </div>
+
+
+
 
         <div id="div5">
           <TransitionsErrorMessages />

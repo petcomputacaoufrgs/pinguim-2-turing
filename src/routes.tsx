@@ -5,6 +5,7 @@ import Home from "./controller/home/"
 import Computing from "./controller/computing/"
 
 import { StateProvider } from "./ContextProvider";
+import StateDiagram from "./components/StateDiagram";
 
 
 export default function Routess(){

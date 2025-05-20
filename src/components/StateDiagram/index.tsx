@@ -24,10 +24,9 @@ import { initRedirectLinks } from "./graph/events/redirectLinks/redirectLinks";
 TO DO: 
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
-1) Permitir que links sejam adicionados na ferramenta padrão (a partir do clique na borda do nodo) e adicionar validação nos símbolos para não permitir que o símbolo "undefined"
+1) Reconhecer a posição dos links undefined para quando o usuário mudar eles a posição permanecer a mesma.
 
 - Acessórios (estilos e funcionalidades extras)
-5) Modo de tela cheia para grafo e tabela
 6) Deixar botões de edição de estado final/inicial mais bonitinhos
 7) Deixar caixa de ferramentas mais bonitinha
 8) Salvar movimento dos nodos e links num histórico de ações para permitir que o control + Z e o control + Y capturem ações que sejam apaenas movimento

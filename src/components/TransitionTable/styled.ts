@@ -15,7 +15,7 @@ export const StyledInput = styled("input")<{$hasError: boolean}>`
 
     text-align: center; 
 
-    width: 8vw;
+    width: 6vw;
 
     &:focus {
       outline: none;
@@ -23,7 +23,7 @@ export const StyledInput = styled("input")<{$hasError: boolean}>`
     }
 
     &::placeholder {
-      font-size: 0.6vw;
+      font-size: 0.5vw;
   }
   `;
 

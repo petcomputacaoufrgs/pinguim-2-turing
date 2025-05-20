@@ -55,14 +55,14 @@ const TransitionTable = ({OnChangeTransitionTable, editable} : i_transition_tabl
         </thead>
         <tbody>
           {stateList.map((state) => (
-            <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FFD700' : 'white' }}>
+            <tr key={state} style={{ backgroundColor: finalStateList.includes(state) ? '#FCE588' : 'white' }}>
               <td>{(tokenizedInputs.initState[0] !== state)? state : ">" + state}</td>
               {alphabetList.map((symbol) => (
                 <td key={symbol}>
 
               <StyledInput
                 type="text"
-                placeholder="State, Direction (R/L), Symbol"
+                placeholder="Estado, Símbolo, (D/E)"
                 value={transitions[state]?.[symbol]?.transitionText || ''}
                 $hasError={hasError(transitions[state]?.[symbol]?.error)}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, state, symbol, alphabetList)} 

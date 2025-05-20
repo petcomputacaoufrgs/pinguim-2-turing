@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {Button, StyledLink} from "./styled.ts"
 
-import styled from "styled-components";
 
 interface i_button{
     title:string;
@@ -16,7 +15,7 @@ const GeneralButtons:React.FC<i_button>=({title, to, onClick, disabled = false, 
     return(
         
         to ?
-        (<StyledLink to={to}>
+        (<StyledLink to={to} style={{width: width, height: height}}>
             <Button onClick={onClick} width={width} height={height} disabled={disabled}>{title}</Button>
         </StyledLink>)
 
