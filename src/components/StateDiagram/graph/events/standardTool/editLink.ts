@@ -7,6 +7,8 @@ export function initEditLink(
     movingLink: any,
     inputs: InputValues ,tokenizedInputs: TokenizedInputValues, transitions: Transitions, handleInputsChange:any,
     notYetDefinedLinks: React.MutableRefObject<Map<string, joint.shapes.standard.Link>>,
+    currentLinks: Map<string,Map<string,Map<string,joint.shapes.standard.Link>>>, 
+    setCurrentLinks: React.Dispatch<React.SetStateAction<Map<string,Map<string, Map<string,joint.shapes.standard.Link>>>>>,
     eventHandlers: any[]
 ){  
 
@@ -162,10 +164,9 @@ export function initEditLink(
 
             // Apaga a transição antiga
             // Se o símbolo de leitura for "undefined" quer dizer que ela ainda não estava definida, mas agora ela estará. Então, tira ela do mapa de links não definidos
-            if(readSymbol == "undefined"){
+            if(readSymbol == "undefined")
               notYetDefinedLinks.current.delete(link.id.toString());
-              link.remove();
-            }
+            
 
             // Do contrário, ela já estava definida e deve ser tirada da tabela de transições
             else{
@@ -184,7 +185,6 @@ export function initEditLink(
                 next = targetState;
 
               newTransitions[originState][transitionInfo[0]] = { ...newTransitions[originState][transitionInfo[0]], transitionText: next, direction: transitionInfo[2], nextState: targetState, newSymbol: transitionInfo[1] };
-              
             if (input) {
               link.label(0, {
                 position: { distance: 0.5, offset: -15 },
@@ -195,6 +195,32 @@ export function initEditLink(
         
               document.removeEventListener('mousedown', handleClick);
         
+              // Atualiza o link no mapa de links para salvar sua posição e vértices
+              const newLinks = new Map(currentLinks);
+
+              // Nível 1: targetState
+              if (!newLinks.has(targetState)) {
+                newLinks.set(targetState, new Map());
+              }
+              const originMap = newLinks.get(targetState);
+
+              // Nível 2: originState
+              if (originMap){
+                if (!originMap.has(originState))
+                  originMap.set(originState, new Map());
+
+                const transitionMap = originMap.get(originState);
+                              
+                // Nível 3: transitionInfo[0]
+              if(transitionMap)
+                transitionMap.set(transitionInfo[0], link);
+
+                            
+              // Atualiza o mapa de links
+              setCurrentLinks(newLinks);
+
+              } 
+            
               handleInputsChange(inputs, tokenizedInputs, newTransitions);
               input.remove();
             }

@@ -72,16 +72,29 @@ export function initCellsSelection(
   
     container.appendChild(selectionBox);
 
+    const selectionRect = new joint.g.Rect(
+      parseFloat(selectionBoxRef.current.style.left),
+      parseFloat(selectionBoxRef.current.style.top),
+      parseFloat(selectionBoxRef.current.style.width) / currentScale,
+      parseFloat(selectionBoxRef.current.style.height) / currentScale
+    );
+
     // Marca todas as células selecionadas. Isso é necessário porque a re-renderização cria novas células, ou seja, as células marcadas antes são perdidas
-    selectedCells.current.forEach((cell: joint.dia.Cell, index: number) => {
 
-      const newCell = nodes.get(getElementText(cell as joint.dia.Element));
-      selectedCells.current[index] = newCell;
-
-      if(newCell)
-        selectCell(newCell);
-
+    // Fazemos isso olhando novamnete para todas as células do grafo e vendo se a caixa de seleção desenhada intersecta com o retângulo que representa a célula
+    // Isso pode ser extremamente ineficiente, já que temos que olhar para todas as células do grafo. Para os nodos, por exemplo, bastava que pegássemos a partir dos nodos selecionados
+    // os nomes deles e a partir de nodes obter o novo id. O problema são os links: temos links undefined, que podem ser exatamente iguais a outros links, mas com id diferente. Não tem como escapar de olhar para todos eles
+    // Para simplificar então, foi optado por olhar todas as células e pronto
+    const allCells = paper.model.getCells();
+    selectedCells.current = allCells.filter(cell => {
+      const bbox = cell.getBBox();
+      return selectionRect.intersect(bbox);
     });
+    
+
+    selectedCells.current.forEach((cell: joint.dia.Cell) =>{
+      selectCell(cell);
+    })
 
   }
 
@@ -142,9 +155,12 @@ export function initCellsSelection(
         // Se for um link, incrementa a posição deles pela variação do movimento: +(dx - lasDx) +(dy - lastDy).
         // Se guardássemos a posição de todos os vértices, poderíamos fazer o mesmo que com os nodos (apenas posicioná-los segundo a posição inicial).
         // Ou poderíamos fazer com os nodos o mesmo que estamos fazendo com os links
-        else if(cell.isLink() && cell.get("vertices").length > 0){
+
+        else if(cell.isLink() && cell.get("vertices")){
           const vertices = cell.get("vertices");
-          cell.set("vertices", vertices.map((vertex :  {x: number, y: number}) => ({x: vertex.x + (dx - lastDx), y: vertex.y + (dy - lastDy)})));
+
+          if(vertices.length > 0)
+            cell.set("vertices", vertices.map((vertex :  {x: number, y: number}) => ({x: vertex.x + (dx - lastDx), y: vertex.y + (dy - lastDy)})));
         }
       });
 

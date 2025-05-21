@@ -24,7 +24,7 @@ import { initRedirectLinks } from "./graph/events/redirectLinks/redirectLinks";
 TO DO: 
 
 - Mais importantes (funcionalidades diretas do grafo e situações para arrumar)
-1) Reconhecer a posição dos links undefined para quando o usuário mudar eles a posição permanecer a mesma.
+1)
 
 - Acessórios (estilos e funcionalidades extras)
 6) Deixar botões de edição de estado final/inicial mais bonitinhos
@@ -288,7 +288,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 
       // Permite editar textos de nodos e links
       initEditNode(paper, currentCellView, inputs, tokenizedInputs, transitions, handleInputsChange, nodePositions, eventHandlers);
-      initEditLink(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, notYetDefinedLinks, eventHandlers);
+      initEditLink(paper, movingLink, inputs, tokenizedInputs, transitions, handleInputsChange, notYetDefinedLinks, currentLinks, setLinks, eventHandlers);
 
     }
 

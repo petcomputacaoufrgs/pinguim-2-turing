@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const Container = styled.div<{$expand: string}>`
-  height: ${({ $expand }) => ($expand !== 'none' ? '120vh' : '100vh')};
+  height: 100vh;
   display: flex;
   flex-direction: column;
 `;

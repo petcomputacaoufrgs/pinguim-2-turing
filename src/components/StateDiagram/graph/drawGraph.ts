@@ -178,7 +178,6 @@ import { createLink } from './styleNode';
         
         // Verifica se já existe um link igual entre esses nós. Se já existir, é preciso usá-lo para guardar sua posição e vértices
         const existingLink = currentLinks.get(transitionInfo[0])?.get(state)?.get(symbol);
-
         
         if (existingLink) {
           const newLink = createLink(transitionInfo, transition.error, symbol, sourceNode, targetNode, paper, existingLink);
