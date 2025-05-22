@@ -25,7 +25,7 @@ export function Home() {
     const  { inputStates } = useStateContext();
 
     // A fita é uma simples string
-    const [tape, setTape] = useState<String>(inputStates.tokenizedInputs.initSymbol[0]);
+    const [tape, setTape] = useState<String>((inputStates.tokenizedInputs.initSymbol[0].length > 1? "[" + inputStates.tokenizedInputs.initSymbol[0] + "]" : inputStates.tokenizedInputs.initSymbol[0]) + inputStates.tokenizedInputs.blankSymbol[0]);
 
     // currState representa o estado atual da máquina. É simplesmente uma array com o nome do estado atual e o index atual na fita
     const [currState, setState] = useState<[string, number]>([inputStates.tokenizedInputs.initState[0], 0]);
@@ -66,7 +66,6 @@ export function Home() {
   */
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 
 
 
@@ -111,12 +110,29 @@ export function Home() {
     }
 
 
-    const currSymbol = tape[currState[1]];
+    let currSymbol = tape[currState[1]];
+    let currIndex = currState[1];
+
+    if(currSymbol == "["){
+      const endIndex = tape.indexOf("]", currIndex + 1);
+
+        if (endIndex === -1) {
+          console.log("ERRO: símbolo ']' não encontrado");
+          setOutput(getOutputError(-1));
+          return false;
+        }
+
+  // Extrai os símbolos entre "[" e "]"
+        currSymbol = tape.slice(currIndex + 1, endIndex);
+    }
 
     const transition = inputStates.transitions[currState[0]][currSymbol];
 
-    console.log(currSymbol, transition);
-    console.log(currState);
+    if(transition == undefined){
+      console.log("Rejeita");
+      setOutput(MachineOutput.REJECT);
+      return false;
+    }
 
     if(transition.error != errorCodes.NoError){
       console.log("Erro");
@@ -133,14 +149,20 @@ export function Home() {
 
     else{
       const nextState = transition.nextState;
-      const newIndex = currState[1] + 1;
+      const hasNewSymbolMoreThanOneCharacter = transition.newSymbol.length > 1;
 
-      if(newIndex >= tape.length)
-        setTape(tape.substring(0, currState[1]) + transition.newSymbol + inputStates.tokenizedInputs.blankSymbol[0]);
-      else
-        setTape(tape.substring(0, currState[1]) + transition.newSymbol +  tape.substring(currState[1] + 1, tape.length));
+      const newIndex = currIndex + (hasNewSymbolMoreThanOneCharacter? 2 + transition.newSymbol.length : 1);
+      
 
 
+      if(newIndex >= tape.length + transition.newSymbol.length - (currSymbol.length + 2)){
+        setTape(tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) + inputStates.tokenizedInputs.blankSymbol[0]);
+
+      }
+        else{
+        setTape(tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) +  tape.substring(currIndex + (currSymbol.length > 1? currSymbol.length + 2 : 1), tape.length));
+        const newTape = tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) +  tape.substring(currIndex + (currSymbol.length > 1? currSymbol.length + 2 : 1), tape.length);
+        }
       const newMachineState = [nextState, newIndex];
 
       setState(newMachineState as [string, number]);
@@ -175,7 +197,7 @@ export function Home() {
     setRun(false);
 
     const tapeValue = document.getElementById("tapeValue") as HTMLInputElement;
-    setTape(inputStates.tokenizedInputs.initSymbol[0] + tapeValue.value)
+    setTape((inputStates.tokenizedInputs.initSymbol[0].length > 1 ? "[" + inputStates.tokenizedInputs.initSymbol[0] + "]" : inputStates.tokenizedInputs.initSymbol[0]) + tapeValue.value)
 
     setOutput(MachineOutput.NONE);
   }

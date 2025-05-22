@@ -24,6 +24,27 @@ const isUndefinedASymbol = (inputAlphabet: string[], auxAlphabet : string[], ini
     return inputAlphabet.includes("undefined") || auxAlphabet.includes("undefined") || initialSymbol == "undefined" || blankSymbol == "undefined";
 }
 
+const areSymbolsValid = (alphabet: string[], auxAlphabet: string[], initialSymbol: string, blankSymbol: string) => {
+    
+    for (const symbol of alphabet) {
+        if (symbol.includes("[") || symbol.includes("]"))
+            return false; 
+    }
+
+    for (const symbol of auxAlphabet) {
+        if (symbol.includes("[") || symbol.includes("]"))
+            return false; 
+    }
+    
+    if (initialSymbol.includes("[") || initialSymbol.includes("]"))
+        return false;
+
+    if (blankSymbol.includes("[") || blankSymbol.includes("]"))
+        return false;
+
+    return true;
+}
+
 const areFinalStatesValid = (states: string[], finalStates: string[]) => {
     for (const state of finalStates){
         if(!states.includes(state) && state !== "")
@@ -111,6 +132,8 @@ export const validateInputs = (tokenized_inputs: TokenizedInputValues, oldErrors
       
     newErrors.undefinedIsNotASymbol = !isUndefinedASymbol(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet, tokenized_inputs.initSymbol[0], tokenized_inputs.blankSymbol[0]);
 
+    newErrors.onlyValidSymbols = areSymbolsValid(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet, tokenized_inputs.initSymbol[0], tokenized_inputs.blankSymbol[0]);
+    
     return newErrors;
 }
 

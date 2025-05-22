@@ -50,6 +50,7 @@ export interface InputErrors {
   auxiliaryAlphabetDoesNotHaveStart: boolean;
   auxiliaryAlphabetDoesNotHaveBlank: boolean;
   undefinedIsNotASymbol: boolean;
+  onlyValidSymbols: boolean;
 }
 
 export interface CurrentTool {

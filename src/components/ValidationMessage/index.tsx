@@ -17,6 +17,7 @@ const ValidationMessage = () => {
         {errors.auxiliaryAlphabetDoesNotHaveStart?     null : <TextoErro>Alfabeto auxiliar não deve conter o símbolo de início de fita!</TextoErro>     }
         {errors.auxiliaryAlphabetDoesNotHaveBlank?     null : <TextoErro>Alfabeto auxiliar não deve conter símbolo de branco!</TextoErro>               }
         {errors.undefinedIsNotASymbol?                 null : <TextoErro>"undefined" não pode ser um símbolo da máquina!</TextoErro>                    }
+        {errors.onlyValidSymbols?                      null : <TextoErro>Os caracteres "[" e "]" não podem ser usados nos símbolos do alfabeto!</TextoErro>   }
         </>
     )
 }
