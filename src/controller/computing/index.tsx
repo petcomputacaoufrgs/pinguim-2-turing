@@ -151,18 +151,23 @@ export function Home() {
       const nextState = transition.nextState;
       const hasNewSymbolMoreThanOneCharacter = transition.newSymbol.length > 1;
 
-      const newIndex = currIndex + (hasNewSymbolMoreThanOneCharacter? 2 + transition.newSymbol.length : 1);
+      const indexIncrement = (hasNewSymbolMoreThanOneCharacter? (2 + transition.newSymbol.length) : 1);
+
+      const newIndex = currIndex + indexIncrement;
       
 
 
-      if(newIndex >= tape.length + transition.newSymbol.length - (currSymbol.length + 2)){
+      if(newIndex >= tape.length + indexIncrement - (currSymbol.length + ((currSymbol.length > 1)? 2 : 0))){
+        console.log("A");
         setTape(tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) + inputStates.tokenizedInputs.blankSymbol[0]);
 
       }
-        else{
+      
+      else{
+        console.log("B");
         setTape(tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) +  tape.substring(currIndex + (currSymbol.length > 1? currSymbol.length + 2 : 1), tape.length));
-        const newTape = tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) +  tape.substring(currIndex + (currSymbol.length > 1? currSymbol.length + 2 : 1), tape.length);
         }
+
       const newMachineState = [nextState, newIndex];
 
       setState(newMachineState as [string, number]);
@@ -270,7 +275,7 @@ export function Home() {
             </Div13>
 
             <Div14>
-              <p style={{fontSize: "15px", color: getOutputColor(output)}}>{output}</p>
+              <p style={{fontSize: "18px", color: getOutputColor(output)}}>{output}</p>
             </Div14>
           </Div2p>
             
@@ -283,8 +288,9 @@ export function Home() {
           </div>  
         </div>
 
-        <div style={{height: "5vh"}}>
+        <div style={{height: "5vh", display: "flex", flexDirection: "column", paddingLeft: "3vw", justifyContent: "center"}} >
           <input
+            style={{width: "30%", minWidth: "150px"}}
             type="range"
             min="0"
             max="100"
@@ -292,7 +298,7 @@ export function Home() {
             onChange={(e) => setValue(Number(e.target.value))}
           />
       
-          <p>Valor: {value * 10} ms</p>
+          <p style={{fontSize: "18px", fontWeight: "500"}}>Valor: {value * 10} ms</p>
         </div>
 
       </ContainerBody>

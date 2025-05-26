@@ -109,9 +109,10 @@ export const Div11 = styled.div`
 export const Div12 = styled.div`
   background-color: aqua;
   width: 100%;
-  height: 60%;
+  height: 65%;
   margin-top: 1vh;
   overflow: auto;
+  overflow-y: hidden;
 
 
   p{
