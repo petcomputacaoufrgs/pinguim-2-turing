@@ -14,6 +14,7 @@ import TransitionTable from '../../components/TransitionTable/index.tsx';
 import TransitionsErrorMessages from '../../components/TransitionsErrorMessages/index.tsx';
 import SimpleDiagram from '../../components/StateDiagram/index.tsx';
 import Tools from '../../components/Tools/index.tsx';
+import HelpPopUp from '../../components/HelpPopUp/index.tsx';
 
 export function Home() { 
 
@@ -89,9 +90,13 @@ export function Home() {
     }
 
 
+    const [showHelp, setShowHelp] = useState<boolean>(false);
+
+
+
   return (
     <Container $expand={expandedComponent}>
-
+<HelpPopUp show={showHelp} setShow={setShowHelp} />
       <Header/>
 
       <ContainerBody $expand={expandedComponent} className={expandedComponent === "diagram" ? "expand-diagram" : expandedComponent === "table" ? "expand-table" : "standard"}>
@@ -146,10 +151,18 @@ export function Home() {
         <div id="div3">
 
          <div style={{display: "flex", gap: "1vw", alignItems: "center"}}> 
+
             <p>Grafo:</p>
+
             <button style={{height: "70%"}} onClick={() => setExpandedComponent(expandedComponent === "diagram" ? "none" : "diagram")}>
             {expandedComponent === "diagram" ? "Recolher" : "Expandir"}
             </button>
+
+            <button style={{height: "70%"}} onClick={() => setShowHelp(true)}>Ajuda</button>
+
+            
+
+
             {expandedComponent === "diagram" && (<><Tools width='48vw' currentTool={currentTools} onChangeTool={setCurrentTool}/>
                                                    <Buttons height="4.5vh" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
                                                  </>)}

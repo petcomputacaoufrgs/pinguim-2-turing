@@ -14,7 +14,7 @@ const Documentation = ({onChange} : DocumentationProps ) => {
     return(
         <Container>
             <p>Documentação: </p>
-            <textarea value={documentation} onChange={onChange}/>
+            <textarea style={{resize: "horizontal"}} value={documentation} onChange={onChange}/>
         </Container>
     )
 }
