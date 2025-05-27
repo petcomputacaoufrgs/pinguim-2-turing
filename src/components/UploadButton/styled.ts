@@ -4,11 +4,11 @@ export const Div = styled.div`
     label{
         color: #343239;
         font-weight:bolder;
-        font-size: 1vw;
+        font-size: max(0.8vw, 10px);
         background-color: #DD5B6C;
         
         border-radius: 4px;
-        width: 14vw;
+        width: max(14vw, 60px);
         height: 4.5vh;
 
         display: flex;

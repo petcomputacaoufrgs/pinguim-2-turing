@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../GeneralButtons/styled";
 import { CurrentTool } from "../../types/types";
 

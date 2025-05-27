@@ -1,5 +1,5 @@
 import TitledInput from "../TitledInput";
-import { ChangeEvent, ChangeEventHandler, useState } from "react";
+import { ChangeEvent} from "react";
 import Upload_button from "../UploadButton";
 import Buttons from "../GeneralButtons";
 import { DivButtons, DivInputs } from "./styled";

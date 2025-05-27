@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import {Container, ContainerBody} from "./styled.ts";
 
 import { Transitions, InputValues, TokenizedInputValues, InputErrors, CurrentTool } from '../../types/types';

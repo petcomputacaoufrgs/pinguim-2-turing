@@ -54,7 +54,7 @@ export const ContainerBody = styled.div<{$expand: string}>`
     flex-grow: 1;
     p {
       font-weight: bold;
-      font-size: 1.5vw;
+      font-size: 2rem;
       margin-bottom: 0.2vh;
       margin-top: 0;
     }
@@ -78,7 +78,7 @@ export const ContainerBody = styled.div<{$expand: string}>`
     
     p {
       font-weight: bold;
-      font-size: 1.5vw;
+      font-size: 2rem;
       margin-bottom: 0.2vh;
       margin-top: 0;
     }

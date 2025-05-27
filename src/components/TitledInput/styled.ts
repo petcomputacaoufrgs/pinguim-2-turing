@@ -11,7 +11,7 @@ export const InputDiv = styled.div`
 
 export const InputDescription = styled.p`
     color: #343239;
-    font-size: 0.8vw;
+    font-size: max(0.8vw, 10px);
     font-weight: bold;
 `;
 

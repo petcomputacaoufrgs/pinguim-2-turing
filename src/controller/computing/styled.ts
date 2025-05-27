@@ -50,9 +50,8 @@ export const ContainerBody = styled.div`
       grid-area: div1;
       padding-left: 3vw;
       padding-top: 1vh;
-
+      
       button{
-        width: 35%;
         
         &:hover {
           background-color: #FF7C89;
@@ -63,6 +62,12 @@ export const ContainerBody = styled.div`
         font-weight: bold;
         font-size: 4vh;
         margin: 0;
+      }
+
+      #editMachineDiv{
+        width: 50%;
+        height: 4.5vh;
+        overflow: visible; 
       }
 
       div{
@@ -107,7 +112,7 @@ export const Div11 = styled.div`
 `;
 
 export const Div12 = styled.div`
-  background-color: aqua;
+  background-color: white;
   width: 100%;
   height: 65%;
   margin-top: 1vh;
@@ -122,7 +127,6 @@ export const Div12 = styled.div`
 `;
 
 export const Div13 = styled.div`
-  background-color: yellow;
   width: 100%;
   height: 15%;
   display: flex;
@@ -143,4 +147,5 @@ export const Div2p = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 5px;
 `;

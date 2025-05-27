@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export const Button = styled.button<{disabled : boolean, width:string, height:string}>`
     color: #343239;
     font-weight:bolder;
-    font-size: 1vw;
+    font-size: max(0.8vw, 10px);
     background-color: #DD5B6C; 
 
 
@@ -36,6 +36,7 @@ export const Button = styled.button<{disabled : boolean, width:string, height:st
       } 
     `
     }
+
 
 
 `;

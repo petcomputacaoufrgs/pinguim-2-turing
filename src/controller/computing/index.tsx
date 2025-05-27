@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import {Container, ContainerBody, Div11, Div12, Div13, Div14, Div2p} from "./styled.ts";
 import Header from '../../components/Header/index.tsx';
 import Buttons from '../../components/GeneralButtons/index.tsx';
@@ -246,7 +246,9 @@ export function Home() {
 
       <ContainerBody>
         <div id="div2">
-          <Buttons to={"../"} title="Editar Máquina de Turing" width={''} height={'4.5vh'}/>
+          <div id="editMachineDiv">
+          <Buttons to={"../"} title="Editar Máquina de Turing" width={'100%'} height={'4.5vh'}/>
+          </div>
           <p>Tabela de Transição:</p>
 
           <div style={{"overflow": "auto", "display": "flex", "alignItems": "flex-start"}}>
@@ -263,8 +265,8 @@ export function Home() {
              
           <Div2p>
             <Div12>
-              <p style={{whiteSpace: "pre"}}>{" ".repeat(currState[1])}↓{currState[0]}</p>
-              <p>{tape}</p>
+              <p style={{whiteSpace: "pre", color: "blue"}}>{" ".repeat(currState[1])}↓{currState[0]}</p>
+              <p style={{}}>{tape}</p>
             </Div12>
 
             <Div13>

@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import logo from '../../assets/LogoPET_oficial (1).png';
 import {AppHeader, Logo, Title, Links, Link} from './styled.ts';
 
