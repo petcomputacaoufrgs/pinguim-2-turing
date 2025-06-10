@@ -11,11 +11,11 @@ export const StyledInput = styled("input")<{$hasError: boolean}>`
     color: ${({ $hasError }) => ($hasError ? 'darkred' : 'black')};
     padding: 8px;
     border-radius: 4px;
-    font-size: 0.8vw;
+    font-size: max(0.8vw, 10px);
 
     text-align: center; 
 
-    width: 6vw;
+    width: max(6vw, 50px);
 
     &:focus {
       outline: none;
@@ -23,8 +23,14 @@ export const StyledInput = styled("input")<{$hasError: boolean}>`
     }
 
     &::placeholder {
-      font-size: 0.5vw;
-  }
+      font-size: max(0.5vw, 5px);
+    }
+
+    @media (max-width: 768px) {
+      padding: 8px 2px;
+
+    }
+  
   `;
 
 
@@ -49,6 +55,10 @@ export const StyledTable = styled.table`
   tbody td {
     padding: 10px;
     text-align: center;
+
+    @media (max-width: 768px) {
+      padding: 5px;
+    }
   }
 
 

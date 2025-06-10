@@ -48,6 +48,17 @@ export function Home() {
 
 
 
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const [showAsMobile, setShowAsMobile] = useState<boolean>(isMobile || window.innerWidth < 768);
+
+
+    const onResize = () => {
+      setShowAsMobile(isMobile || window.innerWidth < 768);
+    }
+
+    window.addEventListener('resize', onResize);
+
 
 // Para inicializar, importar init e descomentar
 /* 
@@ -283,12 +294,14 @@ export function Home() {
             
         </div>
 
+        { !showAsMobile &&
         <div id="div3">
           <p>Grafo:</p>
           <div>
             <SimpleDiagram currentTool={noEditTool.current} currState={currState[0]} />
           </div>  
         </div>
+        }
 
         <div style={{height: "5vh", display: "flex", flexDirection: "column", paddingLeft: "3vw", justifyContent: "center"}} >
           <input

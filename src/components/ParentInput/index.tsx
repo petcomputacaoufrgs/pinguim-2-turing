@@ -145,22 +145,28 @@ const ParentInput = ({ onFileInputDoc, onChangeInputs }: ParentInputProps) => {
   URL.revokeObjectURL(url);
   }
 
+  const NUM_INPUTS = 7;
+
+  // O tamanho do input é calculado como uma porcentagem do tamanho total do espaço que eles ocupam dividido pelo número de inputs
+  const INPUT_SIZE = `${100 / NUM_INPUTS}%`; 
+
+
   return (
     <>
       <DivButtons id="div1_buttons">
-        <Upload_button onFileUpload={handleFileUpload}/>
-        <Buttons onClick={handleDownload} height="4.5vh" width="14vw" title="Salvar"/>
+        <Upload_button onFileUpload={handleFileUpload} height="100%"/>
+        <Buttons onClick={handleDownload} height="100%" width="max(14vw, 85px)" title="Salvar"/>
       </DivButtons>
       
       <DivInputs id="div1_part2">
         <div id="div1_part2_inputs">
-          <TitledInput name="states"      value={inputs.states}      onChange={handleInputChange} title={"Estados:"}></TitledInput>
-          <TitledInput name="initState"   value={inputs.initState}   onChange={handleInputChange} title={"Estado inicial:"}></TitledInput>
-          <TitledInput name="finalStates" value={inputs.finalStates} onChange={handleInputChange} title={"Estados finais:"}></TitledInput>
-          <TitledInput name="inAlphabet"  value={inputs.inAlphabet}  onChange={handleInputChange} title={"Alfabeto de entrada:"}></TitledInput>
-          <TitledInput name="auxAlphabet" value={inputs.auxAlphabet} onChange={handleInputChange} title={"Alfabeto auxiliar:"}></TitledInput>
-          <TitledInput name="initSymbol"  value={inputs.initSymbol}  onChange={handleInputChange} title={"Símbolo inicial:"}></TitledInput>
-          <TitledInput name="blankSymbol" value={inputs.blankSymbol} onChange={handleInputChange} title={"Símbolo de branco:"}></TitledInput>
+          <TitledInput name="states"      value={inputs.states}      onChange={handleInputChange} title={"Estados:"}             height={INPUT_SIZE}></TitledInput>
+          <TitledInput name="initState"   value={inputs.initState}   onChange={handleInputChange} title={"Estado inicial:"}      height={INPUT_SIZE}></TitledInput>
+          <TitledInput name="finalStates" value={inputs.finalStates} onChange={handleInputChange} title={"Estados finais:"}      height={INPUT_SIZE}></TitledInput>
+          <TitledInput name="inAlphabet"  value={inputs.inAlphabet}  onChange={handleInputChange} title={"Alfabeto de entrada:"} height={INPUT_SIZE}></TitledInput>
+          <TitledInput name="auxAlphabet" value={inputs.auxAlphabet} onChange={handleInputChange} title={"Alfabeto auxiliar:"}   height={INPUT_SIZE}></TitledInput>
+          <TitledInput name="initSymbol"  value={inputs.initSymbol}  onChange={handleInputChange} title={"Símbolo inicial:"}     height={INPUT_SIZE}></TitledInput>
+          <TitledInput name="blankSymbol" value={inputs.blankSymbol} onChange={handleInputChange} title={"Símbolo de branco:"}   height={INPUT_SIZE}></TitledInput>
         </div>  
       </DivInputs>          
     </>

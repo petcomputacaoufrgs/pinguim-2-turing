@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-export const Div = styled.div`
+export const Div = styled.div<{$height: string}>`
     label{
         color: #343239;
         font-weight:bolder;
@@ -8,15 +8,13 @@ export const Div = styled.div`
         background-color: #DD5B6C;
         
         border-radius: 4px;
-        width: max(14vw, 60px);
-        height: 4.5vh;
+        width: max(14vw, 85px);
+        height: ${props => props.$height || '4.5vh'};
 
         display: flex;
         justify-content: center;
         align-items: center;
 
-        margin-right: 1vw;
-        margin-bottom: 1vh;
 
         transition: background-color 0.2s ease, transform 0.2s ease;
 

@@ -1,14 +1,14 @@
 import styled from "styled-components";
 
 export const Container = styled.div<{$expand: string}>`
-  height: 100vh;
   display: flex;
   flex-direction: column;
+  min-height: ${({ $expand }) => ($expand !== 'none' ? '140vh' : '100vh')};
+  min-width: 350px;
 `;
 
 export const ContainerBody = styled.div<{$expand: string}>`
-  height: ${({ $expand }) => ($expand !== 'none' ? '120vh' : '100vh')};
-  overflow: auto;
+  flex-grow: 1;
   background-color: #E4DADF;
   display: flex;
   flex-wrap: wrap;
@@ -16,7 +16,7 @@ export const ContainerBody = styled.div<{$expand: string}>`
   justify-content: flex-start;
   gap: 1vh;
   color: #343239;
-  padding: 1vh 3vw;
+  padding: 9px 3vw;
 
   &.expand-diagram,
   &.expand-table,
@@ -26,15 +26,36 @@ export const ContainerBody = styled.div<{$expand: string}>`
 
   #div1, #div2, #div3, #div4, #div5 {
     box-sizing: border-box;
-    margin-bottom: 1vh;
+  }
+
+  #upper_div {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+    min-height: max(37vh, 240px);
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    
+    }
   }
 
   #div1 {
     display: flex;
-    width: 55%;
+    width: 65%;
+    gap: 10px;
+    min-height: max(37vh, 240px);
+    max-height: max(37vh, 240px);
     
     #div1_doc {
       display: flex;
+      width: 100%;
+    }
+    
+    #div1_inputs {
+    }
+
+    @media (max-width: 768px) {
       width: 100%;
     }
   }
@@ -42,9 +63,31 @@ export const ContainerBody = styled.div<{$expand: string}>`
   #div4 {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 45%;
+    width: 35%;
     margin: auto 0;
+
+    p {
+      font-size: max(0.8vw, 10px); 
+    }
+    
+    @media (max-width: 768px) {
+      flex-direction: row;
+      width: 100%;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      column-gap: 3.3vw;
+
+      p {
+        width: 30%;
+      }
+    }
+
+    @media (max-width: 680px) {
+      p {
+        font-size: 8px;
+      }
+    }
+
   }
 
   #div2 {
@@ -52,9 +95,10 @@ export const ContainerBody = styled.div<{$expand: string}>`
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+
     p {
       font-weight: bold;
-      font-size: 2rem;
+      font-size: 1.5rem;
       margin-bottom: 0.2vh;
       margin-top: 0;
     }
@@ -78,7 +122,7 @@ export const ContainerBody = styled.div<{$expand: string}>`
     
     p {
       font-weight: bold;
-      font-size: 2rem;
+      font-size: 1.5rem;
       margin-bottom: 0.2vh;
       margin-top: 0;
     }

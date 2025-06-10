@@ -40,6 +40,25 @@ export function Home() {
  
     const [expandedComponent, setExpandedComponent] = useState<"none" | "diagram" | "table">("none");
 
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const [showAsMobile, setShowAsMobile] = useState<boolean>(isMobile || window.innerWidth < 768);
+
+
+    const onResize = () => {
+
+      const showAsMobile = isMobile || window.innerWidth < 768;
+
+      if(showAsMobile){
+        setExpandedComponent("none");
+      }
+
+      setShowAsMobile(showAsMobile);
+
+    }
+
+    window.addEventListener('resize', onResize);
+
 
     const setInputValues = (newValues : InputValues, 
                             newTokenizedValues : TokenizedInputValues, 
@@ -96,14 +115,15 @@ export function Home() {
 
   return (
     <Container $expand={expandedComponent}>
-<HelpPopUp show={showHelp} setShow={setShowHelp} />
+
+      <HelpPopUp show={showHelp} setShow={setShowHelp} />
       <Header/>
 
       <ContainerBody $expand={expandedComponent} className={expandedComponent === "diagram" ? "expand-diagram" : expandedComponent === "table" ? "expand-table" : "standard"}>
         
-      <div style={{display: "flex", width: "100%", gap: "5vw"}}>
+      <div id="upper_div">
         <div id="div1">
-          <div>    
+          <div id="div1_inputs">    
             <ParentInput onFileInputDoc={setDocumentationValue} onChangeInputs={handleInputsChange} />
           </div>
 
@@ -120,7 +140,7 @@ export function Home() {
       </div>
 
 
-      <div style={{display: "flex", width: "100%", minHeight: (expandedComponent != "none")? "65%" : "52%", flexGrow: "1", gap: "4vw"}}>
+      <div style={{display: "flex", width: "100%", minHeight: (expandedComponent != "none")? "max(80vh, 530px)" : "max(calc(52vh - 18px), 328px)", gap: "4vw"}}>
       {
 
         (expandedComponent != "diagram") ?
@@ -128,15 +148,23 @@ export function Home() {
         <div id="div2">
             <div style={{display: "flex", gap: "1vw", alignItems: "center"}}> 
               <p>Tabela de Transição:</p>
+              
+              { (!showAsMobile && 
               <button style={{height: "70%"}} onClick={() => setExpandedComponent(expandedComponent === "table" ? "none" : "table")}>
               {expandedComponent === "table" ? "Recolher" : "Expandir"}
               </button>
+               )
+              }
+
+              
+              
+
             </div>
           <div id='div2_table'>
           <TransitionTable OnChangeTransitionTable={handleTransitionsChange} editable={true} />
           </div> 
 
-          <Buttons height="4.5vh" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/> 
+          <Buttons height="max(4.44vh, 29px)" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/> 
         </div> 
         
         :
@@ -146,7 +174,7 @@ export function Home() {
     }
 
     {
-      (expandedComponent != "table") ?
+      (expandedComponent != "table" && !showAsMobile) ?
 
         <div id="div3">
 
@@ -164,7 +192,7 @@ export function Home() {
 
 
             {expandedComponent === "diagram" && (<><Tools width='48vw' currentTool={currentTools} onChangeTool={setCurrentTool}/>
-                                                   <Buttons height="4.5vh" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
+                                                   <Buttons height="max(4.44vh, 29px)" width="100%" to={"/computing"} title="Computar" disabled={Object.values(errors).some(valor_bool => !valor_bool)}/>
                                                  </>)}
 
           </div>

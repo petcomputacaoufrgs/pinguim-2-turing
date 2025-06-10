@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const AppHeader = styled.header`
     background-color: #4D4C52;
-    height: 9vh;
+    height: max(9vh, 60px);
 
     display:flex;
     flex-direction:row;
@@ -11,19 +11,25 @@ export const AppHeader = styled.header`
 
     color: #FBF9FB;
     text-overflow: ellipsis;
+
 `;
 
 export const Logo = styled.img`
-    max-height: 9vh;
+    max-height: max(9vh, 60px);
     max-width: 7vw;
     padding-left: 3vw;
 `;
 
 export const Title = styled.p`
     color: #FBF9FB;
-    font-size: 3vw;
+    font-size: max(3vw, 10px);
     font-weight:bold;
     padding-right: 13vw;
+
+    @media (max-width: 768px) {
+        padding-right: 5px;
+        text-align: center;
+    }
 `;
 
 export const Links = styled.div`
@@ -35,12 +41,18 @@ export const Links = styled.div`
 
 export const Link = styled.a` 
     color: #FBF9FB;
-    font-size: 1.5vw;
+    font-size: max(1.5vw, 6px);
     margin: 1vw;
     text-decoration: none;
 
     &:hover {
         color: #DD5B6C;
     }    
+
+
+    @media (max-width: 768px) {
+        text-align: center;
+    }
+
 `;
 

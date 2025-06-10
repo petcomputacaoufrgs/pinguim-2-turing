@@ -53,9 +53,9 @@ const setEditLinks = () => {
 
   return (
   <div style={{display: "flex", width: width, alignItems: "center", height: "auto", fontSize: "0.5vw", backgroundColor: "#E4DADF"}}>
-    <Button width="16vw" height="4.5vh" onClick={setEditLinks} disabled={currentTool.editLinks} style={{borderRadius: "4px 0px 0px 4px"}}>Links</Button>
-    <Button width="16vw" height="4.5vh" onClick={setSelection} disabled={currentTool.selection} style={{borderRadius:"0"}}>Seleção</Button>
-    <Button width="16vw" height="4.5vh" onClick={setStandard} disabled={currentTool.standard} style={{borderRadius: "0px 4px 4px 0px"}}>Padrão</Button>
+    <Button width="16vw" height="max(4.44vh, 29px)" onClick={setEditLinks} disabled={currentTool.editLinks} style={{borderRadius: "4px 0px 0px 4px"}}>Links</Button>
+    <Button width="16vw" height="max(4.44vh, 29px)" onClick={setSelection} disabled={currentTool.selection} style={{borderRadius:"0"}}>Seleção</Button>
+    <Button width="16vw" height="max(4.44vh, 29px)" onClick={setStandard} disabled={currentTool.standard} style={{borderRadius: "0px 4px 4px 0px"}}>Padrão</Button>
   </div>
 
   )
