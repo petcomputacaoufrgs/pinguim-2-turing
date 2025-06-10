@@ -1,11 +1,16 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import {Container, ContainerBody, Div11, Div12, Div13, Div14, Div2p} from "./styled.ts";
+
+import {CurrentTool, errorCodes } from '../../types/types';
+
+import { useStateContext } from '../../ContextProvider.tsx';
+
 import Header from '../../components/Header/index.tsx';
 import Buttons from '../../components/GeneralButtons/index.tsx';
-import { useStateContext } from '../../ContextProvider.tsx';
-import { CurrentTool, errorCodes } from '../../types/types.ts';
-import SimpleDiagram from '../../components/StateDiagram/index.tsx';
 import TransitionTable from '../../components/TransitionTable/index.tsx';
+import SimpleDiagram from '../../components/StateDiagram/index.tsx';
+
+
 
 
 enum MachineOutput {
@@ -19,8 +24,29 @@ enum MachineOutput {
 }
 
 
-export function Home() {  
 
+export function Test() { 
+
+    const [expandedComponent, setExpandedComponent] = useState<"none" | "diagram" | "table">("none");
+
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const [showAsMobile, setShowAsMobile] = useState<boolean>(isMobile || window.innerWidth < 768);
+
+
+    const onResize = () => {
+
+      const showAsMobile = isMobile || window.innerWidth < 768;
+
+      if(showAsMobile){
+        setExpandedComponent("none");
+      }
+
+      setShowAsMobile(showAsMobile);
+
+    }
+
+    window.addEventListener('resize', onResize);
 
     const  { inputStates } = useStateContext();
 
@@ -36,45 +62,10 @@ export function Home() {
 
     const [run, setRun] = useState(false);
     const [machineClock, setMachineClock] = useState(false);
-    /*
 
-    Quanto às entradas, acho que a que vale a pena mudar a estrutura no back para ser "equivalente" à estrutura do front é as transições
-    Fazendo isso aproveitaríamos o fato de que as transições já vem do front como um Map
 
-    Mas para tokenizedInputs e tape, talvez valha a pena receber os valores no back e processá-los para deixá-los de acordo com as estruturas definidas lá
-
-    */
     const noEditTool = useRef<CurrentTool>({noEdit: true, addNodes: false, editLinks: false, selection: false, standard: false});
 
-
-
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    const [showAsMobile, setShowAsMobile] = useState<boolean>(isMobile || window.innerWidth < 768);
-
-
-    const onResize = () => {
-      setShowAsMobile(isMobile || window.innerWidth < 768);
-    }
-
-    window.addEventListener('resize', onResize);
-
-
-// Para inicializar, importar init e descomentar
-/* 
-  useEffect (() => {
-    init().then(() => {
-      console.log("Wasm pronto");
-    }) 
-  }, []);
-*/
-
-
-  /*
-  handleRun e handleStep ativam quando os botões de run e step são pressionados, respectivamente. Nessas funções a máquina de turing é construída e então os métodos de run
-  e step são chamados. Esses métodos são os métodos definidos no back para a TuringMachine e precisam retornar um array com o estado e o index na fita depois da execução 
-  (ou outra, se uma estrutura mais inteligente for pensada)
-  */
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -252,58 +243,72 @@ export function Home() {
   }
 
   return (
-    <Container>
+    <Container $expand={expandedComponent}>
+
       <Header/>
 
-      <ContainerBody>
+      <ContainerBody $expand={expandedComponent} className={expandedComponent === "diagram" ? "expand-diagram" : expandedComponent === "table" ? "expand-table" : "standard"}>
+        
+
+      <div style={{width: "max(25%, 85px)"}}>
+      <Buttons to={"../"} title="Editar Máquina de Turing" width={'100%'} height={'max(4.44vh, 29px)'}/>
+      </div>
+
+      <div style={{display: "flex", width: "100%", minHeight: (expandedComponent != "none")? "max(80vh, 530px)" : "max(calc(80vh - 18px), 426px)",  maxHeight: (expandedComponent != "none")? "max(80vh, 530px)" : "max(calc(80vh - 18px), 426px)", gap: "4vw"}}>
+      {
+
+        (expandedComponent != "diagram") ?
+
         <div id="div2">
-          <div id="editMachineDiv">
-          <Buttons to={"../"} title="Editar Máquina de Turing" width={'100%'} height={'4.5vh'}/>
-          </div>
-          <p>Tabela de Transição:</p>
 
-          <div style={{"overflow": "auto", "display": "flex", "alignItems": "flex-start"}}>
-          <TransitionTable OnChangeTransitionTable={(newTransitions) => {}}  editable={false}/>
-          </div>
 
-        </div>
 
-        <div id="div1">
-          <Div11>
-            <p>Entrada:</p>
-            <input id="tapeValue" type="text" onChange={handleTapeChange}/>
-          </Div11>
-             
-          <Div2p>
-            <Div12>
-              <p style={{whiteSpace: "pre", color: "blue"}}>{" ".repeat(currState[1])}↓{currState[0]}</p>
-              <p style={{}}>{tape}</p>
-            </Div12>
+            <div style={{display: "flex", gap: "1vw", alignItems: "center"}}> 
+              <p>Tabela de Transição:</p>
+              
+              { (!showAsMobile && 
+              <button style={{height: "70%"}} onClick={() => setExpandedComponent(expandedComponent === "table" ? "none" : "table")}>
+              {expandedComponent === "table" ? "Recolher" : "Expandir"}
+              </button>
+               )
+              }
 
-            <Div13>
-              <button onClick={handleReset}>Reset</button>
-              <button onClick={() => setRun(true)}>Run</button>
-              <button onClick={() => setRun(false)}>Stop</button>
-              <button onClick={handleStep}>Step</button>
-            </Div13>
+              
+              
 
-            <Div14>
-              <p style={{fontSize: "18px", color: getOutputColor(output)}}>{output}</p>
-            </Div14>
-          </Div2p>
-            
-        </div>
+            </div>
+          <div id='div2_table'>
+            <TransitionTable OnChangeTransitionTable={(newTransitions) => {}}  editable={false} />
+          </div> 
 
-        { !showAsMobile &&
-        <div id="div3">
-          <p>Grafo:</p>
-          <div>
-            <SimpleDiagram currentTool={noEditTool.current} currState={currState[0]} />
-          </div>  
-        </div>
-        }
 
-        <div style={{height: "5vh", display: "flex", flexDirection: "column", paddingLeft: "3vw", justifyContent: "center"}} >
+        <div id='div2_inputs'>
+                    <Div11>
+                      <p>Entrada:</p>
+                      <input id="tapeValue" type="text" onChange={handleTapeChange}/>
+                    </Div11>
+                       
+                    <Div2p>
+                      <Div12>
+                        <p style={{whiteSpace: "pre", color: "blue"}}>{" ".repeat(currState[1])}↓{currState[0]}</p>
+                        <p style={{}}>{tape}</p>
+                      </Div12>
+          
+                      <Div13>
+                        <button onClick={handleReset}>Reset</button>
+                        <button onClick={() => setRun(true)}>Run</button>
+                        <button onClick={() => setRun(false)}>Stop</button>
+                        <button onClick={handleStep}>Step</button>
+                      </Div13>
+
+                    </Div2p>
+
+          
+                      <Div14>
+                        <p style={{fontSize: "18px", color: getOutputColor(output)}}>{output}</p>
+                      </Div14>
+
+        <div id="temporizador" style={{height: "15%", display: "flex", flexDirection: "column", justifyContent: "center"}} >
           <input
             style={{width: "30%", minWidth: "150px"}}
             type="range"
@@ -316,11 +321,98 @@ export function Home() {
           <p style={{fontSize: "18px", fontWeight: "500"}}>Valor: {value * 10} ms</p>
         </div>
 
+        </div>
+
+        </div> 
+        
+        :
+
+        null
+    
+    }
+
+    {
+      (expandedComponent != "table" && !showAsMobile) ?
+
+        <div id="div3">
+
+         <div style={{display: "flex", gap: "1vw", alignItems: "center"}}> 
+
+            <p>Grafo:</p>
+
+            <button style={{height: "70%"}} onClick={() => setExpandedComponent(expandedComponent === "diagram" ? "none" : "diagram")}>
+            {expandedComponent === "diagram" ? "Recolher" : "Expandir"}
+            </button>
+
+
+          </div>
+          <div style={{width: "100%", flexGrow: "1", overflow: "hidden", marginBottom: "1vh", backgroundColor: "#FFF"}}> 
+            <SimpleDiagram  currentTool={noEditTool.current}  currState={currState[0]}/> 
+
+            
+        </div>
+
+
+        {(expandedComponent === "diagram" && 
+                        <div id='div_inputs'>
+                    <Div11>
+                      <p>Entrada:</p>
+                      <input id="tapeValue" type="text" onChange={handleTapeChange}/>
+                    </Div11>
+                       
+                    <Div2p>
+                      <Div12>
+                        <p style={{whiteSpace: "pre", color: "blue"}}>{" ".repeat(currState[1])}↓{currState[0]}</p>
+                        <p style={{}}>{tape}</p>
+                      </Div12>
+          
+                      <Div13>
+                        <button onClick={handleReset}>Reset</button>
+                        <button onClick={() => setRun(true)}>Run</button>
+                        <button onClick={() => setRun(false)}>Stop</button>
+                        <button onClick={handleStep}>Step</button>
+                      </Div13>
+
+                    </Div2p>
+
+          
+                      <Div14>
+                        <p style={{fontSize: "18px", color: getOutputColor(output)}}>{output}</p>
+                      </Div14>
+
+        <div id="temporizador" style={{height: "15%", display: "flex", flexDirection: "column", justifyContent: "center"}} >
+          <input
+            style={{width: "30%", minWidth: "150px"}}
+            type="range"
+            min="0"
+            max="100"
+            value={value}
+            onChange={(e) => setValue(Number(e.target.value))}
+          />
+      
+          <p style={{fontSize: "18px", fontWeight: "500"}}>Valor: {value * 10} ms</p>
+        </div>
+
+        </div>
+            )
+            
+            }
+
+          
+        </div>
+
+        :
+
+        null
+
+    }
+
+    </div>
+
       </ContainerBody>
 
-      
     </Container>
   );
 }
 
-export default Home;
+export default Test;

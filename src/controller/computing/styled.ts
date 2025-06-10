@@ -1,107 +1,87 @@
 import styled from "styled-components";
 
-export const Container = styled.div`
-  height: 100vh;
+export const Container = styled.div<{$expand: string}>`
   display: flex;
   flex-direction: column;
+  min-height: max(100vh, 555px);
+  min-width: 350px;
 `;
 
-export const ContainerBody = styled.div`
-  height: 100vh;
+export const ContainerBody = styled.div<{$expand: string}>`
+  flex-grow: 1;
   background-color: #E4DADF;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1vh;
+  color: #343239;
+  padding: 9px 3vw;
 
-  display: grid;
-    grid-template-columns: 55% auto;
-    grid-template-rows: 60% auto;
-    grid-template-areas:
-        'div1 div3'
-        'div2 div3';
 
-    color: #343239;
+  #div2, #div3 {
+    box-sizing: border-box;
+  }
 
-    #div1 {
-      grid-area: div2;
-      padding-left: 3vw;
-      margin-bottom: 5vh;   
-      
+
+  #div2 {
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    p {
+      font-weight: bold;
+      font-size: 1.5rem;
+      margin-bottom: 0.2vh;
+      margin-top: 0;
+    }
+
+    #div2_table {
+      width: 100%;
+      background-color: #FFF;
+      margin-bottom: 1vh;
+      height: 100%;
+      overflow: auto;
+    }
+
+    #div2_inputs {
+      height: 40%;
       display: flex;
       flex-direction: column;
-
-      p{
-        font-weight: bold;
-        font-size: 4vh;
-        margin: 0;
-      }
-
-      input{
-        border: none;
-        border-radius: 5px;
-        height: 3vh;
-        width: 35%;
-        margin-left: 1vw;
-
-        &:focus{
-            outline: none;
-        }
-      }
+      gap: 10px;
+    
     }
 
-    #div2 {
-      grid-area: div1;
-      padding-left: 3vw;
-      padding-top: 1vh;
-      
-      button{
-        
-        &:hover {
-          background-color: #FF7C89;
-        }  
-      }
 
-      p{
-        font-weight: bold;
-        font-size: 4vh;
-        margin: 0;
-      }
+  }
 
-      #editMachineDiv{
-        width: 50%;
-        height: 4.5vh;
-        overflow: visible; 
-      }
-
-      div{
-        display: flex;
-        align-items: flex-end;
-        width: 100%;
-        height: 80%;
-        overflow: auto;
-        background-color: #FFF;
-      }
-    }
-
-    #div3 {
-      grid-area: div3;
+    #div_inputs {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      margin-bottom: 5vh;
-
-      p{
-        font-weight: bold;
-        font-size: 4vh;
-        margin-bottom: 0.4vh;
-        margin-top: 5vh;
-      }
-
-      div{
-        width: 80%;
-        height: 100%;
-        overflow: auto;
-        background-color: #FFF;
-      }
+      gap: 10px;
+    
     }
+
+  #div3 {
+    display: flex;
+    width: 40%;
+    flex-direction: column;
+    flex-grow: 1;
+    
+    p {
+      font-weight: bold;
+      font-size: 1.5rem;
+      margin-bottom: 0.2vh;
+      margin-top: 0;
+    }
+
+  }
+
+  #div5 {
+    width: 100%;
+    margin-left: 0;
+  }
 `;
 
 
@@ -109,13 +89,25 @@ export const Div11 = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
+  gap: 10px;
+
+  input {
+    border: none;
+    border-radius: 5px;
+    height: 66%;
+    width: max(18vw, 120px);
+
+    &:focus{
+        outline: none;
+    }
+  
+  }
 `;
 
 export const Div12 = styled.div`
   background-color: white;
   width: 100%;
-  height: 65%;
-  margin-top: 1vh;
+  height: 75%;
   overflow: auto;
   overflow-y: hidden;
 
@@ -128,7 +120,7 @@ export const Div12 = styled.div`
 
 export const Div13 = styled.div`
   width: 100%;
-  height: 15%;
+  height: 25%;
   display: flex;
   align-items: center;
 `;
@@ -136,14 +128,13 @@ export const Div13 = styled.div`
 export const Div14 = styled.div`
   background-color: transparent;
   width: 100%;
-  height: 15%;
+  height: 10%;
   display: flex;
   align-items: center;
 `;
 
 
 export const Div2p = styled.div`
-  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

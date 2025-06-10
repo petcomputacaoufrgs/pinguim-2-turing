@@ -257,7 +257,7 @@ export function StateDiagram({onChangeInputs, saveStateToHistory, currentTool, c
 
       if(currState){
         const node = nodes.get(currState);
-        node.attr('body/stroke', 'green');
+        node.attr('body/stroke', 'blue');
       }
 
 
