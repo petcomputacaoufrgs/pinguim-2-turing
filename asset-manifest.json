@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/pinguim-2-turing/static/css/main.3c2947b8.css",
-    "main.js": "/pinguim-2-turing/static/js/main.dfc9da89.js",
+    "main.js": "/pinguim-2-turing/static/js/main.dd2f46c1.js",
     "static/js/453.40f2a8e3.chunk.js": "/pinguim-2-turing/static/js/453.40f2a8e3.chunk.js",
     "static/media/LogoPET_oficial (1).png": "/pinguim-2-turing/static/media/LogoPET_oficial (1).6919380448b0d45a168b.png",
     "index.html": "/pinguim-2-turing/index.html",
     "main.3c2947b8.css.map": "/pinguim-2-turing/static/css/main.3c2947b8.css.map",
-    "main.dfc9da89.js.map": "/pinguim-2-turing/static/js/main.dfc9da89.js.map",
+    "main.dd2f46c1.js.map": "/pinguim-2-turing/static/js/main.dd2f46c1.js.map",
     "453.40f2a8e3.chunk.js.map": "/pinguim-2-turing/static/js/453.40f2a8e3.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.3c2947b8.css",
-    "static/js/main.dfc9da89.js"
+    "static/js/main.dd2f46c1.js"
   ]
 }
