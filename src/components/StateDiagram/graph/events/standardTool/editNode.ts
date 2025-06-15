@@ -44,8 +44,8 @@ export function initEditNode(
         const input = document.createElement('input');
         input.value = currentText;
         input.style.position = 'absolute';
-        input.style.left = `${paperRect.x + bbox.x}px`;
-        input.style.top = `${paperRect.y + bbox.y}px`;
+        input.style.left = `${paperRect.x + bbox.x + window.scrollX}px`;
+        input.style.top = `${paperRect.y + bbox.y + window.scrollY}px`;
         input.style.fontSize = '12px';
         input.style.padding = '2px';
         input.style.zIndex = '1000';

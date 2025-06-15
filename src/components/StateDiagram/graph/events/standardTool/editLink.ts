@@ -64,8 +64,8 @@ export function initEditLink(
           const input = document.createElement('input');
           input.value = currentText;
           input.style.position = 'absolute';
-          input.style.left = `${textBox.x}px`; 
-          input.style.top = `${textBox.y}px`;
+          input.style.left = `${textBox.x + window.scrollX}px`; 
+          input.style.top = `${textBox.y + window.scrollY}px`;
           input.style.fontSize = '12px';
           input.style.padding = '2px';
           input.style.zIndex = '4';
