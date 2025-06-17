@@ -9,6 +9,7 @@ import Header from '../../components/Header/index.tsx';
 import Buttons from '../../components/GeneralButtons/index.tsx';
 import TransitionTable from '../../components/TransitionTable/index.tsx';
 import SimpleDiagram from '../../components/StateDiagram/index.tsx';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -47,6 +48,11 @@ export function Test() {
     }
 
     window.addEventListener('resize', onResize);
+
+
+    window.addEventListener("beforeunload", function (e) {
+      e.preventDefault();   
+    });
 
     const  { inputStates } = useStateContext();
 

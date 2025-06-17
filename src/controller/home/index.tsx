@@ -59,6 +59,9 @@ export function Home() {
 
     window.addEventListener('resize', onResize);
 
+    window.addEventListener("beforeunload", function (e) {
+      e.preventDefault();     
+    });
 
     const setInputValues = (newValues : InputValues, 
                             newTokenizedValues : TokenizedInputValues, 
