@@ -25,6 +25,8 @@ export const Input = styled.input`
     height: 66%; /* 2/3 da altura da div */
     width: max(18vw, 120px);
 
+    font-size: max(0.8vw, 14px);
+    
     &:focus{
         outline: none;
     }
