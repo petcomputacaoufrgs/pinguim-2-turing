@@ -18,6 +18,8 @@ const ValidationMessage = () => {
         {errors.auxiliaryAlphabetDoesNotHaveBlank?     null : <TextoErro>Alfabeto auxiliar não deve conter símbolo de branco!</TextoErro>               }
         {errors.undefinedIsNotASymbol?                 null : <TextoErro>"undefined" não pode ser um símbolo da máquina!</TextoErro>                    }
         {errors.onlyValidSymbols?                      null : <TextoErro>Os caracteres "[" e "]" não podem ser usados nos símbolos do alfabeto!</TextoErro>   }
+        {errors.initSymbolDefined?                   null : <TextoErro>O símbolo inicial deve ser definido!</TextoErro>}
+        {errors.blankSymbolDefined?                   null : <TextoErro>O símbolo de branco deve ser definido!</TextoErro>}
         </>
     )
 }

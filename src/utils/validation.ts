@@ -36,10 +36,10 @@ const areSymbolsValid = (alphabet: string[], auxAlphabet: string[], initialSymbo
             return false; 
     }
     
-    if (initialSymbol.includes("[") || initialSymbol.includes("]"))
+    if (initialSymbol && (initialSymbol.includes("[") || initialSymbol.includes("]")))
         return false;
 
-    if (blankSymbol.includes("[") || blankSymbol.includes("]"))
+    if (blankSymbol && (blankSymbol.includes("[") || blankSymbol.includes("]")))
         return false;
 
     return true;
@@ -134,6 +134,9 @@ export const validateInputs = (tokenized_inputs: TokenizedInputValues, oldErrors
 
     newErrors.onlyValidSymbols = areSymbolsValid(tokenized_inputs.inAlphabet, tokenized_inputs.auxAlphabet, tokenized_inputs.initSymbol[0], tokenized_inputs.blankSymbol[0]);
     
+    newErrors.initSymbolDefined = tokenized_inputs.initSymbol[0]? true : false;
+    newErrors.blankSymbolDefined = tokenized_inputs.blankSymbol[0]? true : false;
+
     return newErrors;
 }
 

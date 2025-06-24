@@ -51,6 +51,8 @@ export interface InputErrors {
   auxiliaryAlphabetDoesNotHaveBlank: boolean;
   undefinedIsNotASymbol: boolean;
   onlyValidSymbols: boolean;
+  initSymbolDefined: boolean;
+  blankSymbolDefined: boolean;
 }
 
 export interface CurrentTool {

@@ -64,7 +64,9 @@ export const StateProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     auxiliaryAlphabetDoesNotHaveStart: true,
     auxiliaryAlphabetDoesNotHaveBlank: true,
     undefinedIsNotASymbol: true,
-    onlyValidSymbols: true},
+    onlyValidSymbols: true,
+    initSymbolDefined: true,
+    blankSymbolDefined: true},
 
     documentation : "",
 
