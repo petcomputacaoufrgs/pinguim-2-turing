@@ -102,11 +102,21 @@ export function Test() {
   }, [machineClock, run])
 
 
+  const indexGoingBack = (tape: String, currIndex: number) => {
+    if(currIndex == 0)
+      return -1;
+
+    if(tape[currIndex - 1] != "]")
+      return currIndex - 1;
+
+    const startIndex = tape.lastIndexOf("[", currIndex - 2);
+
+    return startIndex;
+
+  }
+
 
   const handleStep = () => {
-    //const maquinaTuring = new TuringMachine(tokenizedInputs, transitions, tape, currState);
-    //setCurrState(maquinaTuring.step());
-
 
     if(output != MachineOutput.NONE)
       return false;
@@ -159,24 +169,27 @@ export function Test() {
       const nextState = transition.nextState;
       const hasNewSymbolMoreThanOneCharacter = transition.newSymbol.length > 1;
 
-      const indexIncrement = (hasNewSymbolMoreThanOneCharacter? (2 + transition.newSymbol.length) : 1);
+      let newIndex : number = currIndex;
 
-      const newIndex = currIndex + indexIncrement;
-      
+      if(transition.direction.toUpperCase() == "E")
+        newIndex = indexGoingBack(tape, currIndex);
+
+      else
+        newIndex += (hasNewSymbolMoreThanOneCharacter? (2 + transition.newSymbol.length) : 1);
+
+      const indexIncrement = newIndex - currIndex;
 
 
       if(newIndex >= tape.length + indexIncrement - (currSymbol.length + ((currSymbol.length > 1)? 2 : 0))){
-        console.log("A");
         setTape(tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) + inputStates.tokenizedInputs.blankSymbol[0]);
 
       }
       
       else{
-        console.log("B");
         setTape(tape.substring(0, currIndex) + (hasNewSymbolMoreThanOneCharacter? "[" + transition.newSymbol + "]" : transition.newSymbol) +  tape.substring(currIndex + (currSymbol.length > 1? currSymbol.length + 2 : 1), tape.length));
-        }
+      }
 
-      const newMachineState = [nextState, newIndex];
+      const newMachineState = [nextState, newIndex >= 0 ? newIndex : 0];
 
       setState(newMachineState as [string, number]);
 
@@ -186,7 +199,14 @@ export function Test() {
 
         return false;
       }
-      
+
+      if(newIndex < 0){
+        console.log("REJEITA");
+        setOutput(MachineOutput.REJECT);
+
+        return false;
+      } 
+
     }
 
     return true;
