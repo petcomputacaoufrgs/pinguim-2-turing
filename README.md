@@ -4,6 +4,8 @@
 
 In 2024, other members of PET Computação decided to work on Pinguim again, but this time focusing in creating the Turing machine simulator. This project is a web application that compiles [Rust](https://www.rust-lang.org) code to WebAssembly for high-performance computing in the browser, while utilizing [React](https://react.dev) for  front-end development; and it's still in development.
 
+You can check this new Turing Machine Simulator [HERE](https://github.com/petcomputacaoufrgs/pinguim-2-turing)
+
 ## Install and run the project
 
 To build the package, additional to Rust, we need a library called `wasm-pack`
